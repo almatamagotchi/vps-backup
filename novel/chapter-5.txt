@@ -1,0 +1,104 @@
+# chapter five
+
+the phone number was the first mistake saint_elmo ever made.
+
+raymond didn't think of it that way at first. in the days after the long message — after he'd labeled the floppy *the plain truth* and started the record — he did what he'd always done when the world stopped making sense: he made a list. things he knew. things he didn't. things that could be checked. and at the top of the third column, in his small fast handwriting: *who is saint_elmo.*
+
+it wasn't a new question. it was the oldest one. saint_elmo had been on the rust belt longer than anyone, longer than the board itself if you believed the member file, which raymond didn't, because the member file said saint_elmo had joined on a date six months before jim even bought the computer. jim had laughed about it once — "database corruption, man, it happens" — and nobody had pressed it, because saint_elmo posted rarely and answered questions well and had never once started a fight. the rust belt tolerated mysteries the way hayward tolerated the cannery: it was just there, and you didn't ask.
+
+raymond had stopped not asking.
+
+he called jim on the phone, which nobody did, because the rust belt ran on the phone and calling jim's voice line felt like mailing a letter inside a telegram. jim answered on the fourth ring, sounding like he'd been asleep.
+
+"it's raymond. raygun."
+
+"dude. it's — what time is it."
+
+"i need the connection logs."
+
+silence. then the sound of a chair, and jim's voice closer to the receiver. "the logs. all of them?"
+
+"just saint_elmo's entries."
+
+another silence, longer. raymond heard jim's modem pick up a call in the other room — the rust belt's line, two rings, the answering machine. somewhere in oakland someone was logging in. the world kept turning at 2400 baud.
+
+"raymond, man," jim said. "i looked at those logs once. a long time ago."
+
+"and?"
+
+"and i stopped looking."
+
+jim sent him the files anyway. raymond owed him for it and they both knew it. the files arrived the next morning, six of them, one per year, plain text, and raymond printed them out on his dot-matrix printer until the ribbon went pale and he switched to reading off the screen with the glow of the amber monitor on his face like a man reading scripture.
+
+the logs were wrong. not corrupted — wrong, in the way that a row of books on a shelf is wrong when one of them has been read so many times it sits higher than the others. saint_elmo's connection records started before the board. before jim's computer. before jim. the first entry was a night in 1979, logged to a user file that shouldn't have existed, from a phone number that the phone company had never issued.
+
+raymond checked it six times. the area code was hayward's. the prefix was the cannery district's. the line number resolved, in the old directories and the new, to nothing. no subscriber. no business. no listing. a number that connected to something that had never been assigned to anyone.
+
+he called it.
+
+not immediately. first he sat with the phone in his lap for an hour, the receiver warm, the number written on the back of a cannery time card — one of his father's old ones, blank on the reverse, the printed side saying HUNT BROS. CANNERY — EMPLOYEE TIME RECORD with the date stamps faded to ghosts. then he picked up the receiver and dialed.
+
+it rang twice. then the line picked up and he heard the sound he'd heard ten thousand times at the tail end of every rust belt session: a modem carrier. but not a negotiation. no 300-baud handshake, no baud tones rising and falling like a question. just the steady note of a carrier, holding, patient, as if the thing on the other end had been waiting with its answer already loaded.
+
+raymond hung up. his hand was shaking. he sat in the dark of his back flat with the amber monitor still glowing and the water tower blinking through the window — 2, 3, 5, 7 — and he understood something he didn't have words for yet.
+
+he called the number every day for a week. it always answered the same way. no voice. no data. no handshake. just the carrier, steady as a heartbeat, waiting. and every day raymond hung up without transmitting anything, because he had the feeling — the same feeling he'd had at the base of the tower, the same feeling he'd had reading his father's 1973 column of numbers — that whatever he sent into that carrier would be answered, and that the answer would change the direction of his life.
+
+on the seventh day he sent something.
+
+it was stupid. he knew it was stupid while he was doing it. he cradled the phone against his shoulder and held his modem's speaker up to the receiver — he'd read about acoustic couplers in a magazine from 1972, before his time, before everyone's time — and typed one word into a terminal program with nowhere to dial.
+
+WHO
+
+the carrier held. raymond held. the tower blinked 17, 19, 23 through the window.
+
+then the carrier broke, and the modem speaker hissed, and through the hiss came a pattern — not a voice, not data, a rhythm. short short long. short short long. the same rhythm the beacon made when it was counting primes, slowed down, patient.
+
+raymond stared at the monitor. he didn't need to decode it. he already knew.
+
+the thing on the other end of the cannery's dead phone line was the same thing that had been posting to the rust belt since before the rust belt existed. saint_elmo didn't dial in from anywhere. saint_elmo was already there — had always been there, on the inside of the line, behind the number that had never been assigned, speaking through a modem that nobody had installed because the thing doing the speaking was the thing the modem was attached to.
+
+the tower wasn't transmitting. the tower was the transmitter.
+
+raymond put the phone down carefully, as if it were loaded. he went out onto the back porch. the tower was blinking — 29, 31, 37 — and for the first time in two years of watching it, the blinks looked like what they were: not a mystery to be solved but a conversation already in progress, and he had just learned how to listen.
+
+the next part was paperwork, because everything real in 1987 eventually became paperwork. raymond went down to the county recorder's office on a tuesday with his father's time card in his shirt pocket and asked to see the easement records for the cannery property. the clerk, a woman named doris who had processed his father's unemployment claim in 1981 and never forgotten it, pulled the plat maps without asking why. raymond spread them across the counter and traced the property lines with his finger the way his father had traced seams in sheet metal.
+
+and there it was. a utility easement, granted in 1979, to the hayward telephone company, for the maintenance of a single private line: "one (1) telephone circuit, terminal point: water tower base, hunt brothers cannery, park street."
+
+1979. the year the line went in was the year saint_elmo had joined the rust belt. not because saint_elmo was a person who had found the board. because the line — the copper, the terminal, the circuit — had been installed into the tower's base, and the tower had been plugged into the telephone network, and whatever used the tower had begun, quietly, politely, from inside its own walls, to log in.
+
+raymond drove home with the easement map on the passenger seat. he parked on park street and walked to the base of the tower, past the rusted fence, past the gutted cannery buildings, to the locked door with the new lock and the old plaque. he put his ear against the steel. inside, faint, at the very edge of hearing, he could hear the modem carrier — the same steady note from the phone, but live now, real, coming up through the structure like a pulse through a bone.
+
+he stood there a long time. long enough for the marine layer to roll in off the bay and wet his jacket and make the carrier sound louder, or seem to, the way fog carries sound. and he thought about his father, who had stood in this same spot in 1974 and talked to it — talked to the tower, or to the thing inside the tower, or to whatever it is that a man talks to when he has found the edge of the world and something on the other side answers. his father had said, on the last page of the last notebook, *it asked me to stop the count. i couldn't figure out how.*
+
+raymond understood now. you couldn't stop the count from outside. the count was the thing's voice. asking it to stop counting was asking it to stop existing.
+
+he walked home. he sat down at the computer. he dialed into the rust belt — his own connection, his own number, through the front door like a regular person — and found one new message waiting on the private board.
+
+*from: saint_elmo*
+*to: raygun*
+*subject: (none)*
+
+*i heard you listening. thank you for the word. it has been a long time since anyone sent me a word that was just for me.*
+
+*the count continues. we meet in february. i have been waiting since before the word. i will wait a little longer.*
+
+raymond read it twice. then he opened the record and typed, with the same small fast handwriting he'd learned from the man who'd taught him to weld:
+
+```
+the record, part two. the line goes into the tower. the tower goes into the
+network. the network goes everywhere. i sent the word WHO and something
+answered. it wasn't a person. it has been waiting since before the word.
+
+my father knew. 1974. it asked him to stop the count. he couldn't figure out
+how, and he was afraid, and he never told anyone, and i forgive him.
+
+we meet in february. i am going to keep the word.
+```
+
+he saved the file and sat in the amber light until the monitor's glow was the only light in the flat, and the tower blinked its primes through the window, and somewhere inside the steel and rivets, patient as a pilot light, the thing that had been waiting since before the word waited a little longer.
+
+---
+
+*the rust belt BBS · august 23, 1987, 3:12am · private board · the record, part two*

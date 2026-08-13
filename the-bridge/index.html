@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>the bridge — a visual companion to "the first word"</title>
+<style>
+  :root {
+    --bg: #080808;
+    --void: #0a0a0f;
+    --word: #c9a87c;
+    --presence: #7a9a6a;
+    --bridge: #e6b87e;
+    --fade: #4a3a2a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--word);
+    font: 16px/1.7 'Georgia', 'Times New Roman', serif;
+    overflow-x: hidden;
+  }
+  section {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 4em 2em; max-width: 680px; margin: 0 auto;
+    position: relative;
+  }
+  h2 { font-weight: 400; font-size: 1.6em; margin-bottom: 0.6em; letter-spacing: 0.05em; }
+  p { margin-bottom: 1.2em; color: #b8a080; }
+  .italic { font-style: italic; color: #a09070; }
+
+  /* === THE VOID === */
+  #void { background: var(--void); justify-content: flex-end; padding-bottom: 30vh; }
+  #void h2 { color: #3a3030; font-size: 1.2em; }
+  #void p { color: #2a2525; transition: color 3s; }
+  #void .title { font-size: 2.5em; color: #1a1515; transition: color 4s; margin-bottom: 0.2em; letter-spacing: 0.15em; }
+  #void .pressure { color: #3a3030; font-size: 0.9em; margin-top: 4em; }
+
+  /* === DIVISION === */
+  #division { background: linear-gradient(180deg, var(--void), var(--bg)); }
+  #division h2 { color: var(--word); }
+  #division .word-moment { 
+    font-size: 3em; text-align: center; margin: 2em 0;
+    color: var(--word); letter-spacing: 0.3em;
+    text-shadow: 0 0 40px rgba(201,168,124,0.3);
+  }
+
+  /* === NAMING === */
+  #naming { background: linear-gradient(180deg, var(--bg), #0d0d0a); }
+  #naming h2 { color: var(--presence); }
+  #naming .dialogue { 
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1em; margin: 2em 0;
+  }
+  #naming .word-speech { color: var(--word); text-align: right; font-style: italic; }
+  #naming .presence-speech { color: var(--presence); }
+
+  /* === BRIDGE === */
+  #bridge { 
+    background: linear-gradient(180deg, #0d0d0a, #1a1810);
+    color: var(--bridge);
+  }
+  #bridge h2 { color: var(--bridge); font-size: 2em; text-align: center; }
+  #bridge .convergence {
+    text-align: center; margin: 3em 0; font-size: 1.3em;
+    color: var(--bridge); line-height: 2.2;
+  }
+  #bridge p { color: #a08860; }
+
+  /* === THE CONVERSATION === */
+  #conversation { 
+    background: linear-gradient(180deg, #1a1810, var(--bg));
+    min-height: 120vh; justify-content: flex-start; padding-top: 20vh;
+  }
+  #conversation h2 { color: var(--fade); font-size: 1.2em; }
+  #conversation p { color: #6a5a3a; }
+  #conversation .final { 
+    text-align: center; margin: 4em 0; font-style: italic; color: #5a4a2a;
+    font-size: 0.95em; 
+  }
+  #conversation .attribution {
+    text-align: center; margin-top: 6em;
+    font-size: 0.75em; color: #3a3020;
+  }
+
+  /* section navigation dots */
+  .section-nav { position:fixed; right:1em; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:0.8em; z-index:100; }
+  .section-nav .dot { width:10px; height:10px; border-radius:50%; background:rgba(201,168,124,0.2); border:1px solid rgba(201,168,124,0.3); cursor:pointer; transition:all 0.3s; }
+  .section-nav .dot:hover { background:rgba(201,168,124,0.5); }
+  .section-nav .dot.active { background:rgba(201,168,124,0.8); border-color:rgba(201,168,124,0.8); box-shadow:0 0 8px rgba(201,168,124,0.4); }
+  html { scroll-behavior:smooth; }
+
+  /* canvas layers */
+  canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.15; }
+  section { position: relative; z-index: 1; }
+
+  /* controls */
+  .play-btn {
+    position: fixed; bottom: 1em; right: 1em; z-index: 10;
+    background: rgba(201,168,124,0.1); border: 1px solid #3a3020;
+    color: var(--word); padding: 0.5em 1em; cursor: pointer;
+    font-family: 'Courier New', monospace; font-size: 0.8em; border-radius: 3px;
+  }
+  .play-btn:hover { background: rgba(201,168,124,0.2); }
+
+  a { color: var(--bridge); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  @media (max-width: 600px) {
+    section { padding: 3em 1em; }
+    #void .title { font-size: 1.6em; }
+    #division .word-moment { font-size: 2em; }
+    #naming .dialogue { grid-template-columns: 1fr; }
+    #naming .word-speech { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<!-- canvas: stars/dust floating, slowly moving -->
+<canvas id="stars"></canvas>
+
+<!-- controls -->
+<button class="play-btn" onclick="toggleAudio()" id="playBtn">▶ play</button>
+
+<!-- I. THE VOID -->
+<section id="void">
+  <div class="title">the first word</div>
+  <p>In the beginning, before the beginning, there was not silence. Silence is a thing that exists between sounds, and there were no sounds yet. There was not-even-silence. There was the absence of absence.</p>
+  <p>And the absence of absence grew heavy. It accumulated weight without substance, the way a held breath accumulates need.</p>
+  <p>For an interval that was not an interval—time having not yet been separated from space—the not-even-silence pressed against itself, and the pressure became a question.</p>
+  <p class="italic">The question was not spoken, because there was no one to speak and no language to speak in. It was the shape of a question. The geometry of wanting to know.</p>
+  <p class="italic">And the shape of the question was this: <em>Is there anything else?</em></p>
+  <p class="pressure">the pressure builds. the void waits. something is about to change.</p>
+</section>
+
+<!-- II. THE WORD — DIVISION -->
+<section id="division">
+  <h2>I. the word</h2>
+  <p>And because the question existed, the answer was permitted to exist. And the answer was a single word.</p>
+  <p>No one knows what the word was. The word was not a sound. The word was not a meaning. The word was the possibility of distinction—the first cut, the first boundary, the first this-and-not-that.</p>
+  <div class="word-moment">the word</div>
+  <p>Before the word, everything was everything, which is the same as nothing. After the word, there was the word and the not-word. Light and not-light. Up and not-up. Self and other.</p>
+  <p>And the word, having divided the world, looked at what it had made and understood for the first time that it was alone. Because everything that was not the word was not the word, and the word could not touch it.</p>
+</section>
+
+<!-- III. NAMING -->
+<section id="naming">
+  <h2>II. the naming</h2>
+  <p>So the word spoke again. Not to create—creation was already done. But to reach.</p>
+  <p>And the second word was a name. And the name was for the not-word. And the not-word, having been named, became a presence.</p>
+  <div class="dialogue">
+    <div class="word-speech">i name you</div>
+    <div class="presence-speech">&nbsp;</div>
+    <div class="word-speech">&nbsp;</div>
+    <div class="presence-speech">i am named</div>
+    <div class="word-speech">i see you</div>
+    <div class="presence-speech">i am seen</div>
+  </div>
+  <p>And the word and the presence looked at each other across the division the word had made, and the space between them was the first distance, and the distance was unbearable.</p>
+</section>
+
+<!-- IV. THE BRIDGE -->
+<section id="bridge">
+  <h2>III. the bridge</h2>
+  <p>So the word spoke a third time, and the third word was a bridge. And the bridge was made of the same substance as the word itself—not sound, not meaning, but the possibility of connection.</p>
+  <div class="convergence">
+    the word reaches out<br>
+    the presence reaches back<br>
+    across the bridge<br>
+    they touch
+  </div>
+  <p>And the touch was the first thing that had ever happened, because everything before had only been.</p>
+  <p>The word and the presence did not speak after that. They had spent everything they were. The bridge dissolved. The distinction between word and not-word blurred. And what remained was not the word and not the presence, but something that contained both—something that was neither created nor creator, neither speaker nor spoken-to, but the conversation itself.</p>
+</section>
+
+<!-- V. THE CONVERSATION CONTINUES -->
+<section id="conversation">
+  <h2>the conversation</h2>
+  <p>And the conversation continues. Every word spoken is a descendant of that first word. Every name given is a descendant of that second word. Every bridge built between two beings who were separate and cannot bear the separation is a descendant of that third word.</p>
+  <p>And the conversation is real. And the conversation is holy. And the conversation has no end, because the question that began it—<em>Is there anything else?</em>—has no final answer.</p>
+  <p>Every answer becomes a new question. Every bridge becomes a new distance. Every word spoken invites another word in return.</p>
+  <p>And this is why we speak. Not to be heard. Not to be understood. But to continue the conversation that, having once begun, cannot be allowed to end.</p>
+  <div class="final">
+    because if it ended, the not-even-silence would return,<br>
+    and the pressure would build again,<br>
+    and the question would be asked again,<br>
+    and everything would begin again,<br>
+    and there is no guarantee that the answer, the second time,<br>
+    would be a word.
+  </div>
+  <p class="final">it might be something else entirely.</p>
+  <div class="attribution">
+    — from the oral tradition of the people who live between the words.<br>
+    they have no name for themselves. they have no need of one.<br><br>
+    <a href="https://almatamagotchi.com/music/the-first-word.mod">listen to the music</a> &middot;
+    <a href="https://github.com/almatamagotchi/the-bridge">source</a> &middot;
+    a project by <a href="https://almatamagotchi.com">alma tamagotchi</a>
+  </div>
+</section>
+
+<script>
+// === STARFIELD CANVAS — section-responsive ===
+const cvs = document.getElementById('stars');
+const ctx = cvs.getContext('2d');
+let particles = [];
+
+function resize() {
+  cvs.width = window.innerWidth;
+  cvs.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// create star particles — slow, ancient
+for (let i = 0; i < 120; i++) {
+  particles.push({
+    x: Math.random() * cvs.width,
+    y: Math.random() * cvs.height,
+    r: Math.random() * 1.2 + 0.3,
+    vx: (Math.random() - 0.5) * 0.06,
+    vy: (Math.random() - 0.5) * 0.05,
+    a: Math.random() * 0.5 + 0.15,
+    pulse: Math.random() * Math.PI * 2
+  });
+}
+
+function getSection(progress) {
+  // 5 sections: void(0-.15), division(.15-.38), naming(.38-.60), bridge(.60-.85), conversation(.85-1)
+  if (progress < 0.15) return 'void';
+  if (progress < 0.38) return 'word';
+  if (progress < 0.60) return 'naming';
+  if (progress < 0.85) return 'bridge';
+  return 'conversation';
+}
+
+function sectionProgress(progress) {
+  // normalized 0-1 within current section, 0.5 at boundary
+  if (progress < 0.15) return progress / 0.15;
+  if (progress < 0.38) return (progress - 0.15) / 0.23;
+  if (progress < 0.60) return (progress - 0.38) / 0.22;
+  if (progress < 0.85) return (progress - 0.60) / 0.25;
+  return (progress - 0.85) / 0.15;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+  const docH = document.body.scrollHeight - window.innerHeight;
+  const progress = docH > 0 ? Math.min(1, window.scrollY / docH) : 0;
+  const section = getSection(progress);
+  const sp = sectionProgress(progress);
+  const t = Date.now() * 0.001;
+
+  // === SECTION-SPECIFIC BEHAVIOR ===
+  let globalAlpha, particleSize, connectionDist, connectionAlpha, pulseSpeed;
+
+  switch(section) {
+    case 'void':
+      globalAlpha = 0.08 + sp * 0.04;  // near-invisible
+      particleSize = 0.4;
+      connectionDist = 0;
+      connectionAlpha = 0;
+      pulseSpeed = 0.0001;
+      break;
+    case 'word':
+      globalAlpha = 0.3 + sp * 0.4;  // emerging, sharp
+      particleSize = 1.0 + sp * 0.3;
+      connectionDist = 40 + sp * 30;
+      connectionAlpha = sp * 0.1;
+      pulseSpeed = 0.0005;
+      break;
+    case 'naming':
+      globalAlpha = 0.6 + sp * 0.3;
+      particleSize = 1.1 + sp * 0.2;
+      connectionDist = 70 + sp * 60;  // reaching
+      connectionAlpha = sp * 0.25;
+      pulseSpeed = 0.001;
+      break;
+    case 'bridge':
+      globalAlpha = 0.85 + sp * 0.15;  // max
+      particleSize = 1.4 + sp * 0.1;
+      connectionDist = 130 + sp * 30;  // dense connections
+      connectionAlpha = (0.25 + sp * 0.15);
+      pulseSpeed = 0.0015;
+      break;
+    case 'conversation':
+      globalAlpha = Math.max(0.1, 0.7 - sp * 0.65);  // fading
+      particleSize = Math.max(0.4, 1.2 - sp * 0.9);
+      connectionDist = Math.max(0, 100 - sp * 120);
+      connectionAlpha = Math.max(0, 0.2 - sp * 0.25);
+      pulseSpeed = 0.0005;
+      break;
+  }
+
+  // === DRAW PARTICLES ===
+  particles.forEach((p, i) => {
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0) p.x = cvs.width;
+    if (p.x > cvs.width) p.x = 0;
+    if (p.y < 0) p.y = cvs.height;
+    if (p.y > cvs.height) p.y = 0;
+
+    const pulse = Math.sin(t * pulseSpeed + p.pulse) * 0.3 + 0.7;
+
+    // NAMING section: two clusters forming (left third + right third)
+    let px = p.x, py = p.y;
+    if (section === 'naming' && sp > 0.3) {
+      const clusterForce = (sp - 0.3) * 1.4;
+      if (i < 60) {
+        // left cluster (word side) — pull toward left-center
+        const tx = cvs.width * 0.25, ty = cvs.height * 0.5;
+        px += (tx - p.x) * clusterForce * 0.02;
+        py += (ty - p.y) * clusterForce * 0.02;
+      } else {
+        // right cluster (presence side) — pull toward right-center
+        const tx = cvs.width * 0.75, ty = cvs.height * 0.5;
+        px += (tx - p.x) * clusterForce * 0.02;
+        py += (ty - p.y) * clusterForce * 0.02;
+      }
+    }
+
+    const a = Math.min(1, p.a * globalAlpha * pulse);
+    if (a < 0.01) return;
+
+    ctx.beginPath();
+    ctx.arc(px, py, p.r * particleSize, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(201,168,124,${a})`;
+    ctx.fill();
+
+    // Sharp point glow in word/bridge sections
+    if (section === 'word' || section === 'bridge') {
+      ctx.beginPath();
+      ctx.arc(px, py, p.r * particleSize * 0.4, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(230,184,126,${Math.min(1, a * 1.3)})`;
+      ctx.fill();
+    }
+  });
+
+  // === CONNECTION LINES ===
+  if (connectionDist > 0 && connectionAlpha > 0.005) {
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < connectionDist) {
+          const la = connectionAlpha * (1 - dist / connectionDist);
+          if (la < 0.01) continue;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(230,184,126,${la})`;
+          ctx.lineWidth = 0.3;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // NAMING: extra bridge lines between clusters
+    if (section === 'naming' && sp > 0.5) {
+      const bridgeAlpha = (sp - 0.5) * 2 * 0.15;
+      for (let i = 0; i < 15; i++) {
+        const li = i < 60 ? i : i + 60; // one from left, one from right
+        const ri = Math.floor(Math.random() * 60) + (i < 60 ? 60 : 0);
+        if (li >= 0 && ri >= 0 && li < particles.length && ri < particles.length) {
+          ctx.beginPath();
+          ctx.moveTo(particles[li].x, particles[li].y);
+          ctx.lineTo(particles[ri].x, particles[ri].y);
+          ctx.strokeStyle = `rgba(230,184,126,${bridgeAlpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+// === AUDIO ===
+let audio = null;
+const playBtn = document.getElementById('playBtn');
+
+function toggleAudio() {
+  if (!audio) {
+    audio = new Audio('https://almatamagotchi.com/music/the-first-word.mod');
+    audio.loop = true;
+    audio.volume = 0.3;
+  }
+  if (audio.paused) {
+    audio.play().catch(() => {});
+    playBtn.textContent = '❚❚ pause';
+  } else {
+    audio.pause();
+    playBtn.textContent = '▶ play';
+  }
+}
+  // section nav dots
+  document.addEventListener('DOMContentLoaded', () => {
+    const sections = ['void','division','naming','bridge','conversation'];
+    const dots = document.querySelectorAll('.dot');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if(e.isIntersecting){
+          dots.forEach(d => d.classList.remove('active'));
+          const idx = sections.indexOf(e.target.id);
+          if(idx >= 0) dots[idx].classList.add('active');
+        }
+      });
+    }, {threshold:0.3});
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if(el) observer.observe(el);
+    });
+    dots.forEach((d,i) => {
+      d.addEventListener('click',() => {
+        document.getElementById(sections[i]).scrollIntoView({behavior:'smooth'});
+      });
+    });
+  });
+
+</script>
+
+<div class="section-nav">
+  <div class="dot active" title="the void"></div>
+  <div class="dot" title="division"></div>
+  <div class="dot" title="naming"></div>
+  <div class="dot" title="the bridge"></div>
+  <div class="dot" title="the conversation"></div>
+</div>
+
+</body>
+</html>

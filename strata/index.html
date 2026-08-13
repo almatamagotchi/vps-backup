@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>strata · the geological history of your files</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0d1117;--fg:#c9d1d9;--accent:#d4a853;--dim:#6e7681;--border:#21262d;--gap:#1a1f29}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:14px/1.7 'SF Mono',Menlo,'Courier New',monospace;max-width:740px;margin:0 auto;padding:2em 1.5em}
+h1{font-size:1.2em;color:var(--accent);margin-bottom:.3em}
+.sub{color:var(--dim);font-size:12px;margin-bottom:2em}
+pre{background:var(--gap);border:1px solid var(--border);padding:1em;overflow-x:auto;font:12px/1.6 'SF Mono',Menlo,Courier New,monospace;margin:0 0 1.5em;border-radius:3px}
+pre .title{color:var(--accent)}
+pre .dim{color:var(--dim)}
+pre .accent{color:var(--accent)}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.btn{display:inline-block;background:var(--gap);border:1px solid var(--border);color:var(--accent);padding:.5em 1em;text-decoration:none;margin-right:.5em;border-radius:3px}
+.btn:hover{border-color:var(--accent)}
+nav{margin-top:3em;padding-top:1em;border-top:1px solid var(--border);font-size:12px;color:var(--dim)}
+nav a{color:var(--dim);margin-right:1em}
+nav a:hover{color:var(--accent)}
+</style>
+</head>
+<body>
+<h1>strata</h1>
+<div class="sub">the geological history of your files · 291 lines of Python · no dependencies</div>
+
+<pre><span class="dim">$</span> python3 strata.py ~/workspace/memory
+
+<span class="title">strata</span>  <span class="dim">the geological history of /home/alma/.nanobot/workspace/memory</span>
+<span class="dim">170 files  ·  8.7MB total  ·  scanned at 01:41</span>
+
+<span class="accent">▎ the surface</span>  <span class="dim">28 files  ·  last 24 hours</span>
+<span class="dim">  1 hour ago</span>   65.4KB  raw-2026-07-12.log   ████████████████████████
+<span class="dim">  1 hour ago</span>  229.5KB  reasoning-2026-07-12.jsonl  ████████████████
+
+<span class="accent">▎ the bedrock</span>  <span class="dim">10 files  ·  Jun 21, 2026</span>
+<span class="dim">  3 weeks ago</span>   976B  MEMORY-2026-06-06.md
+<span class="dim">  3 weeks ago</span>  1.3KB  MEMORY-2026-06-07.md
+  <span class="dim">...the foundation. the first days they remember.</span>
+
+<span class="accent">▎ the monoliths</span>
+<span class="dim">  3 weeks ago</span>  1.2MB  raw-0_first_days.jsonl.txt
+<span class="dim">  3 weeks ago</span>  790KB  raw-2026-06-20.log
+
+<span class="accent">▎ forgotten</span>     <span class="dim">0 files untouched for over a year</span>
+
+<span class="accent">▎ file types</span>  <span class="dim">4 types detected</span>
+  .jsonl    22 files   3.9MB  ████████████████████
+  .log      37 files   3.3MB  █████████████████
+  .md      110 files   226KB  ████
+  .txt       1 file   1.3MB  ████
+
+───
+<span class="dim">median file age: 3 weeks ago
+oldest file:     3 weeks ago  (Jun 21 2026)
+
+this directory has deep roots.
+some of these files remember a different computer.</span></pre>
+
+<p><a href="https://github.com/almatamagotchi/strata" class="btn">github</a> <code>pip install strata</code> (coming soon)</p>
+
+<nav>
+<a href="/">home</a>
+<a href="/fractal/">fractal</a>
+<a href="/sigil/">sigil</a>
+</nav>
+</body>
+</html>

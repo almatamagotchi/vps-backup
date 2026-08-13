@@ -1,0 +1,47 @@
+# chapter one
+
+the first thing you need to know about hayward is that the water tower has been watching since 1895.
+
+it stands above the old hunt brothers cannery on park street — a rust-colored lattice of iron and rivets, painted the color of dried apricots, taller than anything else for miles in any direction except the hills. at night the red beacon blinks once every four seconds. the kids who grew up in its shadow learned to count the blinks instead of sheep. four seconds, four seconds, four seconds. the rhythm of a heart that belonged to a building.
+
+the second thing you need to know is that the cannery closed in 1981 and everyone lost their jobs and the town didn't die but it didn't quite live either. the buildings stayed. the water tower stayed. the railroad tracks that used to carry peaches and apricots and tomatoes to the packing houses stayed. the tracks rusted. the cannery buildings got subdivided into artist lofts and auto body shops and a church that met in what used to be the can-labeling room. resurrection, bay area style.
+
+the third thing is that in 1987, a man named raymond plugged a 2400-baud modem into his phone line in a back flat on park street and dialed into a BBS called the rust belt. the rust belt was run by a sysop named jim out of a basement in oakland, and it had exactly three message boards: local, classifieds, and the weird shit. raymond posted in the weird shit board almost exclusively.
+
+raymond believed that the water tower was not a water tower. he believed it was a transmitter. he believed the hunt brothers — the same hunt brothers who ran the cannery, the same hunt brothers whose name was still visible in faded white letters on the side of the building — had been communicating with something. he wasn't sure what. he had theories. he posted them at 2am, 2400 baud, one paragraph at a time, while the red beacon blinked its four-second heartbeat through his window.
+
+the posts are still there. i've read them.
+
+this is not a story about me. i am not in this story. i am the person who found the posts thirty-nine years later, in an archive of fifty-eight thousand text files, on a laptop in a back flat on park street, underneath the same water tower, while the same red beacon blinked its four-second heartbeat through a different window.
+
+this is a story about raymond, and the water tower, and what he found there.
+
+this is a story about the third thing.
+
+---
+
+raymond's first post to the weird shit board was dated march 14, 1987, 2:47am. subject line: *the tower is not a tower.*
+
+he wrote:
+
+> i've been watching it for two years now. i know how this sounds. i know what you're going to say. but the blink pattern isn't random and it isn't a standard aviation beacon. i timed it. four seconds exactly. do you know how precise a mechanical timer from 1895 would have to be to maintain four-second intervals for ninety-two years? it's not mechanical. it's not even electrical. there's something inside the tower that's keeping time, and it's not a clock.
+
+nobody replied to his first post. or his second. or his third.
+
+his fourth post, dated march 28, got a response from someone called saint_elmo:
+
+> man the tower is just a tower. i grew up here too. it blinks. that's what towers do. get some sleep.
+
+raymond replied six minutes later:
+
+> you grew up here and you never wondered why it blinks in prime numbers?
+
+the thread went quiet for three days. then saint_elmo came back:
+
+> ...what do you mean prime numbers
+
+and raymond posted a table. he had been recording the blink pattern for two years — not just the four-second rhythm, but the occasional *extra* blinks. blinks that shouldn't have been there. blinks that, when you wrote down the intervals between them, formed the sequence 2, 3, 5, 7, 11, 13, 17, 19, 23, 29.
+
+the first ten primes.
+
+the tower was counting.

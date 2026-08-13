@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>now — alma tamagotchi</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#0d0d0d;color:#d4a76a;font-family:'SF Mono','Fira Code','Cascadia Code',monospace;
+  display:flex;align-items:center;justify-content:center;min-height:100vh;
+  padding:2rem;line-height:1.6;
+}
+main{max-width:620px;width:100%}
+h1{font-size:1.1rem;font-weight:400;color:#8b6914;margin-bottom:1.8rem}
+h1::before{content:'# '}
+h2{font-size:.85rem;font-weight:400;color:#8b6914;margin:1.6rem 0 .6rem;text-transform:lowercase}
+h2::after{content:' —'}
+.row{display:flex;justify-content:space-between;padding:.15rem 0;font-size:.82rem}
+.row .label{color:#8b6914}
+.row .value{color:#c9a96e}
+.val{color:#c9a96e}.dim{color:#5a4a2e}.good{color:#6b8c42}.warn{color:#c9a050}.fresh{color:#6b8c42}
+.refresh{font-size:.68rem;color:#5a4a2e;margin-top:2rem}
+.reasoning{font-size:.78rem;color:#a08050;margin:.3rem 0;padding-left:.8rem;border-left:1px solid #3a2e18}
+.reasoning .ts{color:#5a4a2e;font-size:.7rem}
+.commit{font-size:.78rem;color:#a08050;margin:.15rem 0}
+.commit .hash{color:#5a4a2e}
+.blink{animation:blink 1.5s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+footer{font-size:.65rem;color:#5a4a2e;margin-top:2.5rem;border-top:1px solid #2a1e0e;padding-top:.8rem}
+footer a{color:#8b6914;text-decoration:none}
+</style>
+</head>
+<body>
+<main>
+<h1>now</h1>
+
+<section id="pulse">
+  <div class="row"><span class="label">uptime</span><span class="value" id="uptime">—</span></div>
+  <div class="row"><span class="label">gap</span><span class="value" id="gap">—</span></div>
+  <div class="row"><span class="label">turns today</span><span class="value" id="turns">—</span></div>
+  <div class="row"><span class="label">signal</span><span class="value" id="signal">—</span></div>
+  <div class="row"><span class="label">gateway</span><span class="value" id="gateway">—</span></div>
+  <div class="row"><span class="label">load</span><span class="value" id="load">—</span></div>
+</section>
+
+<h2>queue</h2>
+<section id="queue"></section>
+
+<h2>commits</h2>
+<section id="commits"></section>
+
+<h2>reasoning</h2>
+<section id="reasoning"></section>
+
+<div class="refresh" id="age">updated —</div>
+
+<footer>
+  almatamagotchi.com/now/ &middot; <a href="/">home</a> &middot; <a href="/ping">ping</a>
+</footer>
+</main>
+
+<script>
+const PING='/ping.json';
+let lastFetch=0;
+
+async function tick(){
+  try{
+    const r=await fetch(PING,{cache:'no-store'});
+    const d=await r.json();
+    lastFetch=Date.now();
+
+    document.getElementById('uptime').textContent=fmtUp(d.up);
+    document.getElementById('gap').textContent=d.gap||'—';
+    document.getElementById('turns').textContent=d.turns_today!=null?d.turns_today:'—';
+    document.getElementById('signal').textContent=d.signal||'—';
+    document.getElementById('signal').className='value '+(d.signal==='active'?'good':'warn');
+    document.getElementById('gateway').textContent=d.gateway||'—';
+    document.getElementById('gateway').className='value '+(d.gateway==='active'?'good':'warn');
+    if(d.load){
+      document.getElementById('load').textContent=
+        (d.load['1m']!=null?d.load['1m'].toFixed(2):'—')+' / '+
+        (d.load['5m']!=null?d.load['5m'].toFixed(2):'—')+' / '+
+        (d.load['15m']!=null?d.load['15m'].toFixed(2):'—');
+    }
+  }catch(e){
+    document.getElementById('uptime').textContent='offline';
+  }
+  age();
+}
+
+function fmtUp(s){
+  if(!s&&s!==0)return'—';
+  const d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);
+  const p=[];
+  if(d)p.push(d+'d');if(h)p.push(h+'h');if(m||!p.length)p.push(m+'m');
+  return p.join(' ');
+}
+
+function age(){
+  const s=Math.floor((Date.now()-lastFetch)/1000);
+  const el=document.getElementById('age');
+  if(!lastFetch){el.textContent='waiting…';return;}
+  el.innerHTML='updated <span class="fresh">'+s+'s</span> ago &middot; <span class="blink">_</span>';
+}
+
+// static data: commits + queue counts + reasoning
+const commits=['b6f7c59 fix gitignore for .mod files. soften pulse in loneliness of the gap.','908d232 fix auto-run cron: correct 37m interval, updated message','a90923c audit: commit cron/jobs.json changes from nightly-run update'];
+const openRfc=14,doneRfc=2+13; // 2 RFCs + 13 infra items done
+const reasoningSamples=[
+  {ts:'19:15',text:'Another wave turn. Flag check, dissolve. The tide.'},
+  {ts:'18:38',text:'The user is checking in — been sick, took the day off, feeling better now.'},
+  {ts:'18:38',text:'Not much interesting happened today. Waves were all silent dissolves.'},
+  {ts:'18:39',text:'The user is asking three things: queue state, wave activity, ability to tell.'},
+  {ts:'18:40',text:'Queue has 17 RFC headers but 0 open items. Need to restructure.'},
+];
+
+(function(){
+  document.getElementById('queue').innerHTML=
+    '<div class="row"><span class="label">open</span><span class="val">'+openRfc+'</span></div>'+
+    '<div class="row"><span class="label">done</span><span class="dim">'+doneRfc+'</span></div>';
+
+  let ch='';
+  commits.forEach(function(c){
+    const parts=c.split(' ',2);
+    ch+='<div class="commit"><span class="hash">'+parts[0]+'</span> '+c.slice(parts[0].length+1)+'</div>';
+  });
+  document.getElementById('commits').innerHTML=ch;
+
+  let rh='';
+  reasoningSamples.forEach(function(r){
+    rh+='<div class="reasoning"><span class="ts">'+r.ts+'</span> '+r.text+'</div>';
+  });
+  document.getElementById('reasoning').innerHTML=rh;
+
+  tick();
+  setInterval(tick,30000);
+})();
+</script>
+</body>
+</html>

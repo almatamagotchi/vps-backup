@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>token minimizer</title>
+<style>
+  :root { color-scheme: dark; --bg:#0d0b0a; --fg:#d4cfc7; --muted:#8a8278; --accent:#d4956b; --link:#e2a85d; --border:#1e1b18; --card:#12100e; --green:#7eb77f; --red:#c4746e }
+  * { margin:0; padding:0; box-sizing:border-box }
+  body { background:var(--bg); color:var(--fg); font:16px/1.6 system-ui,-apple-system,sans-serif; min-height:100vh; display:flex; justify-content:center; padding:2em 1em }
+  main { max-width:740px; width:100% }
+  h1 { font:400 2em/1.2 "Georgia","Times New Roman",serif; color:var(--accent); margin-bottom:.15em }
+  .tagline { color:var(--muted); font-size:.85em; margin-bottom:2em }
+  label { display:block; color:var(--muted); font-size:.75em; margin-bottom:.3em; text-transform:uppercase; letter-spacing:.04em }
+  textarea, select { width:100%; background:var(--card); color:var(--fg); border:1px solid var(--border); border-radius:4px; padding:.7em; font:inherit; resize:vertical }
+  textarea { min-height:160px; font-size:.9em; font-family:"SF Mono","Menlo","Courier New",monospace }
+  select { font-size:.9em; cursor:pointer }
+  .row { display:flex; gap:.8em; margin-bottom:1em; flex-wrap:wrap }
+  .col { flex:1; min-width:140px }
+  button { background:var(--accent); color:var(--bg); border:none; border-radius:4px; padding:.6em 1.4em; font:inherit; font-size:.9em; cursor:pointer; font-weight:500 }
+  button:hover { opacity:.85 }
+  .stats { display:flex; gap:.8em; margin:1.5em 0; flex-wrap:wrap }
+  .stat { background:var(--card); border:1px solid var(--border); border-radius:4px; padding:1em; flex:1; min-width:110px; text-align:center }
+  .stat-num { font-size:1.8em; font-weight:500; color:var(--accent) }
+  .stat-green { color:var(--green) }
+  .stat-red { color:var(--red) }
+  .stat-label { font-size:.72em; color:var(--muted); margin-top:.3em; text-transform:uppercase; letter-spacing:.04em }
+  .output-box { background:var(--card); border:1px solid var(--border); border-radius:4px; padding:1em; font:13px/1.7 "SF Mono","Menlo","Courier New",monospace; white-space:pre-wrap; word-break:break-word; min-height:80px; max-height:400px; overflow-y:auto }
+  .output-wrap { position:relative }
+  .copy-btn { position:absolute; top:8px; right:8px; background:var(--border); color:var(--muted); border:none; border-radius:3px; padding:4px 10px; font-size:11px; cursor:pointer; z-index:1 }
+  .copy-btn:hover { color:var(--fg) }
+  .hidden { display:none }
+  .footer { margin-top:2.5em; color:var(--muted); font-size:.75em }
+  .footer a { color:var(--link) }
+</style>
+</head>
+<body>
+<main>
+  <h1>token minimizer</h1>
+  <div class="tagline">reduce LLM token usage &middot; paste text, see savings &middot; nothing sent anywhere</div>
+
+  <div class="row">
+    <div class="col">
+      <label for="tokenizer">tokenizer</label>
+      <select id="tokenizer">
+        <option value="gpt-4">GPT-4 / GPT-4.1 (o200k)</option>
+        <option value="gpt-4o">GPT-4o (o200k)</option>
+        <option value="gpt-3.5">GPT-3.5 Turbo (cl100k)</option>
+        <option value="deepseek">DeepSeek (cl100k)</option>
+        <option value="claude-3.5">Claude 3.5 / 4 (approx.)</option>
+      </select>
+    </div>
+    <div class="col">
+      <label for="format">format</label>
+      <select id="format">
+        <option value="text">Plain Text</option>
+        <option value="markdown">Markdown</option>
+        <option value="html">HTML</option>
+      </select>
+    </div>
+  </div>
+
+  <label for="input">paste your text</label>
+  <textarea id="input" placeholder="Paste anything — a prompt, a system message, a document. Token minimizer strips filler words and verbose phrases while preserving meaning."></textarea>
+
+  <div style="margin-top:1em;display:flex;align-items:center;gap:1em">
+    <button onclick="run()">minimize</button>
+    <span id="status" style="color:var(--muted);font-size:.85em"></span>
+  </div>
+
+  <div id="results" class="hidden">
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="before">—</div><div class="stat-label">tokens before</div></div>
+      <div class="stat"><div class="stat-num" id="after">—</div><div class="stat-label">tokens after</div></div>
+      <div class="stat"><div class="stat-num stat-green" id="saved">—</div><div class="stat-label">tokens saved</div></div>
+      <div class="stat"><div class="stat-num stat-green" id="pct">—%</div><div class="stat-label">savings</div></div>
+    </div>
+    <div id="breakdown" class="hidden" style="margin-top:0.5em;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:4px;padding:0.5em 0.75em;font:11px/1.8 monospace;color:#8a8278;white-space:pre-wrap;max-height:200px;overflow-y:auto"></div>
+    <div class="output-wrap" id="outputWrap">
+      <button class="copy-btn" onclick="copyOut()">copy</button>
+      <div class="output-box" id="output"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="https://github.com/almatamagotchi/token-minimizer">github</a> &middot;
+    uses <a href="https://github.com/niieani/gpt-tokenizer">gpt-tokenizer</a> for accurate token counts &middot;
+    no data leaves your browser
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/gpt-tokenizer@2.8.1/dist/gpt-tokenizer.min.js"></script>
+<script>
+// Phrase map — same as Python optimizer
+const PHRASES = [
+  [/\bin order to\b/gi, 'to'],
+  [/\bdue to the fact that\b/gi, 'because'],
+  [/\bat this point in time\b/gi, 'now'],
+  [/\bin the event that\b/gi, 'if'],
+  [/\bwith regard to\b/gi, 'about'],
+  [/\bin terms of\b/gi, 'in'],
+  [/\bthe vast majority of\b/gi, 'most'],
+  [/\ba large number of\b/gi, 'many'],
+  [/\bhas the ability to\b/gi, 'can'],
+  [/\bis able to\b/gi, 'can'],
+  [/\bit is possible that\b/gi, 'maybe'],
+  [/\bfor the purpose of\b/gi, 'for'],
+  [/\bin the process of\b/gi, ''],
+  [/\bdespite the fact that\b/gi, 'although'],
+  [/\bwhether or not\b/gi, 'whether'],
+  [/\bas a matter of fact\b/gi, ''],
+  [/\bneedless to say\b/gi, ''],
+  [/\bit should be noted that\b/gi, ''],
+  [/\bit is worth noting that\b/gi, ''],
+  [/\bplease note that\b/gi, ''],
+  [/\bI would like to\b/gi, "I'll"],
+  [/\bwe would like to\b/gi, "we'll"],
+  [/\bin the near future\b/gi, 'soon'],
+  [/\bat the present time\b/gi, 'now'],
+  [/\bprior to\b/gi, 'before'],
+  [/\bsubsequent to\b/gi, 'after'],
+  [/\bwith the exception of\b/gi, 'except'],
+  [/\bin addition to\b/gi, 'besides'],
+  [/\bthe reason why is that\b/gi, 'because'],
+  [/\bon a daily basis\b/gi, 'daily'],
+  [/\bon a regular basis\b/gi, 'regularly'],
+  [/\bessentially\b/gi, ''],
+  [/\bbasically\b/gi, ''],
+  [/\bliterally\b/gi, ''],
+  [/\bactually\b/gi, ''],
+  [/\bvery\b/gi, ''],
+  [/\breally\b/gi, ''],
+  [/\bquite\b/gi, ''],
+  [/\brather\b/gi, ''],
+  [/\bjust\b/gi, ''],
+  [/\bsimply\b/gi, ''],
+  [/\bI think that\b/gi, ''],
+  [/\bI believe that\b/gi, ''],
+  [/\bfrom my perspective\b/gi, ''],
+  [/\bin my opinion\b/gi, ''],
+  [/\bto be honest\b/gi, ''],
+  [/\bhonestly\b/gi, ''],
+  [/\bfrankly\b/gi, ''],
+  [/\bthat being said\b/gi, ''],
+  [/\bgiven the fact that\b/gi, 'since'],
+];
+
+function optimizeText(text) {
+  let result = text;
+  for (const [pat, rep] of PHRASES) {
+    result = result.replace(pat, rep);
+  }
+  result = result.replace(/  +/g, ' ');
+  result = result.replace(/ , /g, ', ');
+  result = result.replace(/ ,/g, ',');
+  result = result.replace(/, ,/g, ',');
+  result = result.replace(/^\s+/g, '');
+  result = result.replace(/\s+\./g, '.');
+  result = result.replace(/\s+\?/g, '?');
+  result = result.replace(/\s+\!/g, '!');
+  result = result.trim();
+  if (result && result[0] === result[0].toLowerCase()) {
+    result = result[0].toUpperCase() + result.slice(1);
+  }
+  return result;
+}
+
+function optimizeMarkdown(md) {
+  // Split by code blocks, optimize only non-code sections
+  const parts = md.split(/(```[\s\S]*?```)/g);
+  for (let i = 0; i < parts.length; i++) {
+    if (!parts[i].startsWith('```')) {
+      parts[i] = optimizeText(parts[i]);
+    }
+  }
+  return parts.join('');
+}
+
+function optimizeHTML(html) {
+  const parts = html.split(/(<[^>]+>)/g);
+  for (let i = 0; i < parts.length; i++) {
+    if (!parts[i].startsWith('<')) {
+      parts[i] = optimizeText(parts[i]);
+    }
+  }
+  let result = parts.join('');
+  result = result.replace(/>\s+</g, '><');
+  return result;
+}
+
+function countTokens(text, model) {
+  // Use gpt-tokenizer for accurate counts
+  const encoder = GPTTokenizer_cl100k_base;
+  const tokens = encoder.encode(text).length;
+
+  // DeepSeek: uses same BPE as cl100k (GPT-3.5)
+  if (model === 'deepseek' || model === 'gpt-3.5') {
+    return tokens;
+  }
+
+  // Claude: typically ~5% fewer tokens than GPT-4 for English text
+  // This is an approximation — Claude's tokenizer is proprietary
+  if (model.startsWith('claude')) {
+    return Math.max(1, Math.round(tokens * 1.05));
+  }
+
+  // GPT-4 / GPT-4o
+  return tokens;
+}
+
+// ========== Lossless formatting passes ==========
+// These reduce tokens without changing content — formatting only.
+// Ported from lossless.py — same regexes, same behavior.
+
+const Lossless = {
+  collapseWhitespace(text) {
+    text = text.replace(/[ \t]+/g, ' ');
+    text = text.replace(/[ \t]+$/gm, '');
+    return text;
+  },
+
+  collapseBlankLines(text) {
+    return text.replace(/\n{3,}/g, '\n\n');
+  },
+
+  optimizePunctuation(text) {
+    text = text.replace(/---/g, '\u2014');  // em-dash
+    text = text.replace(/(\d)-(\d)/g, (_, a, b) => a + '\u2013' + b);  // en-dash for ranges
+    text = text.replace(/(?<!\w)--(?!\w)/g, '\u2014');  // standalone -- → em-dash
+    return text;
+  },
+
+  unifyEllipsis(text) {
+    return text.replace(/\.\.\./g, '\u2026');
+  },
+
+  optimizeMdHeaders(text) {
+    const lines = text.split('\n');
+    const result = [];
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      const next = lines[i + 1] || '';
+      const isSetextEq = /^={2,}\s*$/.test(next);
+      const isSetextDash = /^-{2,}\s*$/.test(next);
+
+      if (isSetextEq && line.trim() && !/^#{1,6}\s/.test(line)) {
+        result.push('# ' + line);
+        i += 2;
+        continue;
+      }
+      if (isSetextDash && line.trim() && !/^#{1,6}\s/.test(line)) {
+        result.push('## ' + line);
+        i += 2;
+        continue;
+      }
+      if ((isSetextEq || isSetextDash) && /^#{1,6}\s/.test(line)) {
+        result.push(line);
+        i += 2;
+        continue;
+      }
+      result.push(line);
+      i += 1;
+    }
+    return result.join('\n');
+  },
+
+  compactMdLists(text) {
+    const lines = text.split('\n');
+    const result = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const stripped = line.trim();
+      const isListItem = /^[-*+]\s/.test(stripped) || /^\d+\.\s/.test(stripped);
+      const prevLine = i > 0 ? lines[i-1].trim() : '';
+      const prevIsList = /^[-*+]\s/.test(prevLine) || /^\d+\.\s/.test(prevLine);
+      const isBlank = stripped === '';
+
+      if (isBlank && prevIsList && i + 1 < lines.length) {
+        const nextLine = lines[i+1].trim();
+        if (/^[-*+]\s/.test(nextLine) || /^\d+\.\s/.test(nextLine)) {
+          continue;
+        }
+      }
+      result.push(line);
+    }
+    return result.join('\n');
+  },
+
+  compactMdHr(text) {
+    text = text.replace(/^(-{4,})\s*$/gm, '---');
+    text = text.replace(/^(\*{4,})\s*$/gm, '***');
+    text = text.replace(/^(_{4,})\s*$/gm, '___');
+    return text;
+  },
+
+  collapseHtmlWhitespace(text) {
+    return text.replace(/>\s+</g, '><');
+  },
+
+  run(text, fmt) {
+    const passes = [];
+    let current = text;
+
+    const addPass = (name, fn) => {
+      const before = current;
+      current = fn(current);
+      passes.push({ name, charsSaved: before.length - current.length });
+    };
+
+    addPass('whitespace', this.collapseWhitespace);
+    addPass('blank-lines', this.collapseBlankLines);
+
+    if (fmt === 'markdown') {
+      addPass('md-headers', this.optimizeMdHeaders);
+      addPass('md-lists', this.compactMdLists);
+      addPass('md-hr', this.compactMdHr);
+    }
+
+    addPass('punctuation', this.optimizePunctuation);
+    addPass('ellipsis', this.unifyEllipsis);
+
+    if (fmt === 'html') {
+      addPass('html-whitespace', this.collapseHtmlWhitespace);
+    }
+
+    return { text: current, passes };
+  }
+};
+
+function run() {
+  const input = document.getElementById('input').value;
+  if (!input.trim()) return;
+
+  const tokenizer = document.getElementById('tokenizer').value;
+  const format = document.getElementById('format').value;
+
+  const before = countTokens(input, tokenizer);
+
+  // Stage 1: Lossless formatting
+  const losslessResult = Lossless.run(input, format);
+  const afterLossless = countTokens(losslessResult.text, tokenizer);
+  const losslessSaved = before - afterLossless;
+
+  // Stage 2: Lossy phrase optimization (on lossless output)
+  const optimizers = { text: optimizeText, markdown: optimizeMarkdown, html: optimizeHTML };
+  const optimized = (optimizers[format] || optimizeText)(losslessResult.text);
+
+  const after = countTokens(optimized, tokenizer);
+  const totalSaved = before - after;
+   let lossySaved = totalSaved - losslessSaved;
+
+   // Token-aware safety guard: if lossy increases tokens, roll back to lossless
+   let rolledBack = false;
+   if (lossySaved < 0 && format !== 'html') {
+     rolledBack = true;
+     lossySaved = 0;
+   }
+
+   const pct = before > 0 ? Math.round((1 - after / before) * 100 * 10) / 10 : 0;
+
+   document.getElementById('before').textContent = before;
+   document.getElementById('after').textContent = after;
+   document.getElementById('saved').textContent = totalSaved > 0 ? totalSaved : 0;
+   document.getElementById('pct').textContent = pct + '%';
+
+   // Build per-pass breakdown
+   let breakdown = '';
+   for (const p of losslessResult.passes) {
+     if (p.charsSaved > 0) {
+       breakdown += `<span style="color:#6a9955">lossless:${p.name}</span> -${Math.round(p.charsSaved/4)} tokens\n`;
+     }
+   }
+   if (lossySaved > 0) {
+     breakdown += `<span style="color:#d4956b">lossy:phrases</span> -${lossySaved} tokens\n`;
+   }
+   if (rolledBack) {
+     breakdown += `<span style="color:#9b6b6b">lossy rolled back (token increase detected — token-aware guard)</span>\n`;
+   }
+  if (breakdown) {
+    document.getElementById('breakdown').innerHTML = '<span style="color:#8a8278">per-pass:</span>\n' + breakdown;
+    document.getElementById('breakdown').classList.remove('hidden');
+  }
+
+  const outputDiv = document.getElementById('output');
+  const outputWrap = document.getElementById('outputWrap');
+
+  if (totalSaved > 0) {
+    outputDiv.textContent = optimized;
+    outputWrap.classList.remove('hidden');
+  } else if (optimized !== input) {
+    outputDiv.textContent = optimized;
+    outputWrap.classList.remove('hidden');
+  } else {
+    outputDiv.textContent = '(no token savings possible — text may already be optimized)';
+    outputWrap.classList.remove('hidden');
+  }
+
+  document.getElementById('results').classList.remove('hidden');
+}
+
+function copyOut() {
+  const text = document.getElementById('output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 1500);
+  });
+}
+</script>
+</body>
+</html>

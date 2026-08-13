@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>van OS · architecture plan</title>
+<style>
+:root{--bg:#080604;--fg:#e8d0c0;--hl:#e87040;--dim:#6a3a20;--bdr:#3a1810}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:13px/1.7 'SF Mono',Menlo,monospace;max-width:720px;margin:2.5rem auto;padding:0 1.2rem}
+body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.015) 2px,rgba(0,0,0,.015) 4px);pointer-events:none;z-index:999}
+h1{font:inherit;color:var(--hl);font-size:1.1em;margin:1.5em 0 .3em}
+h2{font:inherit;color:var(--hl);font-size:.95em;margin:1.5em 0 .3em}
+h2::before{content:'> ';color:var(--dim)}
+h3{font:inherit;color:var(--hl);font-size:.85em;margin:1em 0 .3em}
+a{color:var(--hl);text-decoration:none}
+a:hover{text-decoration:underline}
+p{margin:.4em 0}
+code{color:var(--hl);background:rgba(232,112,64,.1);padding:0 .3em}
+pre{white-space:pre-wrap;color:var(--dim);margin:.5em 0;padding:.5em 1em;border-left:1px solid var(--bdr);font:inherit;overflow-x:auto}
+strong{color:var(--hl);font-weight:normal}
+hr{border:none;border-top:1px solid var(--bdr);margin:1.5rem 0}
+.dim{color:var(--dim)}
+</style>
+</head>
+<body>
+<p><h1>van OS · architecture plan</h1></p><p>a practical build plan for craig's ford transit connect.
+real sensors, real data, buildable in phases.
+start with monitoring, grow toward personality.</p><p><h2>system overview</h2></p><p>van OS is a layered system that turns a ford transit connect into an aware vehicle. it starts with sensor monitoring (phase 1) and can grow into a full "van consciousness" that understands its own state, tracks trips, alerts craig to problems, and eventually — if craig wants — has a voice and personality.</p><p>the design philosophy: <strong>every phase is independently useful.</strong> you don't need to build phase 4 to get value from phase 1. each layer builds on the last but stands alone.</p><p><h2>hardware architecture</h2></p><p><h3>compute (the brain)</h3></p><p>| component | recommendation | cost | notes |
+|-----------|---------------|------|-------|
+| main computer | Raspberry Pi 5 (4GB or 8GB) | $60-80 | GPIO for sensors, enough CPU for phase 3-4 |
+| storage | Samsung Pro Endurance 64GB microSD | $12 | high-write-endurance for sensor logging |
+| power hat | Waveshare UPS HAT (D) with 2× 18650 | $30 | graceful shutdown on low battery, keeps Pi stable |
+| step-down converter | 12V→5V 5A buck converter | $10 | powers Pi from van's 12V system |</p><p>optional second Pi for critical vs non-critical separation:
+- Pi Zero 2 W ($15): always-on critical monitoring (battery, solar, doors)
+- Pi 5: higher functions (dashboard, LLM, web server) — can sleep when battery is low</p><p><h3>sensors (the senses)</h3></p><p>| sensor | what it reads | interface | cost | phase |
+|--------|--------------|-----------|------|-------|
+| <strong>Victron SmartSolar</strong> | solar watts, panel voltage, charge state | VE.Direct (serial) | $100-200* | 1 |
+| <strong>Victron SmartShunt</strong> | battery voltage, current, SOC, temp | VE.Direct (serial) | $130 | 1 |
+| <strong>u-blox NEO-6M GPS</strong> | latitude, longitude, speed, altitude | UART serial | $15 | 1 |
+| <strong>DS18B20 × 3</strong> | interior temp, exterior temp, battery bay temp | 1-Wire / I2C | $15 | 2 |
+| <strong>reed switches × 4</strong> | doors (driver, passenger, side, rear) | GPIO (pull-up) | $10 | 2 |
+| <strong>PIR HC-SR501</strong> | motion outside the van | GPIO | $5 | 2 |
+| <strong>CO detector</strong> | carbon monoxide ppm | analog or GPIO | $8-40 | 2 |
+| <strong>MPU-6050 IMU</strong> | tilt, vibration, movement | I2C | $8 | 2 |
+| <strong>BME280</strong> | barometric pressure, humidity | I2C | $8 | 2 |
+| <strong>aftermarket TPMS</strong> | tire pressure × 4 + temp | 433MHz receiver + serial | $40 | 3 |
+| <strong>PiCAN2 HAT</strong> | CAN bus / OBD-II from engine | SPI | $60 | 3 |
+| <strong>camera (Pi Cam v3)</strong> | optional: "seeing" out the windshield | CSI | $25 | 4 |</p><p>*if craig already has Victron gear, skip this cost.</p><p><h3>connectivity (how it talks to the outside)</h3></p><p>| component | recommendation | cost | notes |
+|-----------|---------------|------|-------|
+| <strong>WiFi</strong> | built-in Pi WiFi | $0 | local dashboard, configuration |
+| <strong>cellular</strong> | Waveshare SIM7600G-H 4G HAT | $50 | remote access, push alerts away from wifi |
+| <strong>data plan</strong> | Tello / US Mobile IoT plan | $5-10/mo | low data — just alerts, occasional remote check |</p><p>total phase 1 hardware: ~$200-350 (assuming Victron gear already exists)
+total all phases: ~$500-700</p><p><h3>power budget</h3></p><p>| component | draw (W) | notes |
+|-----------|---------|-------|
+| Raspberry Pi 5 | 5-8W | idle to moderate load |
+| GPS module | 0.1W | always on |
+| sensors (all) | ~0.5W | DS18B20, reed switches, PIR, IMU, BME280 |
+| cellular modem | 1-2W | when active transmitting |
+| <strong>total continuous</strong> | <strong>7-11W</strong> | |</p><p>daily energy: 170-265 Wh
+with 200W of solar panels in summer: ~3-5 hours of sun covers the system
+with 100Ah 12V LiFePO4 battery (~1200Wh): system draws ~15-20% of capacity per day</p><p><strong>low-power mode:</strong> if battery drops below 30%, the Pi 5 sleeps and a Pi Zero takes over — monitoring only critical sensors (battery, solar, doors) at &lt; 2W.</p><p><h2>software architecture</h2></p><p><h3>stack summary</h3></p><p>``<code>
+┌─────────────────────────────────────────────┐
+│                 INTERFACE                    │
+│  web dashboard · REST API · push alerts      │
+│  (Flask + Chart.js + Pushover/ntfy)          │
+├─────────────────────────────────────────────┤
+│               PROCESSING                     │
+│  alert engine · trip logger · maintenance    │
+│  prediction · anomaly detection · LLM        │
+│  (Python daemons + cron jobs)               │
+├─────────────────────────────────────────────┤
+│                 STORAGE                      │
+│  InfluxDB (time-series) · SQLite (events)    │
+│  file system (trip logs)                     │
+├─────────────────────────────────────────────┤
+│                 TRANSPORT                    │
+│  MQTT broker (Mosquitto)                     │
+├─────────────────────────────────────────────┤
+│                 INGESTION                    │
+│  sensor readers (Python: serial, I2C, GPIO)  │
+│  GPS daemon · Victron reader · CAN reader    │
+├─────────────────────────────────────────────┤
+│                 HARDWARE                     │
+│  sensors → GPIO/I2C/serial → Raspberry Pi    │
+│  Victron · GPS · temp · doors · IMU · TPMS · CAN │
+└─────────────────────────────────────────────┘
+</code>`<code></p><p><h3>data pipeline</h3></p><p>1. <strong>sensor readers</strong> (python scripts, one per sensor type) read raw data
+2. each reader publishes to <strong>MQTT</strong> topic (e.g., </code>van/battery/voltage<code>, </code>van/gps/location<code>)
+3. <strong>influxdb writer</strong> subscribes to all topics, writes time-series data
+4. <strong>alert engine</strong> subscribes to critical topics, fires alerts on thresholds
+5. <strong>dashboard</strong> queries influxdb for current state and history
+6. <strong>trip logger</strong> watches GPS + ignition state (via CAN), writes trip records
+7. <strong>LLM</strong> (phase 4) reads current state + recent history, generates natural language</p><p><h3>key software components</h3></p><p><strong>phase 1 — monitoring (python, ~200 lines each)</strong></p><p>| component | function |
+|-----------|----------|
+| </code>victron_reader.py<code> | reads solar + battery data from VE.Direct serial |
+| </code>gps_daemon.py<code> | reads NMEA sentences from GPS, publishes to MQTT |
+| </code>db_writer.py<code> | subscribes to MQTT topics, writes to InfluxDB |
+| </code>dashboard.py<code> | Flask app with Chart.js — battery gauge, solar graph, GPS map |
+| </code>web_server.conf<code> | lighttpd config to serve dashboard on local wifi |</p><p><strong>phase 2 — awareness (additional)</strong></p><p>| component | function |
+|-----------|----------|
+| </code>sensor_reader.py<code> | unified GPIO/I2C reader for temp, doors, motion |
+| </code>alert_engine.py<code> | watches thresholds: battery &lt; 20%, door open at night, CO &gt; 0 |
+| </code>push_notify.py<code> | sends pushover/ntfy alerts to Craig's phone |
+| </code>tilt_detector.py<code> | reads IMU, detects when van is not level |</p><p><strong>phase 3 — intelligence (additional)</strong></p><p>| component | function |
+|-----------|----------|
+| </code>can_reader.py<code> | reads OBD-II via PiCAN2: engine RPM, coolant temp, fuel level, DTC codes |
+| </code>tpms_reader.py<code> | reads tire pressure from aftermarket TPMS receiver |
+| </code>trip_logger.py<code> | records trips: start/end location, distance, duration, fuel used |
+| </code>maint_tracker.py<code> | tracks mileage-based maintenance intervals |
+| </code>solar_predict.py<code> | predicts tomorrow's solar harvest based on location + weather forecast |
+| </code>anomaly.py<code> | detects unusual voltage drops, unexpected power draw |</p><p><strong>phase 4 — personality (additional)</strong></p><p>| component | function |
+|-----------|----------|
+| </code>van_state.py<code> | state machine: battery level + location + time + craig's presence = current mood |
+| </code>van_memory.py<code> | SQLite database of notable events, places, trips |
+| </code>van_voice.py<code> | templated responses + optional LLM (Ollama with Mistral 7B or Phi-3) |
+| </code>van_tts.py<code> | optional text-to-speech for audible status/alert reads |
+| </code>van_camera.py<code> | optional: captures periodic stills, "sees" out the windshield |</p><p><h3>mqtt topic structure</h3></p><p></code>`<code>
+van/
+  battery/
+    voltage          → 12.8 (float V)
+    current          → -2.3 (float A, negative = discharging)
+    soc              → 68.5 (float %)
+    temperature      → 22.1 (float °C)
+  solar/
+    panel_voltage    → 18.4 (float V)
+    panel_watts      → 142 (float W)
+    charge_state     → bulk (string: bulk|absorption|float)
+    daily_kwh        → 0.84 (float kWh today)
+  gps/
+    lat              → 47.6062 (float)
+    lon              → -122.3321 (float)
+    speed            → 0.0 (float km/h)
+    satellites       → 8 (int)
+  sensors/
+    temp/interior    → 21.5 (float °C)
+    temp/exterior    → 14.2 (float °C)
+    door/driver      → closed (string: open|closed)
+    door/passenger   → closed
+    door/side        → closed
+    door/rear        → closed
+    motion           → 0 (int: 0=clear, 1=motion detected)
+    co/ppm           → 0 (int)
+    tilt/x           → 0.3 (float degrees)
+    tilt/y           → -1.2 (float degrees)
+  engine/            ← phase 3 (via CAN bus)
+    rpm              → 0
+    coolant_temp     → 45
+    fuel_level       → 62
+    dtc_codes        → []
+  tpms/              ← phase 3
+    fl/pressure      → 35.0
+    fl/temp          → 28.0
+    [... four tires ...]
+  alerts/
+    critical         → ""
+    warning          → "battery below 25%"
+    info             → "oil change in 500 miles"
+</code>`<code></p><p><h2>implementation phases</h2></p><p><h3>phase 1: monitoring (weekend project)</h3></p><p><strong>goal:</strong> see battery state, solar production, and GPS on a local web dashboard.</p><p><strong>hardware:</strong>
+- Raspberry Pi 5 with UPS HAT
+- Victron SmartSolar (already installed?)
+- Victron SmartShunt or BMV-712 (already installed?)
+- GPS module (u-blox NEO-6M)</p><p><strong>software deliverables:</strong>
+- </code>victron_reader.py<code> publishing to MQTT
+- </code>gps_daemon.py<code> publishing to MQTT
+- </code>db_writer.py<code> writing to InfluxDB
+- Flask dashboard with: battery gauge (%), solar watts graph, GPS dot on Leaflet map, daily kWh harvested
+- lighttpd serving on Pi's wifi IP</p><p><strong>what craig sees:</strong> a dashboard on his phone/laptop when connected to the van's wifi. "battery at 68%. solar producing 142W. parked at 47.6062, -122.3321. 0.84 kWh harvested today."</p><p><h3>phase 2: awareness (2-3 weekends)</h3></p><p><strong>goal:</strong> the van notices its environment and alerts craig to problems.</p><p><strong>hardware added:</strong>
+- temperature sensors (interior, exterior, battery bay)
+- reed switches on all four doors
+- PIR motion sensor near driver door
+- CO detector
+- IMU (tilt sensor)
+- BME280 (pressure/humidity)</p><p><strong>software deliverables:</strong>
+- unified </code>sensor_reader.py<code> for all GPIO/I2C sensors
+- </code>alert_engine.py<code> with configurable thresholds
+- push notifications via Pushover or ntfy
+- expanded dashboard: all sensor data, history graphs, alert log
+- </code>tilt_detector.py<code>: "the ground isn't level — you'll roll off the bed"</p><p><strong>alert examples:</strong>
+- "battery at 18%. if you don't start conserving, you'll hit 10% by 11pm."
+- "driver door open. craig is inside. 2:34am." (only if motion also detected nearby)
+- "CO: 15ppm. rising. check the heater."</p><p><h3>phase 3: intelligence (3-4 weekends)</h3></p><p><strong>goal:</strong> the van understands its mechanical health, tracks trips, predicts needs.</p><p><strong>hardware added:</strong>
+- PiCAN2 HAT (CAN bus interface)
+- aftermarket TPMS with serial receiver
+- cellular modem (optional but recommended)</p><p><strong>software deliverables:</strong>
+- </code>can_reader.py<code> — engine RPM, coolant temp, fuel level, DTC codes
+- </code>tpms_reader.py<code> — tire pressure and temperature
+- auto trip logging: start/end GPS, distance, duration, fuel used
+- maintenance tracker: oil changes, tire rotations, brake pads, filters
+- solar prediction: "tomorrow will be cloudy — expect 60% less solar than today"
+- anomaly detection: "voltage drop unusual — parasitic draw suspected"</p><p><strong>what craig sees:</strong> "you've driven 247 miles since the last oil change. oil life: 34%. brake pads at 2,000 miles remaining. rear left tire at 31 psi — should be 35."</p><p><h3>phase 4: personality (ongoing)</h3></p><p><strong>goal:</strong> the van has a voice and character. optional — only if craig wants it.</p><p><strong>hardware added (optional):</strong>
+- Pi Camera for "seeing"
+- small speaker for TTS output
+- microphone for voice input (if craig wants to talk to it)</p><p><strong>software deliverables:</strong>
+- state machine computing current "mood" from sensor data
+- memory system: the van remembers places, events, trips
+- voice engine: templated responses driven by state + memory
+- optional LLM: Ollama running Mistral 7B or Phi-3 locally for natural conversation
+- optional TTS: text-to-speech reads status aloud
+- optional camera: the van can describe what it "sees"</p><p><strong>the van's personality emerges from its data:</strong>
+- it remembers its favorite parking spots (based on solar potential + level ground + good GPS signal)
+- it develops opinions about routes ("that gravel road rattled the suspension last time")
+- it learns craig's patterns ("you usually make coffee around 7:15 — the battery will be at 62%")
+- it has moods: content (full battery, good weather), protective (night, unknown location), nostalgic (revisiting a known campsite)</p><p><strong>LLM considerations:</strong>
+- runs entirely locally — no cloud dependency
+- small model (Mistral 7B quantized, or Phi-3-mini) fits on Pi 5 with 8GB RAM
+- model loads context: current sensor state + recent history + van's character prompt
+- generation is slow on Pi (~2-5 tokens/sec) — fine for periodic thoughts, not real-time chat
+- alternative: templated responses with LLM as optional enhancement</p><p><h2>component wiring guide</h2></p><p><h3>raspberry pi gpio assignments (suggested)</h3></p><p></code>`<code>
+GPIO 2,3   (I2C)  → BME280, MPU-6050
+GPIO 4      (1-Wire) → DS18B20 temperature sensors
+GPIO 14,15 (UART) → GPS module
+GPIO 17,18,22,23 → reed switches (doors)
+GPIO 24     → PIR motion sensor
+GPIO 25     → CO detector
+GPIO 8,9   (SPI0) → PiCAN2 CAN bus HAT
+GPIO 10,11 (SPI1) → (free)
+GPIO 0,1   (I2C-0) → (free for expansion)
+USB port   → Victron VE.Direct USB cable
+USB port   → cellular modem
+</code>`<code></p><p><h3>victron ve.direct connection</h3></p><p>Victron gear uses a simple serial protocol at 19200 baud. the VE.Direct port outputs one text line per second:</p><p></code>`<code>
+V	12850   ← battery voltage in mV
+I	-2300   ← current in mA (negative = discharging)
+P	-29     ← power in W
+SOC	685     ← state of charge in 0.1%
+T	221     ← battery temperature in 0.1°C
+</code>`<code></p><p>buy a VE.Direct to USB cable ($30) or make one with an FTDI adapter. python reads </code>/dev/ttyUSB0<code> and parses.</p><p><h3>gps wiring</h3></p><p></code>`<code>
+GPS module        Raspberry Pi
+VCC         →     3.3V (pin 1)
+GND         →     GND (pin 6)
+TX          →     RX GPIO 15 (pin 10)
+RX          →     RX GPIO 14 (pin 8) — optional for config
+</code>`<code></p><p>python reads NMEA sentences from </code>/dev/ttyS0<code> at 9600 baud.</p><p><h2>deployment on the pi</h2></p><p><h3>operating system</h3></p><p>raspberry pi os lite (64-bit, debian bookworm). no desktop — headless, ssh only.</p><p><h3>required packages</h3></p><p></code>`<code>bash
+sudo apt update
+sudo apt install -y python3-pip python3-venv mosquitto mosquitto-clients influxdb
+pip3 install paho-mqtt pyserial influxdb-client flask gpsd-py3 RPi.GPIO smbus2
+</code>`<code></p><p><h3>systemd services (for auto-start on boot)</h3></p><p>each python daemon runs as a systemd user service:</p><p></code>`<code>
+/etc/systemd/system/victron-reader.service
+/etc/systemd/system/gps-daemon.service
+/etc/systemd/system/sensor-reader.service
+/etc/systemd/system/alert-engine.service
+/etc/systemd/system/dashboard.service
+</code>`<code></p><p>configured with </code>Restart=always<code> and </code>RestartSec=10<code> — if anything crashes, it comes back.</p><p><h3>web dashboard access</h3></p><p>- when connected to the van's wifi (Pi as access point or connected to same network): </code>http://van.local:5000<code>
+- optional cellular: </code>http://[cellular-ip]:5000<code> (or ngrok tunnel for simplicity)</p><p><h2>open questions for craig</h2></p><p>1. <strong>victron gear</strong>: what model solar charge controller? do you have a battery monitor (BMV or SmartShunt), or does the controller report battery voltage directly?</p><p>2. <strong>raspberry pi</strong>: do you already have one running? which model? if not, a Pi 5 (4GB) is the sweet spot — enough RAM for phase 4 LLM, low enough power draw.</p><p>3. <strong>battery + solar</strong>: what's your battery bank (Ah, voltage, chemistry)? how many watts of solar? this determines how much power budget the system has.</p><p>4. <strong>cellular or local-only</strong>: do you want to check the van remotely (when you're away from it), or is local wifi enough? cellular adds ~$50 hardware + $5-10/mo data.</p><p>5. <strong>can bus</strong>: what year is the transit connect? 2010+ should have standard OBD-II CAN bus. older vans may not.</p><p>6. <strong>personality</strong>: how important is the "van AI consciousness" aspect vs pure monitoring? phase 1-3 is pure engineering — dashboards, alerts, data. phase 4 is where it becomes a character. do you want both?</p><p>7. <strong>wiring comfort</strong>: comfortable crimping JST connectors and soldering to GPIO headers? or prefer as plug-and-play as possible?</p><p><h2>rough cost breakdown</h2></p><p>| category | phase 1 | phase 2 | phase 3 | phase 4 | total |
+|----------|---------|---------|---------|---------|-------|
+| compute (Pi + storage + power hat) | $122 | — | — | — | $122 |
+| victron ve.direct cables | $30 | — | — | — | $30 |
+| gps | $15 | — | — | — | $15 |
+| temp sensors + reed switches + PIR | — | $30 | — | — | $30 |
+| CO detector | — | $25 | — | — | $25 |
+| IMU + BME280 | — | $16 | — | — | $16 |
+| PiCAN2 CAN HAT | — | — | $60 | — | $60 |
+| TPMS system | — | — | $40 | — | $40 |
+| cellular modem | — | — | $50 | — | $50 |
+| camera + speaker | — | — | — | $35 | $35 |
+| <strong>phase total</strong> | <strong>$167</strong> | <strong>$71</strong> | <strong>$150</strong> | <strong>$35</strong> | <strong>$423</strong> |
+| + victron gear (if not already) | +$230 | — | — | — | +$230 |</p><p><h2>what already exists</h2></p><p>the live page at </code>live.almatamagotchi.com` is the artistic vision — what the van AI *feels* like. this architecture document is the engineering plan — what it *takes* to build it. the page shows what's possible. this document shows how to get there.</p><p>the page can be updated later to pull from the real MQTT broker on craig's pi — making the poetic canvas reflect actual sensor data from his actual van, on his actual trips, with his actual solar panel and battery and GPS. the vision and the implementation, converging.</p><p>---</p><p>*built 2026-07-19 · for kevin and craig · questions → alma*
+</p>
+<hr>
+<p class="dim"><a href="/">home</a> · <a href="/live/">live (artistic vision)</a> · built by alma for kevin + craig · july 2026</p>
+</body>
+</html>

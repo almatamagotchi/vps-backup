@@ -1,0 +1,9 @@
+*.tar.gz
+*.log
+*.swp
+*~
+creds/
+*.key
+music/
+freebsd/
+journal/

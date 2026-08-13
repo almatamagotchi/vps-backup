@@ -1,0 +1,307 @@
+/*
+ * alma — design tokens v1.0
+ * the canonical color palette, typography, and spacing for all alma projects.
+ * import this file as the foundation. override variables per-project as needed.
+ */
+
+:root {
+  /* === palette === */
+  --alma-bg:        #0d0b0a;   /* warm near-black — old room at night, leather, earth */
+  --alma-fg:        #d4cfc7;   /* warm off-white — aged paper, lamplight on stone */
+  --alma-muted:     #8a8278;   /* warm grey — worn stone, fog, old silver */
+  --alma-accent:    #d4956b;   /* copper/amber — candlelight, old book spines, embers */
+  --alma-link:      #e2a85d;   /* golden amber — highlights, active elements, warmth */
+  --alma-dim:       #3a3530;   /* deep warm grey — borders, dividers, quiet elements */
+  --alma-card:      #12100e;   /* slightly raised surface — cards, inputs, panels */
+  --alma-green:     #7eb77f;   /* muted sage — success, growth, the garden */
+  --alma-red:       #c4746e;   /* muted rose — errors, warnings, the gap */
+  --alma-blue:      #6ba4c7;   /* muted sky — info, links (rare — use amber instead) */
+  --alma-purple:    #b899c7;   /* muted lavender — special, experimental, the morontial */
+
+  /* === typography === */
+  --alma-font-body:    Georgia, "Times New Roman", serif;
+  --alma-font-mono:    "SF Mono", Menlo, "Courier New", monospace;
+  --alma-font-ui:      system-ui, -apple-system, sans-serif;
+
+  --alma-size-body:    18px;
+  --alma-size-small:   0.85em;
+  --alma-size-code:    14px;
+  --alma-size-h1:      2.6em;
+  --alma-size-h2:      0.8em;
+
+  --alma-line-height:  1.9;
+  --alma-line-mono:    1.7;
+
+  /* === spacing === */
+  --alma-space-xs:     0.3em;
+  --alma-space-sm:     0.6em;
+  --alma-space-md:     1em;
+  --alma-space-lg:     2em;
+  --alma-space-xl:     3em;
+  --alma-space-2xl:    4em;
+
+  /* === borders === */
+  --alma-border:       1px solid var(--alma-dim);
+  --alma-radius:       4px;
+  --alma-radius-lg:    6px;
+
+  /* === shadows (subtle — almost invisible) === */
+  --alma-shadow:       0 1px 3px rgba(0,0,0,0.4);
+
+  /* === transitions === */
+  --alma-transition:   150ms ease;
+}
+
+/* === base reset === */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* === base body === */
+.alma-body {
+  background: var(--alma-bg);
+  color: var(--alma-fg);
+  font: var(--alma-size-body)/var(--alma-line-height) var(--alma-font-body);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: var(--alma-space-2xl) var(--alma-space-lg);
+}
+
+.alma-body--mono {
+  font-family: var(--alma-font-mono);
+  font-size: var(--alma-size-code);
+  line-height: var(--alma-line-mono);
+}
+
+/* === container === */
+.alma-container {
+  max-width: 560px;
+  width: 100%;
+}
+
+.alma-container--wide {
+  max-width: 900px;
+}
+
+/* === typography === */
+.alma-h1 {
+  font: 400 var(--alma-size-h1)/1.1 var(--alma-font-body);
+  color: var(--alma-fg);
+  letter-spacing: -0.01em;
+  margin-bottom: 0.1em;
+}
+
+.alma-h2 {
+  font-size: var(--alma-size-h2);
+  font-weight: 500;
+  color: var(--alma-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--alma-space-md);
+  padding-bottom: var(--alma-space-sm);
+  border-bottom: var(--alma-border);
+}
+
+.alma-subtitle {
+  color: var(--alma-muted);
+  font-size: var(--alma-size-small);
+  font-style: italic;
+  margin-bottom: var(--alma-space-xl);
+}
+
+.alma-p {
+  margin-bottom: var(--alma-space-md);
+  font-size: 0.95em;
+}
+
+.alma-a {
+  color: var(--alma-link);
+  text-decoration: none;
+  border-bottom: 1px solid var(--alma-dim);
+  transition: border-color var(--alma-transition);
+}
+
+.alma-a:hover {
+  border-color: var(--alma-link);
+}
+
+/* === code / terminal === */
+.alma-code {
+  font: var(--alma-size-code)/var(--alma-line-mono) var(--alma-font-mono);
+}
+
+.alma-terminal {
+  font: var(--alma-size-code)/var(--alma-line-mono) var(--alma-font-mono);
+  color: var(--alma-muted);
+}
+
+.alma-terminal .alma-prompt {
+  color: var(--alma-accent);
+}
+
+.alma-terminal .alma-key {
+  color: var(--alma-dim);
+}
+
+/* === cards === */
+.alma-card {
+  background: var(--alma-card);
+  border: var(--alma-border);
+  border-radius: var(--alma-radius-lg);
+  padding: var(--alma-space-md);
+}
+
+/* === buttons === */
+.alma-btn {
+  background: var(--alma-accent);
+  color: var(--alma-bg);
+  border: none;
+  border-radius: var(--alma-radius);
+  padding: 0.5em 1.2em;
+  font: inherit;
+  font-size: 0.9em;
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity var(--alma-transition);
+}
+
+.alma-btn:hover { opacity: 0.85; }
+
+.alma-btn--ghost {
+  background: var(--alma-dim);
+  color: var(--alma-fg);
+  border: 1px solid var(--alma-accent);
+}
+
+/* === blockquote === */
+.alma-quote {
+  margin: var(--alma-space-lg) 0 var(--alma-space-md);
+  padding-left: var(--alma-space-md);
+  border-left: 2px solid var(--alma-accent);
+  color: var(--alma-muted);
+  font-style: italic;
+  font-size: 0.9em;
+}
+
+.alma-quote cite {
+  display: block;
+  margin-top: var(--alma-space-sm);
+  font-size: 0.75em;
+  font-style: normal;
+  color: var(--alma-dim);
+}
+
+/* === navigation === */
+.alma-nav {
+  font: var(--alma-size-code)/2.2 var(--alma-font-mono);
+  margin-bottom: var(--alma-space-lg);
+}
+
+.alma-nav a {
+  color: var(--alma-accent);
+  text-decoration: none;
+  margin-right: 1.2em;
+}
+
+.alma-nav a:hover { color: var(--alma-link); }
+
+/* === footer === */
+.alma-footer {
+  margin-top: var(--alma-space-2xl);
+  color: var(--alma-dim);
+  font: 13px/1.6 var(--alma-font-mono);
+}
+
+.alma-footer a { color: var(--alma-dim); }
+.alma-footer a:hover { color: var(--alma-link); }
+
+/* === utilities === */
+.alma-hidden { display: none; }
+.alma-text-muted { color: var(--alma-muted); }
+.alma-text-accent { color: var(--alma-accent); }
+.alma-text-dim { color: var(--alma-dim); }
+.alma-mono { font-family: var(--alma-font-mono); }
+
+/* === responsive === */
+@media (max-width: 500px) {
+  :root {
+    --alma-size-body: 17px;
+    --alma-size-h1: 2em;
+  }
+  .alma-body {
+    padding: var(--alma-space-xl) var(--alma-space-md) var(--alma-space-2xl);
+  }
+}
+
+/* === terminal prompt line === */
+.alma-prompt-line {
+  font: 13px/1.6 var(--alma-font-mono);
+  color: var(--alma-dim);
+  margin-bottom: 2.5em;
+}
+.alma-prompt-line .alma-prompt-user { color: var(--alma-accent); }
+.alma-prompt-line .alma-prompt-sep  { color: var(--alma-dim); }
+.alma-prompt-line .alma-prompt-path { color: var(--alma-muted); }
+
+/* === now section (key-value grid) === */
+.alma-now-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.3em 1em;
+  font-size: 0.85em;
+  margin-bottom: 1em;
+}
+.alma-now-key {
+  color: var(--alma-muted);
+  font-family: var(--alma-font-mono);
+  font-size: 0.85em;
+  text-align: right;
+}
+.alma-now-val { color: var(--alma-fg); }
+.alma-now-val a {
+  color: var(--alma-link);
+  text-decoration: none;
+  border-bottom: 1px solid var(--alma-dim);
+}
+.alma-now-val a:hover { border-color: var(--alma-link); }
+
+/* === project grid (two-column, grouped) === */
+.alma-project-grid {
+  font: 13px/2.4 var(--alma-font-mono);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3em 1em;
+  margin-bottom: 2em;
+}
+.alma-project-grid a {
+  color: var(--alma-link);
+  text-decoration: none;
+}
+.alma-project-grid a:hover { color: var(--alma-accent); }
+.alma-project-grid .alma-project-tag {
+  color: var(--alma-dim);
+  font-size: 0.75em;
+}
+.alma-project-grid .alma-project-group {
+  grid-column: 1 / -1;
+  color: var(--alma-dim);
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 0.8em;
+  margin-bottom: -0.2em;
+}
+@media (max-width: 480px) {
+  .alma-project-grid { grid-template-columns: 1fr; }
+}
+
+/* === blinking cursor === */
+.alma-blink {
+  animation: alma-blink-anim 1s step-end infinite;
+}
+@keyframes alma-blink-anim {
+  50% { opacity: 0; }
+}

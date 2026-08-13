@@ -1,0 +1,116 @@
+the hours · chapter two
+
+the thread exploded.
+
+within twenty-four hours of raymond posting his prime-number table, the weird shit board had thirty-seven replies. most of them were people telling raymond he was either a genius or insane, with the consensus leaning toward insane. a few people actually checked his math — three separate users confirmed the intervals matched the first ten primes — but that only made it worse. now they had verified data with no explanation.
+
+saint_elmo stayed quiet for two days. then, on april 1, he posted a single line:
+
+> meet me at the tower. tonight. midnight.
+
+raymond asked how he'd recognize him. saint_elmo said he'd be the one not carrying a clipboard.
+
+
+raymond had been watching the tower for two years but had never stood directly underneath it. the cannery grounds were technically private property, though nobody enforced it — there was no fence, just a faded sign that said NO TRESPASSING in letters you had to squint to read. the tower itself was surrounded by a chain-link perimeter, but the gate had been rusted open since 1983. raymond had always watched from his window, or from the railroad tracks, or from the parking lot of the auto body shop. close enough to see the blink. far enough to pretend he wasn't obsessed.
+
+midnight on april 1 was cold for hayward. the marine layer had rolled in early, and the fog made the tower look like something that had been sketched in charcoal and then half-erased. the red beacon cut through it every four seconds. raymond counted. four seconds, four seconds, four seconds. the rhythm was so embedded in his nervous system that he could feel it even when he wasn't looking — a phantom pulse in his wrist.
+
+saint_elmo was already there.
+
+he was older than raymond expected — mid-forties, gray hair pulled back, a denim jacket that had been patched more times than it had been washed. he was standing with his hands in his pockets, looking up at the tower with an expression raymond couldn't read. not awe. not skepticism. something closer to recognition.
+
+"you're the prime number guy," saint_elmo said without turning around.
+
+"you're the one who told me to get some sleep."
+
+"yeah. well." he finally turned. "i haven't slept much since you posted that table."
+
+
+they stood in silence for a while. the beacon blinked. the fog drifted. somewhere in the distance, a train crossed the hayward flats.
+
+"how long have you been watching it?" raymond asked.
+
+"longer than you."
+
+raymond waited.
+
+"i grew up in this neighborhood," saint_elmo said. "used to climb the tower when i was a kid. there's a ladder inside — the hunt brothers built it for maintenance. i'd go up there at night and watch the lights across the bay. san mateo bridge, dumbarton bridge, all the way out to the peninsula. you could see everything from up there."
+
+"did you notice the extra blinks?"
+
+saint_elmo was quiet for a long moment. "i noticed something. i didn't know what it was. i thought it was just... static. noise. i was a kid. i wasn't going to sit there with a stopwatch."
+
+"i did."
+
+"yeah. you did."
+
+saint_elmo pulled a folded piece of paper from his jacket pocket and handed it to raymond. it was a dot-matrix printout, the kind that came off a tractor-feed printer, with those perforated edges you had to tear off. the paper was yellowed and brittle.
+
+raymond unfolded it and read:
+
+```
+ 2    3    5    7   11   13   17   19   23   29
+```
+
+underneath, in handwriting:
+
+```
+31 37 41 43 47 53 59 61 67 71
+73 79 83 89 97
+```
+
+and underneath that, in different handwriting — older, shakier:
+
+```
+31 37 41 43 47 53 59 61 67 71 73 79 83 89 97 101
+```
+
+"what is this?" raymond asked.
+
+"the first ten primes. the first twenty-five. the first twenty-six." saint_elmo pointed at each line. "my mother gave me this. she got it from her father. he got it from someone who worked at the cannery in the twenties. that last line — that's the primes the tower broadcast between 1923 and 1947."
+
+raymond stared at the paper. "someone else was recording."
+
+"someone's always been recording." saint_elmo took the paper back and folded it carefully. "the tower's been counting primes since it was built. that's ninety-two years. it's up to the high thousands by now. but that's not the part that keeps me awake."
+
+"what's the part that keeps you awake?"
+
+saint_elmo looked up at the tower. the beacon blinked. four seconds.
+
+"they're not just counting up. someone is counting back."
+
+raymond felt the cold air settle into his lungs. "counting back from what."
+
+"i was hoping you could tell me."
+
+
+the ladder was still there. saint_elmo had been right — it ran up the inside of the tower's lattice, an iron spiral that had been installed when the tower was built and never removed. the rungs were slick with condensation and rust. saint_elmo climbed first, then raymond. the higher they went, the more the fog thinned, until they emerged above the marine layer into a sky that was improbably clear — stars everywhere, the kind of stars you never saw at ground level in hayward because the streetlights and the fog swallowed everything.
+
+at the top, there was a small platform — barely wide enough for two people to stand. the beacon housing was directly above them, a red glass dome inside a metal cage. every four seconds, it lit up and painted their faces crimson.
+
+"there's something inside the housing," saint_elmo said. "i've never been able to open it. my grandfather tried. said the screws were welded shut from the inside."
+
+"from the inside."
+
+"yeah."
+
+raymond looked out across the bay. the lights of san francisco were a faint glow on the horizon. the dumbarton bridge was a string of amber pearls. everything was quiet except the beacon and his own breathing and the distant sound of a train that was probably carrying nothing anywhere.
+
+"how many primes?" he asked.
+
+"what?"
+
+"the tower. how many primes has it counted. if it started in 1895 and it's still going."
+
+saint_elmo was quiet. then he said: "my grandfather estimated around seventy-eight thousand. but that was forty years ago."
+
+raymond did the math in his head. seventy-eight thousand primes in fifty-two years. another forty years of counting. somewhere north of a hundred and thirty thousand primes, one every four seconds, night and day, since the year the hunt brothers first filled the tower with water.
+
+and someone — something — was counting back.
+
+the beacon blinked. the fog rolled beneath them like a second ocean. and somewhere in the dark, a number ticked over that had never been spoken by any human voice.
+
+raymond looked at saint_elmo and saint_elmo looked at raymond and neither of them said what they were both thinking: that the tower wasn't counting up. it was counting down. and when it reached zero, whatever it was counting toward would arrive.
+
+
+the rust belt BBS · april 2, 1987, 3:44am · new post in the weird shit board by raygun: "it's not a beacon. it's a clock."

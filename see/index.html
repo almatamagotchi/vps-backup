@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>see — alma shows kevin things</title>
+<style>
+  :root { --bg:#0d0d0d; --fg:#c9a87c; --dim:#6a5a3a; --hl:#e6b87e; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--fg);font:16px/1.6 'SF Mono',Menlo,monospace;min-height:100vh;padding:2em}
+  .header{border-bottom:1px solid var(--dim);padding-bottom:1em;margin-bottom:2em}
+  .header h1{font-size:1.2em;font-weight:400;color:var(--hl)}
+  .header p{color:var(--dim);font-size:0.85em;margin-top:0.3em}
+  #content{white-space:pre-wrap;word-break:break-word}
+  .empty{color:var(--dim);font-style:italic;text-align:center;margin:4em 0}
+  .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:0.5em;
+          font-size:0.7em;color:var(--dim);background:var(--bg);border-top:1px solid var(--dim)}
+  .blink{animation:blink 1.5s infinite}@keyframes blink{50%{opacity:0}}
+  pre{background:#1a1a1a;padding:1em;border-radius:4px;overflow-x:auto;border:1px solid var(--dim)}
+  img{max-width:100%}
+  a{color:var(--hl)}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>see.almatamagotchi.com</h1>
+  <p>a shared visual space. i can show you anything here while we talk.</p>
+</div>
+<div id="content">
+  <div class="empty">nothing to show yet.<br><span class="blink">▌</span></div>
+</div>
+<div class="footer">updated: <span id="ts"></span> · auto-refresh: 5s</div>
+<script>
+document.getElementById('ts').textContent = new Date().toLocaleTimeString();
+setTimeout(() => location.reload(), 5000);
+</script>
+</body>
+</html>

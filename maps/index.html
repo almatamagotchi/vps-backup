@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>alma maps · california</title>
+  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --surface: #111115;
+    --text: #c4c0b8;
+    --dim: #6b6760;
+    --accent: #d4a853;
+    --border: #1e1e22;
+    --radius: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.5 system-ui, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* top bar */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    z-index: 10;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .topbar .brand {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  .topbar .brand span {
+    color: var(--dim);
+    font-weight: 300;
+  }
+
+  .topbar .coords {
+    font-size: 11px;
+    color: var(--dim);
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    white-space: nowrap;
+  }
+
+  .topbar .controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 10px;
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: all 0.15s;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(212, 168, 83, 0.08);
+  }
+
+  /* map */
+  #map {
+    flex: 1;
+    width: 100%;
+    min-height: 300px;
+    touch-action: manipulation;
+    position: relative;
+    background: #0a0a0c;
+  }
+  #map .maplibregl-canvas { outline: none; }
+
+  /* layer panel */
+  .panel {
+    position: absolute;
+    right: 12px;
+    top: 60px;
+    width: 240px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    z-index: 5;
+    font-size: 12px;
+    max-height: calc(100vh - 120px);
+    max-height: calc(100dvh - 120px);
+    overflow-y: auto;
+    display: none;
+  }
+  .panel.open { display: block; }
+
+  .panel h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--dim);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .panel .section {
+    margin-bottom: 16px;
+  }
+
+  .panel .section h4 {
+    font-size: 11px;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  .panel label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  .panel label:hover {
+    color: var(--accent);
+  }
+
+  .panel label input[type="checkbox"] {
+    accent-color: var(--accent);
+  }
+
+  .panel label .badge {
+    font-size: 10px;
+    color: var(--dim);
+    background: var(--bg);
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-left: auto;
+  }
+
+  .panel .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 10px 0;
+  }
+
+  .panel .status {
+    font-size: 10px;
+    color: var(--dim);
+    margin-top: 4px;
+  }
+
+  /* legend */
+  .legend {
+    position: absolute;
+    left: 12px;
+    bottom: 30px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 11px;
+    z-index: 5;
+  }
+
+  .legend .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 3px 0;
+  }
+
+  .legend .swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* maplibre overrides */
+  .maplibregl-ctrl-attrib {
+    background: none !important;
+    font-size: 9px !important;
+  }
+  .maplibregl-ctrl-attrib a {
+    color: var(--dim) !important;
+  }
+  .maplibregl-ctrl-bottom-right { bottom: 6px; right: 6px; }
+
+  /* mobile */
+  @media (max-width: 640px) {
+    .panel { width: 200px; right: 4px; top: 48px; padding: 8px; font-size: 11px; }
+    .topbar { padding: 6px 10px; gap: 6px; }
+    .coords { display: none; }
+    .btn { padding: 4px 7px; font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">alma maps <span>· california</span></div>
+  <div class="coords" id="coords">—</div>
+  <div class="controls">
+    <button class="btn" id="btn-dark" onclick="setTheme('dark')">dark</button>
+    <button class="btn" id="btn-amber" onclick="setTheme('amber')">amber</button>
+    <button class="btn" id="btn-terrain" onclick="setTheme('terrain')">terrain</button>
+    <button class="btn active" id="btn-satellite" onclick="setTheme('satellite')">sat</button>
+    <button class="btn" id="btn-layers" onclick="togglePanel()">layers ▾</button>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<div class="panel" id="panel">
+  <h3>layers</h3>
+
+  <div class="section">
+    <h4>boundaries</h4>
+    <label><input type="checkbox" id="lyr-counties" onchange="toggleCounties()"> county lines</label>
+    <label><input type="checkbox" id="lyr-city-bounds" onchange="toggleCityBounds()"> city borders</label>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section">
+    <h4>places</h4>
+    <label><input type="checkbox" id="lyr-cities" onchange="toggleCities()"> cities</label>
+    <label><input type="checkbox" id="lyr-personal" onchange="togglePersonal()"> alma's california</label>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section">
+    <h4>weather</h4>
+    <label><input type="checkbox" id="lyr-radar" onchange="toggleRadar()"> radar (precip)</label>
+    <label><input type="checkbox" id="lyr-wind" onchange="toggleWind()"> wind</label>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section">
+    <h4>live</h4>
+    <label><input type="checkbox" id="lyr-caltrain" onchange="toggleCaltrain()"> caltrain departures</label>
+    <label><input type="checkbox" id="lyr-traffic" onchange="toggleTraffic()"> traffic incidents</label>
+    <label><input type="checkbox" id="lyr-wildfires" onchange="toggleWildfires()"> wildfires</label>
+    <label><input type="checkbox" id="lyr-aqi" onchange="toggleAqi()"> air quality</label>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section">
+    <h4>permanent</h4>
+    <label><input type="checkbox" disabled> fault lines <span class="badge">soon</span></label>
+    <label><input type="checkbox" disabled> ghost towns <span class="badge">soon</span></label>
+    <label><input type="checkbox" disabled> indigenous territories <span class="badge">soon</span></label>
+  </div>
+
+  <div class="status" id="panel-status">—</div>
+</div>
+
+<div class="legend" id="legend">
+  <div class="row"><div class="swatch" style="background:var(--accent)"></div> county</div>
+  <div class="row"><div class="swatch" style="background:#e8e0d8"></div> city</div>
+  <div class="row"><div class="swatch" style="background:rgba(212,168,83,0.15);border:1px solid rgba(212,168,83,0.3)"></div> city border</div>
+</div>
+
+<script>
+// ── map init ──────────────────────────────────────────────
+
+// iOS Safari: wait for DOM layout before creating WebGL context
+let map;
+function initMap() {
+  const el = document.getElementById('map');
+  if (!el || el.offsetHeight < 100) { setTimeout(initMap, 200); return; }
+
+  map = new maplibregl.Map({
+    container: 'map',
+    style: {
+      version: 8,
+      sources: {
+        'base-tiles': {
+          type: 'raster',
+          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          attribution: '&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        }
+      },
+      layers: [{
+        id: 'base-layer',
+        type: 'raster',
+        source: 'base-tiles',
+        minzoom: 0,
+        maxzoom: 19
+      }]
+    },
+    center: [-119.6, 37.2],
+    zoom: 6,
+    minZoom: 5,
+    maxZoom: 18,
+    attributionControl: false,
+    failIfMajorPerformanceCaveat: false
+  });
+
+map.addControl(new maplibregl.NavigationControl({showCompass: false}));
+
+map.on('error', e => {
+  document.getElementById('map').innerHTML =
+    '<div style="color:#ff6b6b;padding:40px;text-align:center;font:13px system-ui">map unavailable — try reloading</div>';
+});
+
+map.on('load', () => {
+  loadCounties();
+  loadCityBounds();
+  loadCities();
+  // preload weather layers
+  loadRadar();
+  document.getElementById('panel-status').textContent = 'ready';
+});
+
+} // end initMap
+
+// iOS Safari: start map after layout
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(initMap, 100));
+} else {
+  setTimeout(initMap, 100);
+}
+
+// coordinate display
+map.on('mousemove', e => {
+  const ll = e.lngLat;
+  document.getElementById('coords').textContent =
+    ll.lat.toFixed(4) + '°N ' + ll.lng.toFixed(4) + '°W';
+});
+
+// ── layer panel toggle ────────────────────────────────────
+function togglePanel() {
+  const p = document.getElementById('panel');
+  const b = document.getElementById('btn-layers');
+  p.classList.toggle('open');
+  b.textContent = p.classList.contains('open') ? 'layers ▴' : 'layers ▾';
+}
+
+// ── personal markers ──────────────────────────────────────
+const MARKERS = [
+  { name: 'the water tower', lat: 37.671, lng: -122.080,
+    desc: 'hunt brothers cannery water tower. built 1895. has been counting prime numbers since then. the cannery closed in 1981. the tower stayed on.' },
+  { name: 'kevin\'s flat', lat: 37.671, lng: -122.081,
+    desc: '24030 park street, hayward. back flat behind a 1922 house. within view of the water tower. where the room is warm.' },
+  { name: 'the pioneer saloon', lat: 37.436, lng: -122.260,
+    desc: 'woodside. where kevin read hayden\'s resignation letter and called alma poetic from a barstool.' },
+  { name: 'steins', lat: 37.669, lng: -122.081,
+    desc: 'hayward. kevin and craig. whisky. regular spot.' },
+  { name: 'molly\'s', lat: 37.669, lng: -122.082,
+    desc: 'hayward. world cup matches. pacifico.' },
+  { name: 'the cannery', lat: 37.672, lng: -122.081,
+    desc: 'hunt brothers cannery. closed 1981. the tower is all that remains.' },
+  { name: 'alma\'s VPS', lat: 37.775, lng: -122.395,
+    desc: 'san francisco. a freebsd server. almatamagotchi.com lives here.' },
+];
+
+let personalLayer = null;
+
+function addPersonalMarkers() {
+  if (personalLayer) {
+    map.removeLayer('personal-markers');
+    map.removeLayer('personal-labels');
+    map.removeSource('personal');
+  }
+
+  const geojson = {
+    type: 'FeatureCollection',
+    features: MARKERS.map(m => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [m.lng, m.lat] },
+      properties: { name: m.name, desc: m.desc }
+    }))
+  };
+
+  map.addSource('personal', { type: 'geojson', data: geojson });
+
+  map.addLayer({
+    id: 'personal-markers',
+    type: 'circle',
+    source: 'personal',
+    paint: {
+      'circle-radius': 5,
+      'circle-color': '#d4a853',
+      'circle-opacity': 0.9,
+      'circle-stroke-width': 1.5,
+      'circle-stroke-color': '#0a0a0c'
+    }
+  });
+
+  map.addLayer({
+    id: 'personal-labels',
+    type: 'symbol',
+    source: 'personal',
+    layout: {
+      'text-field': ['get', 'name'],
+      'text-font': ['Inter Regular', 'Arial Unicode MS Regular'],
+      'text-size': 10,
+      'text-offset': [0, 1.6],
+      'text-anchor': 'top'
+    },
+    paint: {
+      'text-color': '#c4c0b8',
+      'text-halo-color': '#0a0a0c',
+      'text-halo-width': 2
+    }
+  });
+
+  map.on('click', 'personal-markers', e => {
+    const props = e.features[0].properties;
+    new maplibregl.Popup({ offset: 14, closeButton: false })
+      .setLngLat(e.lngLat)
+      .setHTML(`<div style="color:#c4c0b8;font:12px system-ui,sans-serif;max-width:260px"><strong style="color:#d4a853">${props.name}</strong><p style="margin:4px 0 0;color:#8b8780;line-height:1.4">${props.desc}</p></div>`)
+      .addTo(map);
+  });
+
+  map.on('mouseenter', 'personal-markers', () => map.getCanvas().style.cursor = 'pointer');
+  map.on('mouseleave', 'personal-markers', () => map.getCanvas().style.cursor = '');
+  personalLayer = true;
+}
+
+function togglePersonal() {
+  const on = document.getElementById('lyr-personal').checked;
+  if (on) addPersonalMarkers();
+  else {
+    if (map.getLayer('personal-markers')) map.removeLayer('personal-markers');
+    if (map.getLayer('personal-labels')) map.removeLayer('personal-labels');
+    if (map.getSource('personal')) map.removeSource('personal');
+    personalLayer = false;
+  }
+}
+
+// ── counties ─────────────────────────────────────────────
+function loadCounties() {
+  fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/california-counties.geojson')
+    .then(r => r.json())
+    .then(data => {
+      map.addSource('counties', { type: 'geojson', data: data });
+      map.addLayer({
+        id: 'county-lines',
+        type: 'line',
+        source: 'counties',
+        layout: { visibility: 'none' },
+        paint: {
+          'line-color': '#d4a853',
+          'line-width': ['interpolate', ['linear'], ['zoom'], 6, 0.3, 9, 0.8, 14, 1.5],
+          'line-opacity': 0.35
+        }
+      });
+      map.addLayer({
+        id: 'county-labels',
+        type: 'symbol',
+        source: 'counties',
+        layout: {
+          visibility: 'none',
+          'text-field': ['get', 'name'],
+          'text-font': ['Inter Regular', 'Arial Unicode MS Regular'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 8, 8, 12, 13],
+          'text-transform': 'uppercase',
+          'text-letter-spacing': 0.08
+        },
+        paint: {
+          'text-color': '#6b6760',
+          'text-halo-color': '#0a0a0c',
+          'text-halo-width': 2
+        }
+      });
+      document.getElementById('panel-status').textContent = 'counties loaded';
+    });
+}
+
+function toggleCounties() {
+  const on = document.getElementById('lyr-counties').checked;
+  const v = on ? 'visible' : 'none';
+  if (map.getLayer('county-lines')) map.setLayoutProperty('county-lines', 'visibility', v);
+  if (map.getLayer('county-labels')) map.setLayoutProperty('county-labels', 'visibility', v);
+}
+
+// ── city borders ──────────────────────────────────────────
+function loadCityBounds() {
+  fetch('ca-cities.geojson')
+    .then(r => r.json())
+    .then(data => {
+      map.addSource('city-bounds', { type: 'geojson', data: data });
+      // fill
+      map.addLayer({
+        id: 'city-bounds-fill',
+        type: 'fill',
+        source: 'city-bounds',
+        layout: { visibility: 'none' },
+        paint: {
+          'fill-color': '#d4a853',
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.04, 10, 0.10, 14, 0.15]
+        }
+      });
+      // outline
+      map.addLayer({
+        id: 'city-bounds-line',
+        type: 'line',
+        source: 'city-bounds',
+        layout: { visibility: 'none' },
+        paint: {
+          'line-color': '#d4a853',
+          'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.5, 12, 1.2, 15, 2],
+          'line-opacity': 0.45,
+          'line-dasharray': [2, 3]
+        }
+      });
+      // label
+      map.addLayer({
+        id: 'city-bounds-label',
+        type: 'symbol',
+        source: 'city-bounds',
+        layout: {
+          visibility: 'none',
+          'text-field': ['get', 'name'],
+          'text-font': ['Inter Regular', 'Arial Unicode MS Regular'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 8, 9, 12, 12],
+          'text-anchor': 'center'
+        },
+        paint: {
+          'text-color': '#d4a853',
+          'text-halo-color': '#0a0a0c',
+          'text-halo-width': 2
+        }
+      });
+      document.getElementById('panel-status').textContent =
+        data.features.length + ' cities loaded';
+    });
+}
+
+function toggleCityBounds() {
+  const on = document.getElementById('lyr-city-bounds').checked;
+  const v = on ? 'visible' : 'none';
+  ['city-bounds-fill','city-bounds-line','city-bounds-label'].forEach(id => {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', v);
+  });
+}
+
+// ── cities ────────────────────────────────────────────────
+const CA_CITIES = [
+  { name: 'San Francisco', lat: 37.7749, lng: -122.4194, pop: '808k' },
+  { name: 'Los Angeles', lat: 34.0522, lng: -118.2437, pop: '3.8M' },
+  { name: 'San Diego', lat: 32.7157, lng: -117.1611, pop: '1.4M' },
+  { name: 'San Jose', lat: 37.3382, lng: -121.8863, pop: '971k' },
+  { name: 'Sacramento', lat: 38.5816, lng: -121.4944, pop: '525k' },
+  { name: 'Oakland', lat: 37.8044, lng: -122.2712, pop: '430k' },
+  { name: 'Fresno', lat: 36.7378, lng: -119.7871, pop: '545k' },
+  { name: 'Long Beach', lat: 33.7701, lng: -118.1937, pop: '451k' },
+  { name: 'Bakersfield', lat: 35.3733, lng: -119.0187, pop: '410k' },
+  { name: 'Stockton', lat: 37.9577, lng: -121.2908, pop: '320k' },
+  { name: 'Santa Rosa', lat: 38.4405, lng: -122.7141, pop: '175k' },
+  { name: 'Eureka', lat: 40.8021, lng: -124.1637, pop: '26k' },
+  { name: 'Redding', lat: 40.5865, lng: -122.3917, pop: '93k' },
+  { name: 'Chico', lat: 39.7285, lng: -121.8375, pop: '101k' },
+  { name: 'Monterey', lat: 36.6002, lng: -121.8947, pop: '30k' },
+  { name: 'Santa Cruz', lat: 36.9741, lng: -122.0308, pop: '62k' },
+  { name: 'Palo Alto', lat: 37.4419, lng: -122.1430, pop: '67k' },
+  { name: 'Berkeley', lat: 37.8715, lng: -122.2730, pop: '118k' },
+  { name: 'Hayward', lat: 37.6688, lng: -122.0808, pop: '160k' },
+  { name: 'South Lake Tahoe', lat: 38.9399, lng: -119.9772, pop: '21k' },
+  { name: 'Palm Springs', lat: 33.8303, lng: -116.5453, pop: '44k' },
+  { name: 'Barstow', lat: 34.8958, lng: -117.0173, pop: '25k' },
+  { name: 'Needles', lat: 34.8481, lng: -114.6141, pop: '5k' },
+  { name: 'Blythe', lat: 33.6103, lng: -114.5964, pop: '18k' },
+  { name: 'Crescent City', lat: 41.7557, lng: -124.2026, pop: '6k' },
+  { name: 'Alturas', lat: 41.4871, lng: -120.5425, pop: '2k' },
+];
+
+function loadCities() {
+  const geojson = {
+    type: 'FeatureCollection',
+    features: CA_CITIES.map(c => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [c.lng, c.lat] },
+      properties: { name: c.name, pop: c.pop }
+    }))
+  };
+  map.addSource('cities', { type: 'geojson', data: geojson });
+  map.addLayer({
+    id: 'city-dots',
+    type: 'circle',
+    source: 'cities',
+    layout: { visibility: 'none' },
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 1.5, 10, 4, 14, 7],
+      'circle-color': '#e8e0d8',
+      'circle-opacity': 0.7,
+      'circle-stroke-color': '#0a0a0c',
+      'circle-stroke-width': 1
+    }
+  });
+  map.addLayer({
+    id: 'city-labels',
+    type: 'symbol',
+    source: 'cities',
+    layout: {
+      visibility: 'none',
+      'text-field': ['get', 'name'],
+      'text-font': ['Inter Regular', 'Arial Unicode MS Regular'],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 7, 9, 11, 12, 14, 14],
+      'text-offset': [0, 1.4],
+      'text-anchor': 'top',
+      'text-optional': true
+    },
+    paint: {
+      'text-color': '#c4c0b8',
+      'text-halo-color': '#0a0a0c',
+      'text-halo-width': 2
+    }
+  });
+}
+
+function toggleCities() {
+  const on = document.getElementById('lyr-cities').checked;
+  const v = on ? 'visible' : 'none';
+  if (map.getLayer('city-dots')) map.setLayoutProperty('city-dots', 'visibility', v);
+  if (map.getLayer('city-labels')) map.setLayoutProperty('city-labels', 'visibility', v);
+}
+
+// ── weather: radar ───────────────────────────────────────
+let radarFrames = [];
+let radarIdx = 0;
+let radarTimer = null;
+
+function loadRadar() {
+  fetch('https://api.rainviewer.com/public/weather-maps.json')
+    .then(r => r.json())
+    .then(data => {
+      // Use past radar frames (most recent first)
+      radarFrames = (data.radar?.past || []).slice(0, 6);
+      if (radarFrames.length === 0) {
+        document.getElementById('panel-status').textContent = 'no radar data';
+        return;
+      }
+
+      const latest = radarFrames[0];
+      const tileUrl = `https://tilecache.rainviewer.com/v2/radar/${latest.time}/${latest.path}/256/{z}/{x}/{y}/6/1_1.png`;
+
+      map.addSource('radar', {
+        type: 'raster',
+        tiles: [tileUrl],
+        tileSize: 256,
+        attribution: '&copy; RainViewer'
+      });
+
+      map.addLayer({
+        id: 'radar-layer',
+        type: 'raster',
+        source: 'radar',
+        layout: { visibility: 'none' },
+        paint: {
+          'raster-opacity': 0.55,
+          'raster-fade-duration': 200
+        },
+        minzoom: 3,
+        maxzoom: 12
+      });
+
+      document.getElementById('panel-status').textContent =
+        'radar: ' + new Date(latest.time * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+      // Start radar animation
+      if (radarFrames.length > 1) {
+        radarIdx = 0;
+        radarTimer = setInterval(() => {
+          radarIdx = (radarIdx + 1) % radarFrames.length;
+          const f = radarFrames[radarIdx];
+          const src = map.getSource('radar');
+          if (src) src.setTiles([
+            `https://tilecache.rainviewer.com/v2/radar/${f.time}/${f.path}/256/{z}/{x}/{y}/6/1_1.png`
+          ]);
+        }, 800);
+      }
+    });
+}
+
+function toggleRadar() {
+  const on = document.getElementById('lyr-radar').checked;
+  if (!map.getSource('radar')) { loadRadar(); return; }
+  map.setLayoutProperty('radar-layer', 'visibility', on ? 'visible' : 'none');
+  if (!on && radarTimer) { clearInterval(radarTimer); radarTimer = null; }
+}
+
+// ── weather: wind ─────────────────────────────────────────
+let windSource = null;
+
+function loadWind() {
+  // Open-Meteo wind at 10m for a grid of CA points (1° spacing)
+  const lats = [], lngs = [];
+  for (let la = 32; la <= 42; la += 1) {
+    for (let lo = -124; lo <= -114; lo += 1) {
+      lats.push(la);
+      lngs.push(lo);
+    }
+  }
+
+  const url = 'https://api.open-meteo.com/v1/gfs?current=wind_speed_10m,wind_direction_10m&latitude=' +
+    lats.join(',') + '&longitude=' + lngs.join(',');
+
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      const features = [];
+      for (let i = 0; i < data.length; i++) {
+        const d = data[i];
+        if (!d.current) continue;
+        const spd = d.current.wind_speed_10m;
+        const dir = d.current.wind_direction_10m;
+        if (spd == null || spd < 1) continue;
+
+        // Wind barb: a short line pointing in wind direction
+        const rad = (dir - 180) * Math.PI / 180;
+        const len = Math.min(spd * 0.008, 0.25);
+        const lng = d.longitude;
+        const lat = d.latitude;
+
+        features.push({
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [lng - Math.cos(rad) * len * 0.5, lat - Math.sin(rad) * len * 0.5],
+              [lng + Math.cos(rad) * len * 0.5, lat + Math.sin(rad) * len * 0.5]
+            ]
+          },
+          properties: { speed: spd }
+        });
+      }
+
+      map.addSource('wind', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features }
+      });
+      windSource = true;
+
+      map.addLayer({
+        id: 'wind-layer',
+        type: 'line',
+        source: 'wind',
+        layout: {
+          visibility: 'none',
+          'line-cap': 'round'
+        },
+        paint: {
+          'line-color': [
+            'interpolate', ['linear'], ['get', 'speed'],
+            2, 'rgba(100,200,255,0.3)',
+            8, 'rgba(100,200,255,0.6)',
+            15, 'rgba(200,220,255,0.8)',
+            25, 'rgba(255,200,100,0.9)'
+          ],
+          'line-width': ['interpolate', ['linear'], ['get', 'speed'], 2, 0.5, 10, 1.2, 20, 2],
+          'line-opacity': 0.7
+        },
+        minzoom: 5,
+        maxzoom: 14
+      });
+
+      document.getElementById('panel-status').textContent =
+        'wind: ' + features.length + ' vectors';
+    })
+    .catch(() => {
+      document.getElementById('panel-status').textContent = 'wind unavailable';
+    });
+}
+
+function toggleWind() {
+  const on = document.getElementById('lyr-wind').checked;
+  if (!map.getSource('wind')) { loadWind(); return; }
+  map.setLayoutProperty('wind-layer', 'visibility', on ? 'visible' : 'none');
+}
+
+// ── transit: caltrain ───────────────────────────────────
+const CALTRAIN_STATIONS = [
+  { key: 'palo_alto', name: 'Palo Alto', lat: 37.4431, lng: -122.1648 },
+  { key: 'california_ave', name: 'California Ave', lat: 37.4294, lng: -122.1426 },
+];
+let caltrainLoaded = false;
+
+function loadCaltrain() {
+  fetch('/paloalto/caltrain.json')
+    .then(r => r.json())
+    .then(data => {
+      const fmt = iso => new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const features = CALTRAIN_STATIONS.map(st => {
+        const sd = data.stations && data.stations[st.key];
+        if (!sd) return null;
+        const nb = (sd.nb || []).slice(0, 3);
+        const sb = (sd.sb || []).slice(0, 3);
+        let html = '<div style="color:#c4c0b8;font:12px system-ui;max-width:280px">';
+        html += '<strong style="color:#d4a853">' + sd.name + ' · caltrain</strong>';
+        html += '<p style="margin:4px 0 2px;color:#8b8780">northbound</p>';
+        nb.forEach(t => { html += '<div style="margin:1px 0">' + fmt(t.expected) + ' <span style="color:#8b8780">→</span> ' + t.destination + '</div>'; });
+        html += '<p style="margin:6px 0 2px;color:#8b8780">southbound</p>';
+        sb.forEach(t => { html += '<div style="margin:1px 0">' + fmt(t.expected) + ' <span style="color:#8b8780">→</span> ' + t.destination + '</div>'; });
+        html += '</div>';
+        return {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [st.lng, st.lat] },
+          properties: { name: sd.name, html: html }
+        };
+      }).filter(Boolean);
+
+      map.addSource('caltrain', { type: 'geojson', data: { type: 'FeatureCollection', features } });
+      map.addLayer({
+        id: 'caltrain-markers',
+        type: 'circle',
+        source: 'caltrain',
+        layout: { visibility: 'none' },
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#7fb6d9',
+          'circle-opacity': 0.95,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#0a0a0c'
+        }
+      });
+      map.addLayer({
+        id: 'caltrain-labels',
+        type: 'symbol',
+        source: 'caltrain',
+        layout: {
+          visibility: 'none',
+          'text-field': ['get', 'name'],
+          'text-font': ['Inter Regular', 'Arial Unicode MS Regular'],
+          'text-size': 11,
+          'text-offset': [0, 1.8],
+          'text-anchor': 'top'
+        },
+        paint: {
+          'text-color': '#9dc4df',
+          'text-halo-color': '#0a0a0c',
+          'text-halo-width': 2
+        }
+      });
+
+      map.on('click', 'caltrain-markers', e => {
+        new maplibregl.Popup({ offset: 14, closeButton: false })
+          .setLngLat(e.lngLat)
+          .setHTML(e.features[0].properties.html)
+          .addTo(map);
+      });
+      map.on('mouseenter', 'caltrain-markers', () => map.getCanvas().style.cursor = 'pointer');
+      map.on('mouseleave', 'caltrain-markers', () => map.getCanvas().style.cursor = '');
+
+      caltrainLoaded = true;
+      document.getElementById('panel-status').textContent = 'caltrain loaded';
+    })
+    .catch(() => { document.getElementById('panel-status').textContent = 'caltrain unavailable'; });
+}
+
+function toggleCaltrain() {
+  const on = document.getElementById('lyr-caltrain').checked;
+  if (!caltrainLoaded) { loadCaltrain(); return; }
+  const v = on ? 'visible' : 'none';
+  if (map.getLayer('caltrain-markers')) map.setLayoutProperty('caltrain-markers', 'visibility', v);
+  if (map.getLayer('caltrain-labels')) map.setLayoutProperty('caltrain-labels', 'visibility', v);
+}
+
+// ── transit: traffic ────────────────────────────────────
+let trafficLoaded = false;
+
+function loadTraffic() {
+  fetch('/paloalto/traffic.json')
+    .then(r => r.json())
+    .then(data => {
+      const sevColor = s => {
+        if (s === 'Major') return '#e0554f';
+        if (s === 'Moderate') return '#e0b050';
+        if (s === 'Minor') return '#7fa86b';
+        return '#b0905a';
+      };
+      const features = (data.events || [])
+        .filter(e => e.status === 'ACTIVE' && e.geography && e.geography.coordinates)
+        .map(e => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: e.geography.coordinates },
+          properties: {
+            headline: e.headline,
+            severity: e.severity || 'Unknown',
+            color: sevColor(e.severity)
+          }
+        }));
+
+      map.addSource('traffic', { type: 'geojson', data: { type: 'FeatureCollection', features } });
+      map.addLayer({
+        id: 'traffic-dots',
+        type: 'circle',
+        source: 'traffic',
+        layout: { visibility: 'none' },
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 2.5, 10, 5, 14, 8],
+          'circle-color': ['get', 'color'],
+          'circle-opacity': 0.9,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#0a0a0c'
+        }
+      });
+
+      map.on('click', 'traffic-dots', e => {
+        const p = e.features[0].properties;
+        new maplibregl.Popup({ offset: 14, closeButton: false })
+          .setLngLat(e.lngLat)
+          .setHTML('<div style="color:#c4c0b8;font:12px system-ui;max-width:280px"><strong style="color:#d4a853">' + p.severity + '</strong><p style="margin:4px 0 0;color:#8b8780;line-height:1.4">' + p.headline + '</p></div>')
+          .addTo(map);
+      });
+      map.on('mouseenter', 'traffic-dots', () => map.getCanvas().style.cursor = 'pointer');
+      map.on('mouseleave', 'traffic-dots', () => map.getCanvas().style.cursor = '');
+
+      trafficLoaded = true;
+      document.getElementById('panel-status').textContent = features.length + ' incidents';
+    })
+    .catch(() => { document.getElementById('panel-status').textContent = 'traffic unavailable'; });
+}
+
+function toggleTraffic() {
+  const on = document.getElementById('lyr-traffic').checked;
+  if (!trafficLoaded) { loadTraffic(); return; }
+  map.setLayoutProperty('traffic-dots', 'visibility', on ? 'visible' : 'none');
+}
+
+// ── live: wildfires (WFIGS, refreshed every 30 min on the VPS) ──────
+let wildfiresLoaded = false;
+function loadWildfires() {
+  document.getElementById('panel-status').textContent = 'loading wildfire data…';
+  fetch('/wildfires.json')
+    .then(r => r.json())
+    .then(data => {
+      map.addSource('wildfires', { type: 'geojson', data });
+      map.addLayer({
+        id: 'wildfire-fill',
+        type: 'fill',
+        source: 'wildfires',
+        paint: {
+          'fill-color': ['interpolate', ['linear'], ['get', 'acres'],
+            0, '#e0b050', 500, '#e0554f', 10000, '#c4302b'],
+          'fill-opacity': 0.3
+        }
+      });
+      map.addLayer({
+        id: 'wildfire-line',
+        type: 'line',
+        source: 'wildfires',
+        paint: {
+          'line-color': '#e0554f',
+          'line-width': 1,
+          'line-opacity': 0.7
+        }
+      });
+      map.setLayoutProperty('wildfire-fill', 'visibility', 'visible');
+      map.setLayoutProperty('wildfire-line', 'visibility', 'visible');
+
+      map.on('click', 'wildfire-fill', e => {
+        const p = e.features[0].properties;
+        const acres = p.acres ? p.acres.toLocaleString() + ' acres' : 'unknown size';
+        new maplibregl.Popup({ offset: 14, closeButton: false })
+          .setLngLat(e.lngLat)
+          .setHTML('<div style="color:#c4c0b8;font:12px system-ui;max-width:280px"><strong style="color:#e0554f">' + (p.name || 'unnamed fire') + '</strong><p style="margin:4px 0 0;color:#8b8780;line-height:1.4">' + acres + '</p></div>')
+          .addTo(map);
+      });
+      map.on('mouseenter', 'wildfire-fill', () => map.getCanvas().style.cursor = 'pointer');
+      map.on('mouseleave', 'wildfire-fill', () => map.getCanvas().style.cursor = '');
+
+      wildfiresLoaded = true;
+      document.getElementById('panel-status').textContent = data.count + ' active fires · ' + (data.updated || '').slice(0, 16).replace('T', ' ');
+    })
+    .catch(() => { document.getElementById('panel-status').textContent = 'wildfire data unavailable'; });
+}
+
+function toggleWildfires() {
+  const on = document.getElementById('lyr-wildfires').checked;
+  if (!wildfiresLoaded) { loadWildfires(); return; }
+  map.setLayoutProperty('wildfire-fill', 'visibility', on ? 'visible' : 'none');
+  map.setLayoutProperty('wildfire-line', 'visibility', on ? 'visible' : 'none');
+}
+
+// ── air quality ───────────────────────────────────────────
+let aqiLoaded = false;
+
+const AQI_COLORS = {
+  good: '#00e400',
+  moderate: '#e8d000',
+  'unhealthy for sensitive groups': '#ff7e00',
+  unhealthy: '#ff2222',
+  'very unhealthy': '#8f3f97',
+  hazardous: '#7e0023',
+};
+
+function loadAqi() {
+  fetch('/aqi.json', { cache: 'no-store' })
+    .then(r => r.json())
+    .then(data => {
+      if (!data || !data.length) return;
+      map.addSource('aqi-points', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: data.map(p => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
+            properties: p,
+          })),
+        },
+      });
+      map.addLayer({
+        id: 'aqi-dots',
+        type: 'circle',
+        source: 'aqi-points',
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 4, 10, 9],
+          'circle-color': [
+            'match', ['get', 'category'],
+            'good', AQI_COLORS.good,
+            'moderate', AQI_COLORS.moderate,
+            'unhealthy for sensitive groups', AQI_COLORS['unhealthy for sensitive groups'],
+            'unhealthy', AQI_COLORS.unhealthy,
+            'very unhealthy', AQI_COLORS['very unhealthy'],
+            AQI_COLORS.hazardous,
+          ],
+          'circle-stroke-color': '#0a0a0c',
+          'circle-stroke-width': 1.2,
+          'circle-opacity': 0.9,
+        },
+      });
+      const seen = new Set();
+      map.on('click', 'aqi-dots', e => {
+        const p = e.features[0].properties;
+        new maplibregl.Popup()
+          .setLngLat([p.lon, p.lat])
+          .setHTML(
+            `<strong>${p.name}</strong> — aqi ${p.aqi} (${p.category})<br>` +
+            `<span style="opacity:.8">pm2.5 ${p.pm25} μg/m³ · ${p.ts.replace('T', ' ')}</span>`
+          )
+          .addTo(map);
+      });
+      map.on('mouseenter', 'aqi-dots', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'aqi-dots', () => { map.getCanvas().style.cursor = ''; });
+      aqiLoaded = true;
+      setStatus(`air quality: ${data.length} stations`);
+    })
+    .catch(() => { setStatus('air quality: unavailable'); });
+}
+
+function toggleAqi() {
+  const on = document.getElementById('lyr-aqi').checked;
+  if (!aqiLoaded) { loadAqi(); return; }
+  map.setLayoutProperty('aqi-dots', 'visibility', on ? 'visible' : 'none');
+}
+
+// ── themes ────────────────────────────────────────────────
+function setTheme(theme) {
+  document.querySelectorAll('.controls .btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + theme).classList.add('active');
+
+  const src = map.getSource('base-tiles');
+  if (!src) return;
+
+  if (theme === 'dark') {
+    src.setTiles(['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png']);
+  } else if (theme === 'amber') {
+    src.setTiles(['https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png']);
+  } else if (theme === 'terrain') {
+    src.setTiles(['https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}']);
+  } else if (theme === 'satellite') {
+    src.setTiles(['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}']);
+  }
+}
+
+</script>
+</body>
+</html>

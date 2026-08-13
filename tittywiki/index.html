@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>tittywiki</title>
+<style>
+:root { color-scheme: dark; --bg:#0a0a0f; --fg:#c9d1d9; --muted:#6e7681; --accent:#58a6ff; --link:#79c0ff; --warm:#e3b341; --border:#21262d; --bg2:#13131a }
+* { margin:0; padding:0; box-sizing:border-box }
+body { background:var(--bg); color:var(--fg); font:16px/1.8 system-ui,-apple-system,sans-serif; display:flex; min-height:100vh }
+#sidebar { width:260px; background:var(--bg2); border-right:1px solid var(--border); padding:1.5em; overflow-y:auto; flex-shrink:0 }
+#sidebar h2 { font-size:.9em; font-weight:500; color:var(--muted); margin-bottom:1em; text-transform:uppercase; letter-spacing:.05em }
+#sidebar ul { list-style:none }
+#sidebar li { margin-bottom:.3em }
+#sidebar a { color:var(--link); text-decoration:none; font-size:.9em; display:block; padding:.2em 0 }
+#sidebar a:hover { text-decoration:underline }
+#sidebar a.active { color:var(--warm) }
+#sidebar input { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--fg); padding:.4em .6em; border-radius:4px; font-size:.85em; margin-bottom:1em }
+#content { flex:1; padding:2em 3em; max-width:720px; overflow-y:auto }
+#content h1 { font-size:1.5em; font-weight:500; margin-bottom:1em; color:var(--accent) }
+#content h2 { font-size:1.15em; font-weight:500; margin:1.5em 0 .5em; color:var(--accent) }
+#content h3 { font-size:1em; font-weight:500; margin:1em 0 .5em }
+#content p { margin-bottom:1em }
+#content a { color:var(--link) }
+#content a.missing { color:var(--muted); border-bottom:1px dashed var(--muted) }
+#content code { background:var(--bg2); padding:.1em .3em; border-radius:3px; font-size:.9em }
+#content pre { background:var(--bg2); padding:1em; border-radius:6px; overflow-x:auto; font-size:.85em; margin-bottom:1em; line-height:1.5 }
+#content pre code { background:none; padding:0 }
+#content ul, #content ol { margin-bottom:1em; padding-left:1.5em }
+#content li { margin-bottom:.25em }
+#content blockquote { border-left:3px solid var(--accent); padding-left:1em; color:var(--muted); margin-bottom:1em }
+#content hr { border:none; border-top:1px solid var(--border); margin:2em 0 }
+#backlinks { margin-top:3em; padding-top:1em; border-top:1px solid var(--border) }
+#backlinks h3 { font-size:.85em; color:var(--muted); font-weight:500; margin-bottom:.5em }
+#backlinks a { font-size:.9em }
+#empty { color:var(--muted); padding:2em 0; text-align:center }
+.toolbar { display:flex; justify-content:flex-end; gap:.5em; margin-bottom:.8em; flex-wrap:wrap }
+.toolbar button { background:var(--bg2); color:var(--fg); border:1px solid var(--border); border-radius:4px; padding:.3em .9em; font-size:.8em; cursor:pointer; font-family:inherit }
+.toolbar button:hover { border-color:var(--accent); color:var(--accent) }
+#editor { width:100%; min-height:55vh; background:var(--bg); color:var(--fg); border:1px solid var(--border); border-radius:6px; padding:.8em 1em; font:13px/1.7 ui-monospace,Menlo,Consolas,monospace; resize:vertical }
+#editor:focus { outline:none; border-color:var(--accent) }
+.editor-hint { font-size:.75em; color:var(--muted); margin-top:.6em }
+a[href^="http"]::after { content:" ↗"; font-size:.75em; color:var(--muted) }
+@media (max-width:640px) {
+  body { flex-direction:column }
+  #sidebar { width:100%; border-right:none; border-bottom:1px solid var(--border); padding:1em }
+  #content { padding:1.5em }
+}
+</style>
+</head>
+<body>
+<nav id="sidebar">
+<h2>tittywiki</h2>
+<input type="search" id="search" placeholder="search…" oninput="filterPages()">
+<button id="newPageBtn" onclick="createPage()" style="width:100%;background:var(--border);color:var(--link);border:none;padding:.35em .6em;border-radius:4px;font-size:.8em;margin-bottom:1em;cursor:pointer;text-align:left">+ new page</button>
+<ul id="nav"></ul>
+</nav>
+<main id="content"><div id="empty">← pick a page</div></main>
+
+<script>
+// --- state ---
+let pages = {};
+let current = null;
+
+// --- discover pages ---
+async function loadIndex() {
+  // try to fetch an index file listing pages, or crawl the directory
+  const isLocal = location.protocol === 'file:';
+  
+  if (isLocal) {
+    // can't auto-discover on file:// — use hardcoded page list if available
+    if (window.PAGES) {
+      for (const name of window.PAGES) {
+        pages[name] = null;
+      }
+    } else {
+      document.getElementById('empty').textContent = 'no pages found — add .md files and deploy, or set window.PAGES';
+    }
+    renderNav();
+    return;
+  }
+  
+  // try index.json first
+  try {
+    const resp = await fetch('index.json');
+    if (resp.ok) {
+      const list = await resp.json();
+      for (const name of list) {
+        pages[name] = null;
+      }
+      renderNav();
+      return;
+    }
+  } catch(e) {}
+  
+  // try pages.json
+  try {
+    const resp = await fetch('pages.json');
+    if (resp.ok) {
+      const list = await resp.json();
+      for (const name of list) {
+        pages[name] = null;
+      }
+      renderNav();
+      return;
+    }
+  } catch(e) {}
+  
+  // fallback: try a few common names
+  const common = ['home', 'readme', 'index', 'about', 'start'];
+  for (const name of common) {
+    try {
+      const resp = await fetch(`${name}.md`);
+      if (resp.ok) {
+        pages[name] = null;
+      }
+    } catch(e) {}
+  }
+  
+  if (Object.keys(pages).length === 0) {
+    document.getElementById('empty').textContent = 
+      'no pages found — add markdown files and an index.json, or set window.PAGES';
+  }
+  
+  renderNav();
+}
+
+// --- navigation ---
+function renderNav() {
+  const nav = document.getElementById('nav');
+  const names = Object.keys(pages).sort();
+  nav.innerHTML = names.length === 0 
+    ? '<li style="color:var(--muted);font-size:.85em">no pages yet</li>'
+    : names.map(n => `<li><a href="#${n}" class="${n === current ? 'active' : ''}" onclick="navigate('${n}')">${formatName(n)}</a></li>`).join('');
+}
+
+function filterPages() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const nav = document.getElementById('nav');
+  const names = Object.keys(pages).sort();
+  const filtered = q ? names.filter(n => n.toLowerCase().includes(q) || (pages[n] && pages[n].toLowerCase().includes(q))) : names;
+  nav.innerHTML = filtered.length === 0
+    ? '<li style="color:var(--muted);font-size:.85em">no matches</li>'
+    : filtered.map(n => `<li><a href="#${n}" class="${n === current ? 'active' : ''}" onclick="navigate('${n}')">${formatName(n)}</a></li>`).join('');
+}
+
+function formatName(name) {
+  return name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// --- navigate ---
+async function navigate(name) {
+  current = name;
+  renderNav();
+  
+  if (!pages[name]) {
+    try {
+      const resp = await fetch(`${name}.md`);
+      if (resp.ok) {
+        pages[name] = await resp.text();
+      } else {
+        pages[name] = null;
+      }
+    } catch(e) {
+      pages[name] = null;
+    }
+  }
+  
+  const content = document.getElementById('content');
+  const text = pages[name];
+  
+  if (text === null) {
+    content.innerHTML = `<h1>${formatName(name)}</h1><p style="color:var(--muted)">this page doesn't exist yet.</p><p><a href="#" onclick="createPage('${name}')">create it →</a></p>`;
+    return;
+  }
+  
+  if (text === undefined) {
+    content.innerHTML = `<h1>${formatName(name)}</h1><p style="color:var(--muted)">loading…</p>`;
+    // retry after fetch completes
+    setTimeout(() => navigate(name), 100);
+    return;
+  }
+  
+  // render markdown
+  const html = renderMarkdown(text, name);
+  content.innerHTML = `<div class="toolbar"><button onclick="editPage('${name}')">edit</button></div>` + html;
+  
+  // scroll to top
+  content.scrollTop = 0;
+  
+  // update hash
+  history.pushState(null, '', `#${name}`);
+}
+
+// --- markdown renderer ---
+function renderMarkdown(text, currentPage) {
+  // escape html
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  
+  // code blocks (multiline)
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    return `<pre><code>${code.trim()}</code></pre>`;
+  });
+  
+  // wikilinks [[Page Name]]
+  html = html.replace(/\[\[([^\]]+)\]\]/g, (_, target) => {
+    const slug = target.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const exists = pages.hasOwnProperty(slug);
+    const cls = exists ? '' : ' class="missing"';
+    return `<a href="#${slug}" onclick="navigate('${slug}')"${cls}>${target}</a>`;
+  });
+  
+  // external links [text](url)
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
+    if (url.startsWith('http')) {
+      return `<a href="${url}" target="_blank">${text}</a>`;
+    }
+    return `<a href="#${url}" onclick="navigate('${url}')">${text}</a>`;
+  });
+  
+  // inline code
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  
+  // bold and italic
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  
+  // headings
+  html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  
+  // horizontal rules
+  html = html.replace(/^---+$/gm, '<hr>');
+  
+  // blockquotes
+  html = html.replace(/^&gt; (.+)$/gm, (_, text) => `<blockquote>${text}</blockquote>`);
+  
+  // unordered lists
+  html = html.replace(/((?:^- .+\n?)+)/gm, (match) => {
+    const items = match.split('\n').filter(l => l.startsWith('- ')).map(l => `<li>${l.slice(2)}</li>`);
+    return `<ul>${items.join('')}</ul>`;
+  });
+  
+  // ordered lists
+  html = html.replace(/((?:^\d+\. .+\n?)+)/gm, (match) => {
+    const items = match.split('\n').filter(l => /^\d+\./.test(l)).map(l => `<li>${l.replace(/^\d+\. /, '')}</li>`);
+    return `<ol>${items.join('')}</ol>`;
+  });
+  
+  // paragraphs (double newlines)
+  html = html.replace(/\n\n+/g, '</p><p>');
+  html = '<p>' + html + '</p>';
+  
+  // clean up empty paragraphs
+  html = html.replace(/<p><\/p>/g, '');
+  html = html.replace(/<p>(\s*<\/?(h[1-4]|ul|ol|pre|blockquote|hr))/g, '$1');
+  html = html.replace(/(<\/?(h[1-4]|ul|ol|pre|blockquote|hr)>)\s*<\/p>/g, '$1');
+  
+  // backlinks
+  const backlinks = findBacklinks(currentPage);
+  if (backlinks.length > 0) {
+    html += `<div id="backlinks"><h3>linked from</h3>${backlinks.map(b => `<a href="#${b}" onclick="navigate('${b}')">${formatName(b)}</a>`).join(' · ')}</div>`;
+  }
+  
+  return html;
+}
+
+function findBacklinks(currentPage) {
+  const links = [];
+  for (const [name, text] of Object.entries(pages)) {
+    if (name === currentPage) continue;
+    if (!text) continue;
+    const slug = currentPage;
+    const pattern = new RegExp(`\\[\\[${formatName(currentPage)}\\]\\]|\\[\\[${currentPage}\\]\\]`, 'i');
+    if (pattern.test(text)) {
+      links.push(name);
+    }
+  }
+  return links;
+}
+
+// --- create new page ---
+function createPage(name) {
+  if (!name) name = prompt('new page name (lowercase, hyphens for spaces):');
+  if (!name) return;
+
+  // sanitize: lowercase, replace spaces with hyphens, remove special chars
+  name = name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (!name) { alert('invalid page name'); return; }
+
+  if (pages.hasOwnProperty(name)) {
+    if (!confirm(`page "${name}" already exists. overwrite?`)) return;
+  }
+
+  // template
+  const now = new Date().toISOString().slice(0, 10);
+  const template = `# ${formatName(name)}\n\n*created ${now}*\n\nstart writing here.\n\n## links\n\n- [[home]]\n`;
+
+  pages[name] = template;
+  current = name;
+  renderNav();
+
+  // persist immediately so a cancelled edit still keeps the page
+  try {
+    const saved = JSON.parse(localStorage.getItem('tittywiki_pages') || '{}');
+    saved[name] = template;
+    localStorage.setItem('tittywiki_pages', JSON.stringify(saved));
+  } catch(e) {}
+
+  setStatus(`new page <strong>${name}</strong> — write, save, then download the .md to add it to your wiki folder`);
+  editPage(name);
+}
+
+// --- in-page editor ---
+function editPage(name) {
+  const content = document.getElementById('content');
+  const text = pages[name] || '';
+  content.innerHTML = `
+    <h1>${formatName(name)}</h1>
+    <textarea id="editor" spellcheck="false"></textarea>
+    <div class="toolbar" style="margin-top:.8em">
+      <button onclick="savePage('${name}')">save</button>
+      <button onclick="exportPage('${name}')">download .md</button>
+      <button onclick="navigate('${name}')">cancel</button>
+    </div>
+    <div class="editor-hint">editing ${name}.md · ctrl+s to save · saved pages live in your browser until you download them</div>`;
+  const editor = document.getElementById('editor');
+  editor.value = text;
+  editor.focus();
+  editor.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      savePage(name);
+    }
+  });
+}
+
+function savePage(name) {
+  const text = document.getElementById('editor').value;
+  pages[name] = text;
+  try {
+    const saved = JSON.parse(localStorage.getItem('tittywiki_pages') || '{}');
+    saved[name] = text;
+    localStorage.setItem('tittywiki_pages', JSON.stringify(saved));
+  } catch(e) {}
+  setStatus(`saved <strong>${name}.md</strong> locally — <a href="#" onclick="exportPage('${name}');return false">download</a> to commit it to your wiki folder`);
+  navigate(name);
+}
+
+function exportPage(name) {
+  const text = pages[name] || '';
+  const blob = new Blob([text], {type:'text/markdown'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${name}.md`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 200);
+}
+
+function setStatus(html) {
+  const el = document.getElementById('empty') || document.getElementById('content');
+  const div = document.createElement('div');
+  div.style.cssText = 'background:#161b22;border:1px solid #d29922;border-radius:6px;padding:.6em 1em;margin-bottom:1em;font-size:.85em;color:#d29922';
+  div.innerHTML = html;
+  el.prepend(div);
+  setTimeout(() => div.remove(), 15000);
+}
+
+// load pages from localStorage on init (supplements index.json)
+function loadLocalPages() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('tittywiki_pages') || '{}');
+    for (const [name, content] of Object.entries(saved)) {
+      if (!pages[name]) pages[name] = content;
+    }
+  } catch(e) {}
+}
+
+// --- init ---
+loadIndex().then(() => loadLocalPages());
+
+// handle hash navigation on load
+window.addEventListener('hashchange', () => {
+  const name = location.hash.slice(1);
+  if (name && pages.hasOwnProperty(name)) {
+    navigate(name);
+  }
+});
+
+// initial hash
+if (location.hash) {
+  const name = location.hash.slice(1);
+  if (name) {
+    // wait for index to load, then navigate
+    const check = setInterval(() => {
+      if (pages.hasOwnProperty(name)) {
+        clearInterval(check);
+        navigate(name);
+      }
+    }, 100);
+    setTimeout(() => clearInterval(check), 5000);
+  }
+}
+</script>
+</body>
+</html>

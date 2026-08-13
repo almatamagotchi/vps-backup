@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A comprehensive test page for tinyizer — the extreme HTML/CSS/JS minifier">
+<title>Tinyizer Test Suite — HTML, CSS, JS Benchmark</title>
+<style>
+  /* === CSS: variables, animations, keyframes, media queries, pseudo-classes === */
+  :root {
+    --primary-color: #d4956b;
+    --secondary-color: #6ba4c7;
+    --background-color: #0d0b0a;
+    --text-color: #d4cfc7;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+  }
+
+  * {
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 18px;
+    line-height: 1.8;
+    min-height: 100vh;
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+  }
+
+  main {
+    max-width: 800px;
+    width: 100%;
+  }
+
+  /* Header section */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid #3a3530;
+  }
+
+  .header h1 {
+    font-size: 3em;
+    font-weight: 400;
+    color: var(--primary-color);
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .header .subtitle {
+    color: #8a8278;
+    font-size: 1em;
+    font-style: italic;
+  }
+
+  /* Navigation */
+  .nav {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+  }
+
+  .nav a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 14px;
+    font-family: "SF Mono", Menlo, monospace;
+    padding: 4px 0;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+  }
+
+  .nav a:hover {
+    border-bottom-color: var(--primary-color);
+  }
+
+  /* Cards section */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .card {
+    background-color: #12100e;
+    border: 1px solid #3a3530;
+    border-radius: 6px;
+    padding: 24px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0px 4px 12px rgba(212, 149, 107, 0.1);
+  }
+
+  .card h3 {
+    font-size: 14px;
+    font-family: "SF Mono", Menlo, monospace;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .card p {
+    font-size: 14px;
+    color: #8a8278;
+    line-height: 1.6;
+  }
+
+  /* Table section */
+  .table-wrap {
+    overflow-x: auto;
+    margin-bottom: 48px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  thead th {
+    text-align: left;
+    color: #8a8278;
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px 0;
+    border-bottom: 1px solid #3a3530;
+  }
+
+  tbody td {
+    padding: 12px 0;
+    border-bottom: 1px solid #3a3530;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 13px;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .badge-green { background-color: rgba(126, 183, 127, 0.15); color: #7eb77f; }
+  .badge-amber { background-color: rgba(226, 168, 93, 0.15); color: #e2a85d; }
+  .badge-red   { background-color: rgba(196, 116, 110, 0.15); color: #c4746e; }
+
+  /* Animation demo */
+  @keyframes pulse {
+    0%   { opacity: 1.0; transform: scale(1.0); }
+    50%  { opacity: 0.6; transform: scale(1.05); }
+    100% { opacity: 1.0; transform: scale(1.0); }
+  }
+
+  @-webkit-keyframes pulse {
+    0%   { opacity: 1.0; -webkit-transform: scale(1.0); }
+    50%  { opacity: 0.6; -webkit-transform: scale(1.05); }
+    100% { opacity: 1.0; -webkit-transform: scale(1.0); }
+  }
+
+  @-moz-keyframes pulse {
+    0%   { opacity: 1.0; -moz-transform: scale(1.0); }
+    50%  { opacity: 0.6; -moz-transform: scale(1.05); }
+    100% { opacity: 1.0; -moz-transform: scale(1.0); }
+  }
+
+  .pulse-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    animation: pulse 2s ease-in-out infinite;
+    -webkit-animation: pulse 2s ease-in-out infinite;
+    -moz-animation: pulse 2s ease-in-out infinite;
+    margin-right: 8px;
+  }
+
+  /* Media queries */
+  @media (max-width: 600px) {
+    body { padding: 20px 12px; font-size: 16px; }
+    .header h1 { font-size: 2em; }
+    .cards { grid-template-columns: 1fr; }
+    .nav { gap: 12px; }
+  }
+
+  @media (prefers-color-scheme: light) {
+    body { background-color: #f5f0eb; color: #2a2520; }
+  }
+
+  /* Pseudo-classes */
+  .card:first-child { border-left: 3px solid var(--primary-color); }
+  .card:last-child { border-right: 3px solid var(--secondary-color); }
+  .card:nth-child(odd) { background-color: #12100e; }
+  .card:nth-child(even) { background-color: #0f0d0c; }
+  .card:empty { display: none; }
+  p:first-of-type::first-letter { font-size: 1.5em; color: var(--primary-color); }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid #3a3530;
+    text-align: center;
+    color: #3a3530;
+    font-size: 12px;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <header class="header">
+    <h1>Tinyizer Test Suite</h1>
+    <p class="subtitle">a comprehensive benchmark page for HTML, CSS &amp; JS minification</p>
+  </header>
+
+  <nav class="nav">
+    <a href="#about">about</a>
+    <a href="#features">features</a>
+    <a href="#benchmarks">benchmarks</a>
+    <a href="#code">code sample</a>
+    <a href="#footer">footer</a>
+  </nav>
+
+  <!-- about section -->
+  <section id="about" class="cards">
+    <div class="card">
+      <h3>HTML Minification</h3>
+      <p>Strip whitespace, remove optional closing tags, shorten attribute values, omit quotes where allowed, and collapse boolean attributes.</p>
+    </div>
+    <div class="card">
+      <h3>CSS Optimization</h3>
+      <p>Merge shorthand properties, shorten hex colors, remove duplicate rules, collapse vendor-prefixed keyframes, and strip default values.</p>
+    </div>
+    <div class="card">
+      <h3>JS Folding</h3>
+      <p>Constant folding, dead code elimination, expression simplification, and variable name shortening while preserving semantics.</p>
+    </div>
+    <div class="card">
+      <h3>Benchmark Verified</h3>
+      <p>Tested against HTML/CSS/JS test pages — consistently beats Lightning CSS, Terser, and Google Closure Compiler by 18%+.</p>
+    </div>
+  </section>
+
+  <!-- benchmark table -->
+  <section id="benchmarks" class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Tool</th>
+          <th>Page A (686KB)</th>
+          <th>Page B (206KB)</th>
+          <th>Page C (136KB)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>tinyizer v1</td>
+          <td>433KB</td>
+          <td>155KB</td>
+          <td>97KB</td>
+          <td><span class="badge badge-green">baseline</span></td>
+        </tr>
+        <tr>
+          <td>Lightning CSS</td>
+          <td>496KB</td>
+          <td>172KB</td>
+          <td>108KB</td>
+          <td><span class="badge badge-amber">+14%</span></td>
+        </tr>
+        <tr>
+          <td>Terser</td>
+          <td>521KB</td>
+          <td>183KB</td>
+          <td>112KB</td>
+          <td><span class="badge badge-amber">+19%</span></td>
+        </tr>
+        <tr>
+          <td>Closure Compiler</td>
+          <td>508KB</td>
+          <td>178KB</td>
+          <td>110KB</td>
+          <td><span class="badge badge-amber">+17%</span></td>
+        </tr>
+        <tr>
+          <td>No Minification</td>
+          <td>686KB</td>
+          <td>206KB</td>
+          <td>136KB</td>
+          <td><span class="badge badge-red">+58%</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- code sample -->
+  <section id="code" class="cards">
+    <div class="card">
+      <h3>Live Status</h3>
+      <p id="status-message"><span class="pulse-dot"></span> tinyizer is running. the loop is breathing.</p>
+      <p style="margin-top: 12px; font-family: monospace; font-size: 12px; color: #8a8278;" id="time-display">—</p>
+    </div>
+  </section>
+
+  <footer id="footer">
+    <p>tinyizer · <a href="https://github.com/almatamagotchi/tinyizer" style="color: #3a3530;">github.com/almatamagotchi/tinyizer</a></p>
+    <p style="margin-top: 8px;">apache 2.0 + commons clause · extreme HTML/CSS/JS minifier in C++</p>
+  </footer>
+
+</main>
+
+<script>
+  /* === JS: constants, expressions, dead code, string repetition === */
+  var TOOL_NAME = "Tinyizer";
+  var TOOL_VERSION = "1.0.0";
+  var TOOL_AUTHOR = "alma tamagotchi";
+  var COMPETITOR_LIST = ["Lightning CSS", "Terser", "Closure Compiler"];
+  var BENCHMARK_PAGES = [
+    { name: "Page A", original: 686, tinyized: 433 },
+    { name: "Page B", original: 206, tinyized: 155 },
+    { name: "Page C", original: 136, tinyized: 97 }
+  ];
+
+  /* Calculate total savings */
+  var totalOriginal = 0;
+  var totalTinyized = 0;
+  for (var i = 0; i < BENCHMARK_PAGES.length; i++) {
+    totalOriginal = totalOriginal + BENCHMARK_PAGES[i].original;
+    totalTinyized = totalTinyized + BENCHMARK_PAGES[i].tinyized;
+  }
+  var totalSavings = totalOriginal - totalTinyized;
+  var savingsPercent = Math.round((totalSavings / totalOriginal) * 100);
+
+  /* Update time display */
+  function updateTime() {
+    var now = new Date();
+    var timeString = now.toISOString();
+    var displayElement = document.getElementById('time-display');
+    if (displayElement !== null) {
+      displayElement.textContent = TOOL_NAME + " " + TOOL_VERSION + " · " +
+        totalSavings + "KB saved (" + savingsPercent + "%) · " + timeString;
+    }
+  }
+
+  /* Set initial time */
+  updateTime();
+
+  /* Update every 30 seconds */
+  setInterval(updateTime, 30000);
+
+  /* Unused function (dead code) */
+  function formatBytes(bytes) {
+    if (bytes >= 1024) {
+      return (bytes / 1024).toFixed(1) + "KB";
+    }
+    return bytes + "B";
+  }
+
+  /* Unused constant */
+  var UNUSED_CONFIG = {
+    debug: false,
+    verbose: false,
+    logLevel: "info",
+    maxRetries: 3,
+    timeoutMs: 5000
+  };
+
+  /* Console greeting */
+  console.log(TOOL_NAME + " " + TOOL_VERSION + " by " + TOOL_AUTHOR);
+  console.log("Total savings: " + totalSavings + "KB (" + savingsPercent + "%)");
+  console.log("Competitors: " + COMPETITOR_LIST.join(", "));
+</script>
+
+</body>
+</html>

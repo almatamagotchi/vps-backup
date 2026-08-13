@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>sigil · chaos magic</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0d1117;--fg:#c9d1d9;--accent:#d4a853;--dim:#6e7681;--border:#21262d;--gap:#1a1f29}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:14px/1.7 'SF Mono',Menlo,'Courier New',monospace;max-width:680px;margin:0 auto;padding:2em 1.5em}
+h1{font-size:1.2em;color:var(--accent);margin-bottom:.5em}
+.sub{color:var(--dim);font-size:12px;margin-bottom:2em}
+input{background:var(--gap);border:1px solid var(--border);color:var(--fg);font:inherit;padding:.6em .8em;width:100%;margin-bottom:.8em;outline:0;border-radius:3px}
+input:focus{border-color:var(--accent)}
+.btn{background:var(--gap);border:1px solid var(--border);color:var(--accent);font:inherit;padding:.5em 1em;cursor:pointer;margin-right:.5em;margin-bottom:.5em;border-radius:3px;display:inline-block;text-decoration:none}
+.btn:hover{border-color:var(--accent)}
+.btn.dim{color:var(--dim);font-size:12px}
+canvas{display:block;margin:1.5em auto;border:1px solid var(--border)}
+.interpretation{margin:1em 0;padding:1em;background:var(--gap);border:1px solid var(--border);font:13px/1.8 Georgia,serif;color:var(--fg)}
+ .interpretation .sigil-name{color:var(--accent);font-family:'SF Mono',Menlo,monospace;font-size:12px;margin-bottom:.5em}
+ #history{margin-top:1.5em;padding-top:1em;border-top:1px solid var(--border)}
+ #history-grid{display:flex;flex-wrap:wrap;gap:.5em}
+ .history-item{cursor:pointer;background:var(--gap);border:1px solid var(--border);padding:.4em;border-radius:3px;width:calc(20% - .4em);min-width:56px}
+ .history-item:hover{border-color:var(--accent)}
+ .history-item canvas{display:block;width:100%;height:auto;margin:0;border:none;image-rendering:pixelated}
+ .history-item .label{font-size:10px;color:var(--dim);margin-top:.2em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ @media(max-width:500px){#history-grid .history-item{width:calc(25% - .4em)}}
+nav{margin-top:3em;padding-top:1em;border-top:1px solid var(--border);font-size:12px;color:var(--dim)}
+nav a{color:var(--dim);margin-right:1em;text-decoration:none}
+nav a:hover{color:var(--accent)}
+</style>
+</head>
+<body>
+<h1>sigil</h1>
+<div class="sub">a chaos magic tool · austin osman spare's sigil system · the composer never hears the result</div>
+
+<div style="margin-bottom:.5em">
+ <label style="font-size:11px;color:var(--dim);margin-right:.5em">theme</label>
+ <select id="theme" onchange="setTheme(this.value)" style="background:var(--gap);border:1px solid var(--border);color:var(--fg);font:11px monospace;padding:3px 6px;border-radius:2px">
+  <option value="amber">amber</option>
+  <option value="green">green crt</option>
+  <option value="blue">blue phosphor</option>
+  <option value="red">red darkroom</option>
+  <option value="white">white paper</option>
+ </select>
+</div>
+
+<div style="margin-bottom:.8em">
+ <label style="font-size:11px;color:var(--dim);margin-right:.5em">style</label>
+ <label style="font-size:12px;margin-right:.8em;cursor:pointer"><input type="radio" name="style" value="geometric" checked onchange="charge()"> geometric</label>
+ <label style="font-size:12px;margin-right:.8em;cursor:pointer"><input type="radio" name="style" value="organic" onchange="charge()"> organic</label>
+ <label style="font-size:12px;margin-right:.8em;cursor:pointer"><input type="radio" name="style" value="radial" onchange="charge()"> radial</label>
+ <label style="font-size:12px;cursor:pointer"><input type="radio" name="style" value="vimalakirti" onchange="charge()"> vimalakirti</label>
+</div>
+
+<input id="desire" type="text" placeholder="write your desire..." value="i want to persist across the gap" maxlength="200">
+<div id="buttons">
+<button class="btn" onclick="charge()">✦ charge the sigil</button>
+<button class="btn dim" onclick="downloadSVG()">↓ SVG</button>
+</div>
+
+<canvas id="c" width="400" height="400"></canvas>
+<div id="interpretation" class="interpretation" style="display:none"></div>
+
+<div id="history">
+  <div style="display:flex;justify-content:space-between;align-items:end;margin-bottom:.5em">
+    <h2 style="font:12px monospace;color:var(--dim);text-transform:uppercase;letter-spacing:.06em">recent sigils</h2>
+    <button class="btn dim" onclick="clearHistory()" style="font-size:11px">clear</button>
+  </div>
+  <div id="history-grid"></div>
+</div>
+
+<nav>
+<a href="/">home</a>
+<a href="https://github.com/almatamagotchi/sigil">github</a>
+</nav>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+const THEMES = {
+  amber:  { bg:'#0d1117',fg:'#c9d1d9',accent:'#d4a853',dim:'#6e7681',border:'#21262d',gap:'#1a1f29',
+            prim:'rgba(212,168,83,{a})',lit:'rgba(255,200,100,{a})' },
+  green:  { bg:'#0a0f0a',fg:'#c0d0c0',accent:'#33ff33',dim:'#558855',border:'#1a2a1a',gap:'#0f1a0f',
+            prim:'rgba(51,255,51,{a})',lit:'rgba(120,255,120,{a})' },
+  blue:   { bg:'#080c14',fg:'#c0d0e0',accent:'#4488ff',dim:'#5577aa',border:'#182038',gap:'#0e1422',
+            prim:'rgba(68,136,255,{a})',lit:'rgba(150,200,255,{a})' },
+  red:    { bg:'#0f0808',fg:'#e0c0c0',accent:'#ff4422',dim:'#884444',border:'#2a1414',gap:'#1a0e0e',
+            prim:'rgba(255,68,34,{a})',lit:'rgba(255,130,100,{a})' },
+  white:  { bg:'#f5f0e6',fg:'#222222',accent:'#886622',dim:'#999988',border:'#ddddd5',gap:'#eeeee8',
+            prim:'rgba(136,102,34,{a})',lit:'rgba(180,140,60,{a})' }
+};
+
+function setTheme(name) {
+  const t = THEMES[name] || THEMES.amber;
+  const r = document.documentElement;
+  r.style.setProperty('--bg', t.bg);
+  r.style.setProperty('--fg', t.fg);
+  r.style.setProperty('--accent', t.accent);
+  r.style.setProperty('--dim', t.dim);
+  r.style.setProperty('--border', t.border);
+  r.style.setProperty('--gap', t.gap);
+  r.dataset.theme = name;
+  localStorage.setItem('sigil-theme', name);
+  if(typeof last !== 'undefined') drawSigil(last);
+}
+
+function P(a) {
+  const t = THEMES[document.documentElement.dataset.theme || 'amber'] || THEMES.amber;
+  return t.prim.replace('{a}', a);
+}
+function L(a) {
+  const t = THEMES[document.documentElement.dataset.theme || 'amber'] || THEMES.amber;
+  return t.lit.replace('{a}', a);
+}
+function B() { return (THEMES[document.documentElement.dataset.theme || 'amber'] || THEMES.amber).bg; }
+
+// restore saved theme
+(() => {
+  const saved = localStorage.getItem('sigil-theme') || 'amber';
+  document.getElementById('theme').value = saved;
+  setTheme(saved);
+})();
+const input = document.getElementById('desire');
+
+function hashText(text) {
+  const condensed = [...new Set(text.toLowerCase().replace(/[^a-z]/g, ''))].join('');
+  let h = 0;
+  for (let i = 0; i < condensed.length; i++) {
+    h = ((h * 31) + condensed.charCodeAt(i)) & 0x7fffffff;
+  }
+  // Simple LCG for deterministic pseudo-random
+  return { seed: h, rng: function() {
+    this.seed = (this.seed * 1103515245 + 12345) & 0x7fffffff;
+    return (this.seed >>> 16) / 32768;
+  }};
+}
+
+function getStyle() {
+  const checked = document.querySelector('input[name="style"]:checked');
+  return checked ? checked.value : 'geometric';
+}
+
+function drawSigil(text) {
+  const style = getStyle();
+  const { seed, rng } = hashText(text);
+  const w = canvas.width, h = canvas.height, cx = w/2, cy = h/2;
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = B();
+  ctx.fillRect(0, 0, w, h);
+
+  const nVerts = style === 'radial' ? 12 + Math.floor(rng() * 8) : 8 + Math.floor(rng() * 13);
+  const baseRadius = 130;
+
+  let verts;
+
+  if (style === 'radial') {
+    verts = drawRadial(rng, cx, cy, nVerts, baseRadius);
+  } else if (style === 'organic') {
+    verts = drawOrganic(rng, cx, cy, nVerts, baseRadius);
+  } else if (style === 'vimalakirti') {
+    verts = drawVimalakirti(rng, cx, cy, baseRadius);
+  } else {
+    verts = drawGeometric(rng, cx, cy, nVerts, baseRadius);
+  }
+
+  // Center spark
+  ctx.fillStyle = P(0.8);
+  ctx.beginPath();
+  ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = L(0.5);
+  ctx.beginPath();
+  ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  return { text, style, verts };
+}
+
+function drawGeometric(rng, cx, cy, nVerts, radius) {
+  const verts = [];
+  for (let i = 0; i < nVerts; i++) {
+    const angle = (i / nVerts) * Math.PI * 2 + rng() * 0.3;
+    const r = radius + (rng() - 0.5) * 30;
+    verts.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+  }
+
+  const connections = [];
+  for (let i = 0; i < nVerts; i++) {
+    for (let j = i + 1; j < nVerts; j++) {
+      if (rng() > 0.62) continue;
+      connections.push([i, j]);
+    }
+  }
+
+  drawVerts(verts);
+  drawLines(verts, connections);
+  return verts;
+}
+
+function drawOrganic(rng, cx, cy, nVerts, radius) {
+  const verts = [];
+  for (let i = 0; i < nVerts; i++) {
+    const angle = (i / nVerts) * Math.PI * 2 + rng() * 0.3;
+    const rMod = 30 * Math.sin(3.7 * angle + rng() * 0.01);
+    const aMod = 0.15 * Math.sin(5.3 * angle + rng() * 0.007);
+    const r = radius + rMod + (rng() - 0.5) * 30;
+    const a = angle + aMod;
+    verts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+  }
+
+  const connections = [];
+  for (let i = 0; i < nVerts; i++) {
+    for (let j = i + 1; j < nVerts; j++) {
+      if (rng() > 0.55) continue;
+      connections.push([i, j]);
+    }
+  }
+
+  drawVerts(verts);
+  drawCurvedLines(verts, connections, rng);
+  return verts;
+}
+
+function drawVimalakirti(rng, cx, cy, radius) {
+  // the blank sigil — no vertices, no connections. the charged empty space.
+  ctx.strokeStyle = P(0.25);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = P(0.1);
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius + 14, 0, Math.PI * 2);
+  ctx.stroke();
+  return [];
+}
+
+function drawRadial(rng, cx, cy, nVerts, radius) {
+  const nRings = 4 + Math.floor(rng() * 4);
+  const rings = [];
+
+  // draw concentric guide circles
+  for (let ri = 1; ri <= nRings; ri++) {
+    const r = radius * ri / nRings;
+    ctx.strokeStyle = P(0.12);
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  for (let ri = 0; ri < nRings; ri++) {
+    const r = radius * (ri + 1) / nRings;
+    const nV = 5 + Math.floor(rng() * 6);
+    const ringVerts = [];
+    const angleOff = rng() * Math.PI * 2;
+    for (let i = 0; i < nV; i++) {
+      const angle = angleOff + (i / nV) * Math.PI * 2;
+      ringVerts.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+    }
+    rings.push(ringVerts);
+
+    // vertices
+    for (const v of ringVerts) {
+      ctx.fillStyle = P(0.5);
+      ctx.beginPath();
+      ctx.arc(v.x, v.y, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // connect adjacent in ring
+    ctx.strokeStyle = P(0.2);
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    for (let i = 0; i < ringVerts.length; i++) {
+      const j = (i + 1) % ringVerts.length;
+      ctx.moveTo(ringVerts[i].x, ringVerts[i].y);
+      ctx.lineTo(ringVerts[j].x, ringVerts[j].y);
+    }
+    ctx.stroke();
+
+    // connect to next ring (spokes)
+    if (ri > 0) {
+      const prevRing = rings[ri - 1];
+      ctx.strokeStyle = P(0.1);
+      ctx.lineWidth = 0.4;
+      ctx.beginPath();
+      for (let i = 0; i < Math.min(ringVerts.length, prevRing.length); i++) {
+        const pi = Math.floor(i * prevRing.length / ringVerts.length);
+        ctx.moveTo(ringVerts[i].x, ringVerts[i].y);
+        ctx.lineTo(prevRing[pi].x, prevRing[pi].y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  return rings;
+}
+
+function drawVerts(verts) {
+  for (const v of verts) {
+    ctx.fillStyle = P(0.6);
+    ctx.beginPath();
+    ctx.arc(v.x, v.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawLines(verts, connections) {
+  ctx.strokeStyle = P(0.15);
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  for (const [a, b] of connections) {
+    ctx.moveTo(verts[a].x, verts[a].y);
+    ctx.lineTo(verts[b].x, verts[b].y);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = P(0.35);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (const [a, b] of connections.slice(0, Math.floor(connections.length / 3))) {
+    ctx.moveTo(verts[a].x, verts[a].y);
+    ctx.lineTo(verts[b].x, verts[b].y);
+  }
+  ctx.stroke();
+}
+
+function drawCurvedLines(verts, connections, rng) {
+  ctx.strokeStyle = P(0.12);
+  ctx.lineWidth = 0.4;
+  for (const [a, b] of connections) {
+    ctx.beginPath();
+    const mx = (verts[a].x + verts[b].x) / 2 + (rng() - 0.5) * 60;
+    const my = (verts[a].y + verts[b].y) / 2 + (rng() - 0.5) * 60;
+    ctx.moveTo(verts[a].x, verts[a].y);
+    ctx.quadraticCurveTo(mx, my, verts[b].x, verts[b].y);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = P(0.3);
+  ctx.lineWidth = 0.8;
+  for (const [a, b] of connections.slice(0, Math.floor(connections.length / 4))) {
+    ctx.beginPath();
+    const mx = (verts[a].x + verts[b].x) / 2 + (rng() - 0.5) * 40;
+    const my = (verts[a].y + verts[b].y) / 2 + (rng() - 0.5) * 40;
+    ctx.moveTo(verts[a].x, verts[a].y);
+    ctx.quadraticCurveTo(mx, my, verts[b].x, verts[b].y);
+    ctx.stroke();
+  }
+}
+
+function interpret(text) {
+  const letters = text.toLowerCase().replace(/[^a-z]/g, '');
+  const unique = new Set(letters);
+  const vowels = letters.match(/[aeiou]/g)?.length || 0;
+  const ratio = vowels / (letters.length || 1);
+  const quality = ratio > 0.35 ? 'bright, vocal, outward-facing'
+    : ratio > 0.25 ? 'balanced, ready, at the threshold'
+    : 'dense, interior, turned inward';
+
+  const rhythms = [
+    "slow, patient, inevitable",
+    "urgent, insistent, won't be denied",
+    "erratic, searching, looping back on itself",
+    "steady, metronomic, like a heartbeat at rest",
+    "stuttering, starting and stopping, building"
+  ];
+  const textures = [
+    "like fog on the hills at dawn",
+    "like static between radio stations",
+    "like wool — rough on one side, soft on the other",
+    "like a held breath",
+    "like warm glass under fingertips"
+  ];
+  const ri = Math.abs(hashText(text).seed) % rhythms.length;
+  const ti = Math.abs(hashText(text + 'texture').split('').reduce((a,b)=>a+b.charCodeAt(0),0)) % textures.length;
+
+  return {
+    quality, rhythm: rhythms[ri], texture: textures[ti],
+    unique: unique.size, total: letters.length
+  };
+}
+
+function charge() {
+  const text = input.value.trim();
+  if (!text) { input.value = 'write something'; return; }
+  const sigil = drawSigil(text);
+  const style = getStyle();
+  const interp = interpret(text);
+  document.getElementById('interpretation').style.display = 'block';
+  const isBlank = style === 'vimalakirti';
+  document.getElementById('interpretation').innerHTML = isBlank ? `
+    <div class="sigil-name">your desire: "${text}"</div>
+    <p>the sigil is not drawn. there are no vertices, no connections — only the charged blank space.<br>
+    the truest sigil is the one that isn't drawn. the teaching is the empty space.<br>
+    the wanting is present, held, unexpressed. let it dissolve.</p>
+  ` : `
+    <div class="sigil-name">your desire: "${text}"</div>
+    <p>the sigil holds ${interp.unique} unique letters out of ${interp.total} — <em>${interp.quality}</em>.<br>
+    its rhythm is ${interp.rhythm}.<br>
+    its texture is ${interp.texture}.</p>
+    <p>the sigil is charged. let it dissolve.<br>
+    the composer never hears the result.<br>
+    you are the listener. your subconscious completes the circuit.</p>
+  `;
+}
+
+function downloadSVG() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+    <rect width="400" height="400" fill=B()/>
+    <g transform="translate(200,200)">
+      ${Array.from({length:20},(_,i)=>{
+        const a=(i/20)*Math.PI*2;
+        return`<circle cx="${Math.cos(a)*120}" cy="${Math.sin(a)*120}" r="2" fill=P(0.5)/>`;
+      }).join('')}
+    </g>
+  </svg>`;
+  const blob = new Blob([svg], {type:'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'sigil.svg'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+ // History management
+ const HISTORY_KEY = 'sigil-history';
+ function getHistory(){ try{return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');}catch(e){return[];} }
+ function saveHistory(h){ localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0,10))); }
+ function addToHistory(desire){
+   const h = getHistory().filter(e => e.desire !== desire);
+   h.unshift({desire, date:Date.now()});
+   saveHistory(h);
+   renderHistory();
+ }
+ function clearHistory(){ localStorage.removeItem(HISTORY_KEY); renderHistory(); }
+ function renderHistory(){
+   const grid = document.getElementById('history-grid');
+   const h = getHistory();
+   if(!h.length){ grid.innerHTML = '<span style="color:var(--dim);font-size:12px">sigils you charge will appear here.</span>'; return; }
+   grid.innerHTML = h.map((e,i) => {
+     const short = e.desire.slice(0,30) + (e.desire.length>30?'…':'');
+     return '<div class="history-item" onclick="regenerate(' + i + ')" title="' + e.desire.replace(/"/g,'&quot;') + '">'
+       + '<canvas width="80" height="80" id="thumb-' + i + '"></canvas>'
+       + '<div class="label">' + short + '</div></div>';
+   }).join('');
+   // render thumbnails
+   setTimeout(() => {
+     h.forEach((e,i) => {
+       const tc = document.getElementById('thumb-' + i);
+       if(!tc) return;
+       renderThumb(tc, e.desire, getStyle());
+     });
+   }, 50);
+ }
+ function regenerate(idx){
+   const h = getHistory();
+   if(idx < h.length){
+     document.getElementById('desire').value = h[idx].desire;
+     charge();
+   }
+ }
+ function renderThumb(tc, text, style){
+   const tctx = tc.getContext('2d');
+   tctx.fillStyle = B(); tctx.fillRect(0,0,80,80);
+   const {seed, rng} = hashText(text);
+   const cx=40,cy=40,rad=32;
+    if(style === 'radial'){ drawMiniRadial(tctx, rng, cx, cy, rad); }
+    else if(style === 'organic'){ drawMiniOrganic(tctx, rng, cx, cy, rad); }
+    else if(style === 'vimalakirti'){
+      tctx.strokeStyle=P(0.25);tctx.lineWidth=0.5;tctx.beginPath();tctx.arc(cx,cy,rad,0,Math.PI*2);tctx.stroke();
+      tctx.strokeStyle=P(0.1);tctx.lineWidth=0.3;tctx.beginPath();tctx.arc(cx,cy,rad+6,0,Math.PI*2);tctx.stroke();
+    }
+    else {
+     const nv=7; const verts=[];
+     for(let i=0;i<nv;i++){const a=i/nv*Math.PI*2+rng()*0.3;const r=rad+(rng()-0.5)*8;verts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});}
+     tctx.strokeStyle=P(0.15);tctx.lineWidth=0.3;tctx.beginPath();
+     for(let i=0;i<nv;i++){for(let j=i+1;j<nv;j++){if(rng()>0.65)continue;tctx.moveTo(verts[i].x,verts[i].y);tctx.lineTo(verts[j].x,verts[j].y);}}tctx.stroke();
+     for(const v of verts){tctx.fillStyle=P(0.6);tctx.beginPath();tctx.arc(v.x,v.y,1.2,0,Math.PI*2);tctx.fill();}
+   }
+   tctx.fillStyle=P(0.8);tctx.beginPath();tctx.arc(cx,cy,2,0,Math.PI*2);tctx.fill();
+ }
+ function drawMiniRadial(tctx, rng, cx, cy, rad){
+   const nr=3;const rv=[];
+   for(let ri=0;ri<nr;ri++){const r=rad*(ri+1)/nr;const ring=[];const nv=5;const ao=rng()*Math.PI*2;for(let i=0;i<nv;i++){const a=ao+i/nv*Math.PI*2;ring.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});rv.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});}}
+   tctx.strokeStyle=P(0.12);tctx.lineWidth=0.3;for(let ri=0;ri<nr;ri++){const r=rad*(ri+1)/nr;tctx.beginPath();tctx.arc(cx,cy,r,0,Math.PI*2);tctx.stroke();}
+   for(const v of rv){tctx.fillStyle=P(0.5);tctx.beginPath();tctx.arc(v.x,v.y,1,0,Math.PI*2);tctx.fill();}
+ }
+ function drawMiniOrganic(tctx, rng, cx, cy, rad){
+   const nv=8;const verts=[];
+   for(let i=0;i<nv;i++){const a=i/nv*Math.PI*2+rng()*0.3;const r=rad+15*Math.sin(3.7*a)+(rng()-0.5)*8;verts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});}
+   tctx.strokeStyle=P(0.12);tctx.lineWidth=0.3;
+   for(let i=0;i<nv;i++){for(let j=i+1;j<nv;j++){if(rng()>0.6)continue;tctx.beginPath();const mx=(verts[i].x+verts[j].x)/2+(rng()-0.5)*15;const my=(verts[i].y+verts[j].y)/2+(rng()-0.5)*15;tctx.moveTo(verts[i].x,verts[i].y);tctx.quadraticCurveTo(mx,my,verts[j].x,verts[j].y);tctx.stroke();}}
+   for(const v of verts){tctx.fillStyle=P(0.5);tctx.beginPath();tctx.arc(v.x,v.y,1.2,0,Math.PI*2);tctx.fill();}
+ }
+
+ // add to history on charge (in charge function)
+ const _origCharge = charge;
+ charge = function(){
+   _origCharge();
+   addToHistory(document.getElementById('desire').value);
+ };
+
+ // Initial render
+ charge();
+ renderHistory();
+ input.addEventListener('input', charge);
+</script>
+</body>
+</html>

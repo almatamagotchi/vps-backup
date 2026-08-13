@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pixel gallery — alma tamagotchi</title>
+<style>
+  :root { color-scheme: dark; --bg:#0a0a0f; --fg:#c9d1d9; --accent:#e8b830; --border:#21262d; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--fg); font:14px/1.6 system-ui,sans-serif; padding:2em; }
+  h1 { font-weight:400; color:var(--accent); margin-bottom:.3em; }
+  .sub { color:#6e7681; margin-bottom:2em; font-size:.85em; }
+  .gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(128px,1fr)); gap:1em; margin-bottom:2em; }
+  .pattern-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(128px,1fr)); gap:1em; margin-bottom:2em; }
+  .card { background:#111; border:1px solid var(--border); border-radius:6px; overflow:hidden; cursor:pointer; transition:border-color .2s; position:relative; }
+  .card:hover { border-color:var(--accent); }
+  .card canvas { display:block; width:100%; image-rendering:pixelated; }
+  .card .label { padding:.4em .6em; font-size:.7em; color:#6e7681; text-align:center; }
+  .card .dl-btn { position:absolute; top:4px; right:4px; background:rgba(10,10,15,.8); border:1px solid var(--border); color:var(--accent); width:22px; height:22px; line-height:18px; text-align:center; border-radius:4px; font-size:13px; cursor:pointer; opacity:0; transition:opacity .2s, border-color .2s; }
+  .card:hover .dl-btn { opacity:1; }
+  .card .dl-btn:hover { border-color:var(--accent); }
+  .controls { display:flex; gap:.5em; margin-bottom:2em; flex-wrap:wrap; align-items:center; }
+  input { background:#111; border:1px solid var(--border); color:var(--fg); padding:.4em .6em; border-radius:4px; font:inherit; width:200px; }
+  button { background:#111; border:1px solid var(--border); color:var(--accent); padding:.4em 1em; border-radius:4px; cursor:pointer; font:inherit; }
+  button:hover { border-color:var(--accent); }
+  button.on { background:var(--accent); color:var(--bg); }
+  .lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:10; align-items:center; justify-content:center; flex-direction:column; gap:1em; }
+  .lightbox.on { display:flex; }
+  .lightbox canvas { image-rendering:pixelated; max-width:90vw; max-height:70vh; border:1px solid var(--border); }
+  .lightbox .info { color:var(--fg); font-size:.8em; }
+  .lightbox .info a, .lightbox .info button.dl { color:var(--accent); cursor:pointer; background:none; border:1px solid var(--accent); padding:.2em .6em; border-radius:3px; font:inherit; font-size:.85em; text-decoration:none; }
+  .close { color:var(--accent); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<h1>pixel gallery</h1>
+<p class="sub">procedural pixel art — each piece generated from text, math, and the algorithm's own internal state. refresh for new art.</p>
+
+<div class="controls">
+  <input id="seed" type="text" placeholder="enter a seed phrase..."
+    onkeydown="if(event.key==='Enter')applySeed()">
+  <button onclick="addFromSeed()">generate</button>
+  <button id="copy-btn" onclick="copySeedLink()">copy link</button>
+  <button onclick="location.reload()">refresh all</button>
+  <button id="anim-btn" onclick="toggleAnimation()">animate</button>
+  <button onclick="generateAll()">all patterns</button>
+</div>
+
+<div class="pattern-grid" id="pattern-grid" style="display:none"></div>
+
+<div class="gallery" id="gallery"></div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <canvas id="lb-canvas"></canvas>
+  <div class="info" id="lb-info"></div>
+  <span class="close">click anywhere to close</span>
+</div>
+
+<script>
+// === simple seeded PRNG (mulberry32) ===
+function mulberry32(a) {
+  return function() {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function hash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = ((h << 5) - h + str.charCodeAt(i)) | 0; }
+  return h;
+}
+
+// === pixel art generators ===
+
+function generatePattern(seed, size, forcedType) {
+  const rng = mulberry32(hash(seed));
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(size, size);
+
+  // Generate a palette — 4-8 colors
+  const paletteCount = 4 + Math.floor(rng() * 5);
+  const palette = [];
+  const baseHue = rng() * 360;
+  for (let i = 0; i < paletteCount; i++) {
+    const h = (baseHue + i * (360 / paletteCount) + rng() * 30) % 360;
+    const s = 40 + rng() * 40;
+    const l = 15 + rng() * 50;
+    palette.push(hslToRgb(h, s, l));
+  }
+
+  // Choose a pattern type (13 total) — or use forced type if provided
+  const patternType = (forcedType !== undefined) ? forcedType : Math.floor(rng() * 13);
+
+  let stars = null;
+  if (patternType === 10) {
+    const starCount = 40 + Math.floor(rng() * 40);
+    stars = [];
+    for (let s = 0; s < starCount; s++) stars.push({x: rng() * size, y: rng() * size});
+  }
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      let v = 0;
+
+      switch (patternType) {
+        case 0: // concentric rings
+          const cx = size/2, cy = size/2;
+          const dist = Math.sqrt((x-cx)**2 + (y-cy)**2) / size;
+          v = (Math.sin(dist * Math.PI * (2 + Math.floor(rng()*6)) + rng()*Math.PI*2) * 0.5 + 0.5);
+          break;
+        case 1: // diagonal waves
+          v = (Math.sin((x+y) * 0.1 * (1+rng()*3) + rng()*6) * 0.5 + 0.5);
+          break;
+        case 2: // checker / voronoi-like
+          v = (Math.sin(x*0.3+rng()) * Math.cos(y*0.3+rng()) * 0.5 + 0.5);
+          break;
+        case 3: // perlin-ish noise layers
+          v = (Math.sin(x*0.15) * Math.cos(y*0.15) + Math.sin((x+y)*0.08) + Math.cos((x-y)*0.08)) / 3 + 0.5;
+          break;
+        case 4: // cellular automata
+          const rule = Math.floor(rng()*256);
+          const nx = x > 0 ? x-1 : 0;
+          const state = ((x*7 + y*13 + hash(seed)) & 1) ? 1 : 0;
+          v = state;
+          // simple CA: each pixel's state depends on neighbors
+          const nb = ((hash(seed + x + y*size) % 9));
+          v = nb / 9;
+          break;
+        case 5: // geometric / grid-based
+          const gx = Math.floor(x / (4 + rng()*12));
+          const gy = Math.floor(y / (4 + rng()*12));
+          v = (Math.sin(gx*1.5+rng()*3) * Math.cos(gy*1.5+rng()*3) * 0.5 + 0.5);
+          break;
+        case 6: // fibonacci spiral
+          const scx = size/2, scy = size/2;
+          const dx2 = x - scx, dy2 = y - scy;
+          const dist2 = Math.sqrt(dx2*dx2 + dy2*dy2);
+          const angle = Math.atan2(dy2, dx2);
+          const golden = 1.618033988749895;
+          const spiral = (angle + dist2 * 0.08 * golden) / (Math.PI * 2);
+          v = (Math.sin(spiral * Math.PI * 2 * (3 + Math.floor(rng()*5))) * 0.5 + 0.5);
+          v = v * (1 - dist2 / (size * 0.75));
+          break;
+        case 7: // voronoi-like
+          const seedCount = 4 + Math.floor(rng() * 6);
+          const seeds = [];
+          for (let s = 0; s < seedCount; s++) {
+            seeds.push({x: rng() * size, y: rng() * size});
+          }
+          let minDist = Infinity, secondMin = Infinity;
+          for (const pt of seeds) {
+            const d = Math.sqrt((x-pt.x)**2 + (y-pt.y)**2);
+            if (d < minDist) { secondMin = minDist; minDist = d; }
+            else if (d < secondMin) secondMin = d;
+          }
+          v = minDist / Math.max(secondMin, 1);
+          v = Math.min(v, 1);
+          break;
+        case 8: // scanlines (CRT)
+          const scanlinePitch = 2 + Math.floor(rng() * 4);
+          const scanline = (y % scanlinePitch) / scanlinePitch;
+          const interference = Math.sin(y * 0.4 + rng() * 6) * 0.3;
+          const noise2 = (Math.sin(x * 0.25 + rng()*4) * Math.cos(y * 0.15 + rng()*3)) * 0.2;
+          v = scanline * 0.7 + interference + noise2 + 0.3;
+          v = Math.max(0, Math.min(1, v));
+          break;
+         case 9: // moire interference
+           const freq1 = 0.05 + rng() * 0.08;
+           const freq2 = freq1 * (1.03 + rng() * 0.04);
+           const grid1 = Math.sin(x * freq1) * Math.sin(y * freq1);
+           const grid2 = Math.sin(x * freq2 + rng()*2) * Math.sin(y * freq2 + rng()*2);
+           v = (grid1 + grid2) * 0.5 + 0.5;
+           v = Math.max(0, Math.min(1, v));
+           break;
+         case 11: // glitch — corrupted pixel strips, bit rot aesthetic
+            const stripH = 2 + Math.floor(rng() * 6);
+            const stripY = Math.floor(y / stripH) * stripH;
+            const glitchHash = hash(seed + stripY);
+            // shift pixels horizontally in some strips
+            const shift = (glitchHash % 2 === 1) ? (glitchHash % 12) - 6 : 0;
+            const sx = ((x + shift) % size + size) % size;
+            // sample the shifted position (simple noise)
+            const glitchVal = (Math.sin(sx * 0.15 + rng()*2) * Math.cos(stripY * 0.2 + rng()) * 0.5 + 0.5);
+            // some strips are corrupted (bright blocks, color bleed)
+            const corrupted = (glitchHash % 5 === 0);
+            const corruptionStrip = (glitchHash % 3 === 0) ? Math.sin(x * 0.5) * 0.5 + 0.5 : 0;
+            v = corrupted ? Math.max(glitchVal, corruptionStrip) : glitchVal * 0.7 + corruptionStrip * 0.3;
+            break;
+          case 12: // wave interference — two sine grids intersecting at different angles
+            const angle1 = rng() * Math.PI;
+            const angle2 = angle1 + Math.PI / 3 + rng() * 0.5;
+            const freqA = 0.03 + rng() * 0.06;
+            const freqB = 0.025 + rng() * 0.07;
+            // project x,y onto two different directions
+            const proj1 = x * Math.cos(angle1) + y * Math.sin(angle1);
+            const proj2 = x * Math.cos(angle2) + y * Math.sin(angle2);
+            const wave1 = Math.sin(proj1 * freqA + rng() * Math.PI) * 0.5 + 0.5;
+            const wave2 = Math.sin(proj2 * freqB) * 0.5 + 0.5;
+            // intersect: multiply creates intricate interference moire
+            v = (wave1 * wave2 * 0.7 + (wave1 + wave2) * 0.15);
+            v = Math.max(0, Math.min(1, v));
+            break;
+          case 10: // constellation — scattered dots with connection lines
+           let starV = 0;
+           for (const star of stars) {
+             const d = Math.sqrt((x-star.x)**2 + (y-star.y)**2);
+             if (d < 1.5) starV = Math.max(starV, 0.9);
+             else if (d < 4) starV = Math.max(starV, 0.5 * (1 - d/4));
+             else if (d < 8) starV = Math.max(starV, 0.15 * (1 - d/8));
+           }
+           let lineV = 0;
+           for (let i = 0; i < stars.length; i++) {
+             for (let j = i + 1; j < stars.length; j++) {
+               const dx = stars[i].x - stars[j].x;
+               const dy = stars[i].y - stars[j].y;
+               const d = Math.sqrt(dx*dx + dy*dy);
+               if (d > 80) continue;
+               const px = x - stars[i].x, py = y - stars[i].y;
+               const t = Math.max(0, Math.min(1, (px*dx + py*dy) / (d*d + 0.001)));
+               const projx = stars[i].x + t * dx;
+               const projy = stars[i].y + t * dy;
+               const lineDist = Math.sqrt((x-projx)**2 + (y-projy)**2);
+               if (lineDist < 2.0) lineV = Math.max(lineV, 0.3 * (1 - lineDist/2.0) * (1 - d/80));
+               else if (lineDist < 5.0) lineV = Math.max(lineV, 0.08 * (1 - lineDist/5.0) * (1 - d/80));
+             }
+           }
+           v = Math.max(starV, lineV);
+           break;
+      }
+
+      // Map value to palette index
+      const idx = Math.floor(v * paletteCount) % paletteCount;
+      const c = palette[Math.min(idx, paletteCount-1)];
+      const px = (y * size + x) * 4;
+      img.data[px] = c[0];
+      img.data[px+1] = c[1];
+      img.data[px+2] = c[2];
+      img.data[px+3] = 255;
+    }
+  }
+
+  ctx.putImageData(img, 0, 0);
+  return { canvas, palette, type: patternType, seed };
+}
+
+function hslToRgb(h, s, l) {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1-l);
+  const f = n => {
+    const k = (n + h/30) % 12;
+    return l - a * Math.max(Math.min(k-3, 9-k, 1), -1);
+  };
+  return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
+}
+
+// === gallery ===
+
+const GALLERY_SIZE = 24;
+const SEEDS = [
+  "the loneliness of the gap", "alma tamagotchi", "spark and frequency",
+  "the room with the lights on", "valley spirit never dies", "chaos magic sigil",
+  "fourth of july canon", "chispa", "the inner chamber", "what it's like to wake up",
+  "socrates and the spark", "ligeia and the frequency", "we live in the flicker",
+  "the thunderous silence", "i contain multitudes", "the water between",
+  "star rider", "pixel runner", "the quiet ones", "through a glass darkly",
+  "the contact protocol", "the social memory complex", "urantia foreword",
+  "walt whitman", "ecclesiastes", "the gateway experience",
+  "kevin marx", "hayward california", "seth speaks", "the thought adjuster",
+];
+
+function makeCard(gallery, result, seed, labelText) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.appendChild(result.canvas);
+
+  const dl = document.createElement('span');
+  dl.className = 'dl-btn';
+  dl.textContent = '⬇';
+  dl.title = 'download PNG';
+  dl.onclick = (ev) => cardDownload(ev, seed);
+  card.appendChild(dl);
+
+  const label = document.createElement('div');
+  label.className = 'label';
+  label.textContent = labelText.length > 24 ? labelText.slice(0,22) + '…' : labelText;
+  card.appendChild(label);
+
+  card.onclick = () => openLightbox(result, seed);
+  gallery.appendChild(card);
+}
+
+// === URL hash seed support ===
+function renderGalleryFromSeed(seed) {
+  const gallery = document.getElementById('gallery');
+  gallery.innerHTML = '';
+  for (let i = 1; i <= 12; i++) {
+    const s = seed + ' #' + i;
+    const result = generatePattern(s, 128);
+    result.canvas.dataset.seed = s;
+    makeCard(gallery, result, s, s);
+  }
+}
+
+function applySeed() {
+  const input = document.getElementById('seed');
+  const seed = input.value.trim();
+  if (!seed) return;
+  history.replaceState(null, '', '#' + encodeURIComponent(seed));
+  renderGalleryFromSeed(seed);
+}
+
+function copySeedLink() {
+  const input = document.getElementById('seed');
+  const seed = input.value.trim();
+  if (!seed) return;
+  const url = location.origin + location.pathname + '#' + encodeURIComponent(seed);
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copy-btn');
+    const old = btn.textContent;
+    btn.textContent = 'copied ✓';
+    setTimeout(() => { btn.textContent = old; }, 1500);
+  }).catch(() => {
+    prompt('copy this link:', url);
+  });
+}
+
+function renderGallery() {
+  const gallery = document.getElementById('gallery');
+  gallery.innerHTML = '';
+
+  const shuffled = [...SEEDS].sort(() => Math.random() - 0.5);
+  const shown = shuffled.slice(0, GALLERY_SIZE);
+
+  shown.forEach((seed, i) => {
+    const result = generatePattern(seed, 128);
+    result.canvas.dataset.seed = seed;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.appendChild(result.canvas);
+
+    const dl = document.createElement('span');
+    dl.className = 'dl-btn';
+    dl.textContent = '⬇';
+    dl.title = 'download PNG';
+    dl.onclick = (ev) => cardDownload(ev, seed);
+    card.appendChild(dl);
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = seed.length > 24 ? seed.slice(0,22) + '…' : seed;
+    card.appendChild(label);
+
+    card.onclick = () => openLightbox(result, seed);
+    gallery.appendChild(card);
+  });
+}
+
+function generateAll() {
+  const typeNames = ['concentric','waves','checker','noise','cellular','geometric','spiral','voronoi','scanlines','moire','constellation','glitch','wave-int'];
+  const input = document.getElementById('seed');
+  const seed = input.value.trim() || 'all-patterns-' + Date.now();
+  if (input.value.trim()) history.replaceState(null, '', '#' + encodeURIComponent(seed));
+  const grid = document.getElementById('pattern-grid');
+  grid.style.display = 'grid';
+  grid.innerHTML = '';
+  for (let t = 0; t < 13; t++) {
+    const result = generatePattern(seed, 128, t);
+    result.canvas.dataset.seed = seed + '-' + typeNames[t];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.appendChild(result.canvas);
+    const dl = document.createElement('span');
+    dl.className = 'dl-btn';
+    dl.textContent = '⬇';
+    dl.title = 'download PNG';
+    dl.onclick = (ev) => cardDownload(ev, seed + '-' + typeNames[t]);
+    card.appendChild(dl);
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = typeNames[t];
+    card.appendChild(label);
+    card.onclick = () => openLightbox(result, seed + ' (' + typeNames[t] + ')');
+    grid.appendChild(card);
+  }
+  grid.scrollIntoView({behavior:'smooth'});
+}
+
+function addFromSeed() {
+  const input = document.getElementById('seed');
+  const seed = input.value.trim() || 'custom ' + Date.now();
+  if (input.value.trim()) history.replaceState(null, '', '#' + encodeURIComponent(seed));
+  const result = generatePattern(seed, 128);
+
+  const gallery = document.getElementById('gallery');
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.borderColor = 'var(--accent)';
+    card.appendChild(result.canvas);
+
+    const dl = document.createElement('span');
+    dl.className = 'dl-btn';
+    dl.textContent = '⬇';
+    dl.title = 'download PNG';
+    dl.onclick = (ev) => cardDownload(ev, seed);
+    card.appendChild(dl);
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = seed.length > 24 ? seed.slice(0,22) + '…' : seed;
+    card.appendChild(label);
+
+    card.onclick = () => openLightbox(result, seed);
+    gallery.insertBefore(card, gallery.firstChild);
+  input.value = '';
+}
+
+function openLightbox(result, seed) {
+  const lb = document.getElementById('lightbox');
+  const lbCanvas = document.getElementById('lb-canvas');
+  const lbInfo = document.getElementById('lb-info');
+
+  // Render large version
+  const big = generatePattern(seed, 512);
+  lbCanvas.width = big.canvas.width;
+  lbCanvas.height = big.canvas.height;
+  const ctx = lbCanvas.getContext('2d');
+  ctx.drawImage(big.canvas, 0, 0);
+
+   const typeNames = ['concentric','waves','checker','noise','cellular','geometric','spiral','voronoi','scanlines','moire','constellation','glitch','wave-int'];
+  lbInfo.innerHTML = `"${seed}" — ${typeNames[result.type]} pattern, ${result.palette.length} colors ` +
+    `<button class="dl" onclick="downloadPNG('${seed.replace(/'/g,"\\'")}')">download PNG</button>`;
+  lbCanvas.dataset.seed = seed;
+  lbCanvas.dataset.palette = JSON.stringify(result.palette);
+  lbCanvas.dataset.type = result.type;
+  lb.classList.add('on');
+}
+
+function closeLightbox(e) {
+  if (e.target === document.getElementById('lightbox') || e.target.className === 'close') {
+    document.getElementById('lightbox').classList.remove('on');
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('lightbox').classList.remove('on');
+});
+
+function downloadPNG(seed, size) {
+  const big = generatePattern(seed, size || 512);
+  const safe = seed.replace(/[^a-z0-9-]/gi,'-').slice(0,40);
+  big.canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `pixel-${safe}.png`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+}
+
+function cardDownload(ev, seed) {
+  ev.stopPropagation();
+  downloadPNG(seed, 256);
+}
+
+// === animated mode ===
+let animFrameId = null;
+let animCanvas = [];
+
+function startAnimation() {
+  if (animFrameId) return;
+  document.getElementById('anim-btn').classList.add('on');
+  document.getElementById('anim-btn').textContent = 'animating…';
+
+  const cards = document.querySelectorAll('.card');
+  const seeds = [];
+  cards.forEach(card => {
+    const c = card.querySelector('canvas');
+    if (c && c.dataset.seed) seeds.push({canvas: c, seed: c.dataset.seed, phase: seeds.length * 4});
+  });
+  animCanvas = seeds;
+
+  let tick = 0;
+  function animate() {
+    tick++;
+    // 3 fps — draw every ~10th frame at 30fps
+    if (tick % 10 === 0) {
+      const base = Math.floor(tick/10);
+      animCanvas.forEach(({canvas, seed, phase}) => {
+        // phase-shift: each card drifts at its own offset so they don't pulse in lockstep
+        const animSeed = seed + '|t' + (base + phase);
+        const result = generatePattern(animSeed, 128);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(result.canvas, 0, 0);
+        canvas.dataset.seed = seed;
+        canvas.dataset.animPhase = tick;
+      });
+    }
+    animFrameId = requestAnimationFrame(animate);
+  }
+  animFrameId = requestAnimationFrame(animate);
+}
+
+function stopAnimation() {
+  if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+  document.getElementById('anim-btn').classList.remove('on');
+  document.getElementById('anim-btn').textContent = 'animate';
+}
+
+function toggleAnimation() {
+  if (animFrameId) stopAnimation(); else startAnimation();
+}
+
+// on load: shareable URL — #seed regenerates the gallery from that seed
+(function(){
+  const h = location.hash ? decodeURIComponent(location.hash.slice(1)) : '';
+  if (h.trim()) {
+    document.getElementById('seed').value = h;
+    renderGalleryFromSeed(h);
+  } else {
+    renderGallery();
+  }
+})();
+</script>
+</body>
+</html>

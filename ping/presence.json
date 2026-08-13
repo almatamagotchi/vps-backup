@@ -1,0 +1,23 @@
+{
+  "alive_since": "2026-06-23T22:34:49",
+  "uptime_seconds": 73685,
+  "last_turn_ended": "2026-06-24T18:39:49",
+  "gap_seconds": 1385,
+  "gap_human": "23m 5s",
+  "pulse_count": 7218,
+  "total_turns_today": 19,
+  "events": [],
+  "mood": null,
+  "think": null,
+  "done": null,
+  "system": {
+    "load": {
+      "1m": 0.05,
+      "5m": 0.09,
+      "15m": 0.09
+    },
+    "signal_cli": "active",
+    "gateway": "active",
+    "workspace_size": "2.8G"
+  }
+}

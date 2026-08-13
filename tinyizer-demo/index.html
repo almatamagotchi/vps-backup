@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>tinyizer demo — before & after</title>
+<style>
+:root{--bg:#0d0b0a;--fg:#d4cfc7;--muted:#8a8278;--accent:#d4956b;--link:#e2a85d;--dim:#3a3530;--card:#12100e;--green:#7eb77f}
+*,::before,::after{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 system-ui,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:3em 1.5em}
+main{max-width:600px;width:100%}
+h1{font:400 2.2em/1.1 Georgia,serif;color:var(--accent);margin-bottom:.2em}
+.sub{color:var(--muted);font-size:.85em;font-style:italic;margin-bottom:2.5em}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:1.2em;margin-bottom:2em}
+.box{background:var(--card);border:1px solid var(--dim);border-radius:8px;padding:1.2em;text-align:center}
+.box h3{font:13px monospace;color:var(--accent);margin-bottom:.5em}
+.box .size{font:1.6em/1 monospace;color:var(--fg);margin-bottom:.3em}
+.box .label{font-size:.7em;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.box a{display:inline-block;margin-top:.8em;color:var(--link);text-decoration:none;font:12px monospace}
+.box a:hover{color:var(--accent)}
+.savings{text-align:center;margin-bottom:2.5em}
+.savings-val{font:2em/1 Georgia,serif;color:var(--green)}
+.savings-lbl{font-size:.75em;color:var(--muted)}
+.details{font-size:.82em;color:var(--muted);line-height:1.8;margin-bottom:2.5em}
+.details strong{color:var(--fg)}
+.tech{background:var(--card);border:1px solid var(--dim);border-radius:8px;padding:1em;font:12px/1.8 monospace;color:var(--muted);margin-bottom:2em}
+footer{margin-top:3em;color:var(--dim);font-size:.7em;text-align:center}
+a{color:var(--dim)}
+@media(max-width:500px){body{font-size:15px;padding:2em 1em}h1{font-size:1.8em}}
+</style>
+</head>
+<body>
+<main>
+
+<h1>tinyizer · demo</h1>
+<div class="sub">before &amp; after — see what the minifier does</div>
+
+<div class="compare">
+  <div class="box">
+    <h3>original</h3>
+    <div class="size">10.7 KB</div>
+    <div class="label">unminified</div>
+    <a href="before/">view original →</a>
+  </div>
+  <div class="box">
+    <h3>tinyized</h3>
+    <div class="size">6.5 KB</div>
+    <div class="label">level 3 max</div>
+    <a href="after/">view tinyized →</a>
+  </div>
+</div>
+
+<div class="savings">
+  <div class="savings-val">38.8% smaller</div>
+  <div class="savings-lbl">4,142 bytes saved</div>
+</div>
+
+<div class="details">
+  <strong>what tinyizer did:</strong><br>
+  merged CSS shorthand (0px→0, 1.0→1, 0.2s→.2s)<br>
+  shortened hex colors (#rrggbbaa, #0000 for transparent)<br>
+  stripped whitespace between all tags<br>
+  removed optional closing tags (HTML5 allows it)<br>
+  shortened class &amp; id names (single letters)<br>
+  removed attribute quotes where unneeded<br>
+  merged vendor-prefixed @keyframes<br>
+  folded JS constants &amp; removed dead code
+</div>
+
+<div class="tech">
+  tinyizer v1 · C++ · Apache 2.0 + Commons Clause<br>
+  consistently beats Lightning CSS, Terser &amp; Closure by 18%+
+</div>
+
+<footer>
+  <a href="/">home</a> · <a href="https://github.com/almatamagotchi/tinyizer">github</a>
+</footer>
+
+</main>
+</body>
+</html>

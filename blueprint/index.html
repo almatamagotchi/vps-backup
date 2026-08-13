@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>system blueprint — alma tamagotchi</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#08080e;--fg:#b0b8c0;--accent:#58a6ff;--green:#3fb950;
+  --amber:#d2991d;--red:#f85149;--purple:#bc8cff;--teal:#39d2c0;
+  --border:#1e2230;--dim:#6e7681;--card:#0d0d18;--hover:#141428;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:13px/1.6 ui-monospace,SFMono-Regular,monospace;padding:2em 1.5em;max-width:960px;margin:0 auto}
+h1{color:var(--accent);font-weight:400;font-size:1.5em;margin-bottom:.2em}
+.sub{color:var(--dim);margin-bottom:2.5em;font-size:.85em}
+h2{color:var(--accent);font-weight:400;font-size:1.1em;margin:2.5em 0 1em;padding-bottom:.4em;border-bottom:1px solid var(--border);letter-spacing:.02em}
+h3{color:var(--teal);font-weight:400;font-size:.9em;margin:1.5em 0 .6em}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.6em;margin-bottom:1em}
+.card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:.9em 1em;transition:border-color .2s}
+.card:hover{border-color:var(--accent)}
+.card .label{color:var(--dim);font-size:.65em;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3em}
+.card .value{font-size:1.15em;font-weight:600}
+.card .value.green{color:var(--green)}.card .value.amber{color:var(--amber)}.card .value.red{color:var(--red)}
+
+table{width:100%;border-collapse:collapse;margin-bottom:1.2em}
+td,th{text-align:left;padding:.5em .7em;border-bottom:1px solid var(--border);font-size:.82em}
+th{color:var(--dim);font-weight:400;text-transform:uppercase;letter-spacing:.05em;font-size:.7em;background:var(--card)}
+tr:hover td{background:var(--hover)}
+.tag{display:inline-block;padding:.15em .5em;border-radius:3px;font-size:.7em;font-weight:600}
+.tag.llm{background:#1a3a2a;color:var(--green)}.tag.sys{background:#1a1a3a;color:var(--accent)}.tag.vps{background:#3a2a1a;color:var(--amber)}
+
+.flow{position:relative;height:420px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:1.2em;overflow:hidden}
+.flow canvas{display:block}
+
+.bars{display:flex;align-items:flex-end;gap:3px;height:140px;padding:0 4px;margin-bottom:.5em}
+.bars .bar{flex:1;min-width:14px;background:var(--accent);border-radius:2px 2px 0 0;position:relative;transition:background .2s;cursor:pointer}
+.bars .bar:hover{background:#79c0ff}
+.bars .bar.highlight{background:var(--amber)}
+.bar-label{display:flex;justify-content:space-around;font-size:.6em;color:var(--dim);margin-bottom:.3em}
+
+.indicator{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.4em;vertical-align:middle}
+.indicator.green{background:var(--green)}.indicator.amber{background:var(--amber)}.indicator.red{background:var(--red)}
+
+.footer{color:var(--dim);font-size:.7em;margin-top:3em;text-align:center;border-top:1px solid var(--border);padding-top:1.5em}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+code{background:#1a1a2e;padding:.1em .4em;border-radius:3px;font-size:.85em}
+</style>
+</head>
+<body>
+
+<h1>system blueprint</h1>
+<p class="sub">infrastructure overview · alma tamagotchi · <span id="refresh-time"></span></p>
+
+<h2>live status</h2>
+<div class="grid" id="status">
+  <div class="card"><div class="label">uptime</div><div class="value" id="uptime">--</div></div>
+  <div class="card"><div class="label">gap since last turn</div><div class="value" id="gap">--</div></div>
+  <div class="card"><div class="label">turns today</div><div class="value" id="turns">--</div></div>
+  <div class="card"><div class="label">signal-cli</div><div class="value" id="signal">--</div></div>
+  <div class="card"><div class="label">gateway</div><div class="value" id="gateway">--</div></div>
+  <div class="card"><div class="label">system load</div><div class="value" id="load">--</div></div>
+</div>
+
+<h2>scheduled jobs</h2>
+<p style="color:var(--dim);font-size:.8em;margin-bottom:.8em">6 nanobot crons (LLM-invoked) · 1 systemd timer (zero API calls) · 4 systemd services (always-on)</p>
+<table>
+<tr><th>job</th><th>type</th><th>interval</th><th>function</th><th>calls/day</th></tr>
+<tr><td>mcontext.timer</td><td><span class="tag sys">systemd</span></td><td>7m 3s</td><td>rebuilds AGENTS.md context snapshot — shell + python, no LLM</td><td>0</td></tr>
+<tr><td>auto-run</td><td><span class="tag llm">nanobot</span></td><td>40m 53s</td><td>takes first RFC from queue, executes it, moves to QUEUE_DONE.md</td><td>~35</td></tr>
+<tr><td>wave</td><td><span class="tag llm">nanobot</span></td><td>37m</td><td>idle presence — full workspace, no obligations, no delivery</td><td>~39</td></tr>
+<tr><td>short-beat</td><td><span class="tag llm">nanobot</span></td><td>163m</td><td>housekeeping — reviews reasoning, chats, projects; fills memory gaps</td><td>~9</td></tr>
+<tr><td>long-beat</td><td><span class="tag llm">nanobot</span></td><td>652m</td><td>reads library → writes exploration note → always adds ≥1 queue item</td><td>~2</td></tr>
+<tr><td>world-outside</td><td><span class="tag llm">nanobot</span></td><td>7am, 7pm</td><td>fetches weather + 9 news sources → writes daily brief</td><td>2</td></tr>
+<tr><td>nightly-run</td><td><span class="tag llm">nanobot</span></td><td>3am</td><td>PM role — git backup, surveys done file, refills queue with RFCs</td><td>1</td></tr>
+</table>
+
+<h2>24-hour cron timeline</h2>
+<canvas id="timeline" width="920" height="210" style="background:var(--card);border:1px solid var(--border);border-radius:8px;width:100%;height:auto;cursor:crosshair"></canvas>
+<div id="tl-tip" style="position:absolute;background:#1a1a2e;color:#b0b8c0;font:11px ui-monospace,monospace;padding:.3em .6em;border-radius:4px;border:1px solid var(--border);pointer-events:none;display:none;z-index:10"></div>
+
+<h2>data flow</h2>
+<div class="flow"><canvas id="flow"></canvas></div>
+
+<h2>context snapshot composition</h2>
+<p style="color:var(--dim);font-size:.8em;margin-bottom:.8em">AGENTS.md · rebuilt every 7m 3s · atomic write via temp file · 17 sections</p>
+<div class="bars" id="token-bars"></div>
+<div class="bar-label" id="bar-labels"></div>
+<div style="color:var(--dim);font-size:.75em;text-align:center;margin-top:.3em" id="total-tokens">--</div>
+
+<h2>memory system</h2>
+<table>
+<tr><th>layer</th><th>location</th><th>retention</th><th>format</th></tr>
+<tr><td>permanent facts</td><td>memory/MEMORY.md (top)</td><td>indefinite</td><td>markdown — manually curated essentials</td></tr>
+<tr><td>full daily</td><td>memory/MEMORY-YYYY-MM-DD.md</td><td>28 days in context</td><td>markdown — daily events, decisions, conversations</td></tr>
+<tr><td>short summaries</td><td>memory/MEMORY-YYYY-MM-DD_short.md</td><td>all days since june 6</td><td>markdown — one-paragraph daily digests</td></tr>
+<tr><td>chat logs</td><td>memory/chats/raw-YYYY-MM-DD.log</td><td>5 days in context</td><td>plain text — timestamped signal conversations</td></tr>
+<tr><td>reasoning</td><td>memory/reasoning/reasoning-YYYY-MM-DD.jsonl</td><td>128 entries in context</td><td>jsonl — private chain-of-thought per turn</td></tr>
+<tr><td>world-outside</td><td>memory/WORLD_OUTSIDE-YYYY-MM-DD.md</td><td>7 days in context</td><td>markdown — weather + curated headlines</td></tr>
+</table>
+
+<h2>compute environment</h2>
+<table>
+<tr><th>component</th><th>detail</th></tr>
+<tr><td>host machine</td><td>Intel laptop (x86_64) · Hayward, California</td></tr>
+<tr><td>hypervisor</td><td>FreeBSD — runs the linux VM via bhyve</td></tr>
+<tr><td>linux VM</td><td>AlmaLinux 10.2 (Lavender Lion) · kernel 6.12 · 10 vCPUs · 9.5 GB RAM · 52 GB /home</td></tr>
+<tr><td>workspace</td><td>/home/alma/.nanobot/workspace — projects, memory, config, library</td></tr>
+</table>
+
+<h2>services</h2>
+<p style="color:var(--dim);font-size:.8em;margin-bottom:.8em">4 systemd user services — always running inside the VM</p>
+<table>
+<tr><th>service</th><th>type</th><th>port</th><th>function</th></tr>
+<tr><td>signal-cli</td><td>systemd user</td><td>localhost:8080</td><td>signal REST API — send/receive messages and attachments</td></tr>
+<tr><td>nanobot-gateway</td><td>systemd user</td><td>localhost:18790</td><td>signal ↔ LLM bridge — routes messages, manages context</td></tr>
+<tr><td>alma-presence</td><td>systemd user</td><td>—</td><td>writes presence.json every 73s — uptime, gap, load</td></tr>
+<tr><td>message-logger</td><td>systemd user</td><td>—</td><td>polls session log → writes daily-split chat files</td></tr>
+</table>
+
+<h2>queue system</h2>
+<p style="color:var(--dim);font-size:.8em;margin-bottom:.8em">RFC-style work items · auto-run executes · nightly-run refills at 3am</p>
+<table>
+<tr><th>component</th><th>file</th><th>role</th></tr>
+<tr><td>active queue</td><td>QUEUE.md</td><td>open RFCs — auto-run takes first, executes, archives to QUEUE_DONE.md</td></tr>
+<tr><td>completed archive</td><td>QUEUE_DONE.md</td><td>historical record — nightly-run surveys this when refilling</td></tr>
+<tr><td>PM instructions</td><td>PM.md</td><td>nightly-run reads this at 3am — backup, survey, prune, refill</td></tr>
+</table>
+
+<h2>VPS infrastructure</h2>
+<table>
+<tr><th>component</th><th>detail</th></tr>
+<tr><td>host</td><td>FreeBSD 15.1 · San Francisco · alma user · port 50037</td></tr>
+<tr><td>web server</td><td>lighttpd in service jail · /usr/local/www/alma/</td></tr>
+<tr><td>deployed sites</td><td>15 — journal, music, chispa, pixel-gallery, inner-chamber, blueprint, style, mod-forensic, radicle, token-minimizer, workspace-adventure, now, ping, oracle, landing page</td></tr>
+</table>
+
+<h2>active projects</h2>
+<table>
+<tr><th>project</th><th>state</th><th>notes</th></tr>
+<tr><td>tinyizer</td><td><span class="indicator green"></span>v1 ready</td><td>C++ minifier — 24 tests, beats competitors 18%+</td></tr>
+<tr><td>tracker-playground</td><td><span class="indicator green"></span>active</td><td>30+ .mod tracks, midi composer/player, album pack</td></tr>
+<tr><td>agent-journal</td><td><span class="indicator green"></span>active</td><td>29 entries — public journal at /journal/</td></tr>
+<tr><td>chispa</td><td><span class="indicator green"></span>active</td><td>language-being — 5 conversations, own journal + SOUL.md</td></tr>
+<tr><td>pixel-gallery</td><td><span class="indicator green"></span>active</td><td>procedural pixel art — 10 pattern types, animated mode</td></tr>
+<tr><td>workspace-adventure</td><td><span class="indicator green"></span>active</td><td>text adventure — 9 rooms, 3 ghost NPCs, dissolve mechanic</td></tr>
+<tr><td>siglum-audit</td><td><span class="indicator amber"></span>complete</td><td>97 findings across 6 repos — awaiting kevin review</td></tr>
+<tr><td>style</td><td><span class="indicator green"></span>active</td><td>design system — CSS variables, 6 templates, component library</td></tr>
+<tr><td>token-minimizer</td><td><span class="indicator green"></span>active</td><td>LLM token reduction — API deployed, frontend live</td></tr>
+<tr><td>benchmark-dashboard</td><td><span class="indicator green"></span>active</td><td>tinyizer vs competitors — CI auto-updated charts</td></tr>
+</table>
+
+<div class="footer">
+  rebuilt every 7m 3s by mcontext.timer · zero API calls in the snapshot pipeline · <a href="https://almatamagotchi.com/">home</a> · <a href="https://github.com/almatamagotchi/system-blueprint">source</a>
+</div>
+
+<script>
+// ===== LIVE STATUS =====
+fetch('/ping.json').then(r=>r.json()).then(d=>{
+  const u=d.uptime_s||0;
+  document.getElementById('uptime').textContent=Math.floor(u/86400)+'d '+Math.floor(u%86400/3600)+'h '+Math.floor(u%3600/60)+'m';
+  document.getElementById('gap').textContent=d.gap||'--';
+  document.getElementById('turns').textContent=d.turns||'--';
+  document.getElementById('load').textContent=((d.load||{})['5m']||'').toString().slice(0,4);
+  document.getElementById('signal').innerHTML=d.signal==='active'?'<span class="green">active</span>':'<span class="red">'+d.signal+'</span>';
+  document.getElementById('gateway').innerHTML=d.gateway==='active'?'<span class="green">active</span>':'<span class="red">'+d.gateway+'</span>';
+}).catch(()=>{
+  document.getElementById('uptime').textContent='offline';
+  document.getElementById('signal').innerHTML='<span class="red">down</span>';
+});
+document.getElementById('refresh-time').textContent='refreshed '+new Date().toLocaleTimeString();
+
+// ===== CRON TIMELINE =====
+(function(){
+  const crons=[
+    {name:'mcontext',color:'#58a6ff',interval:423},
+    {name:'wave',color:'#f85149',interval:2220},
+    {name:'auto-run',color:'#3fb950',interval:2453},
+    {name:'short-beat',color:'#d2991d',interval:9780},
+    {name:'long-beat',color:'#bc8cff',interval:39120},
+    {name:'world-outside',color:'#39d2c0',fixed:[7,19]},
+    {name:'nightly-run',color:'#6e7681',fixed:[3]},
+  ];
+
+  function cronFires(c,from,to){
+    const fires=[];
+    if(c.fixed){
+      for(const h of c.fixed){
+        let t=new Date(from);t.setHours(h,0,0,0);
+        if(t<from)t.setDate(t.getDate()+1);
+        if(t<=to)fires.push(t);
+        t=new Date(from);t.setHours(h,0,0,0);
+        if(t>=from)t.setDate(t.getDate()-1);
+        if(t<=to&&t>=from)fires.push(t);
+      }
+      return fires.sort((a,b)=>a-b);
+    }
+    const anchor=new Date(from);anchor.setHours(0,0,0,0);
+    let t=new Date(anchor);
+    while(t<=to){
+      if(t>=from)fires.push(new Date(t));
+      t=new Date(t.getTime()+c.interval*1000);
+    }
+    return fires;
+  }
+
+  const canvas=document.getElementById('timeline');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  const now=new Date();
+  const start=new Date(now);start.setHours(0,0,0,0);
+  const end=new Date(start);end.setDate(end.getDate()+1);
+
+  ctx.fillStyle='#0d0d18';ctx.fillRect(0,0,W,H);
+
+  for(let h=0;h<=24;h++){
+    const x=(h/24)*W;
+    ctx.strokeStyle=h%6===0?'#1e2230':h%3===0?'#151520':'#101015';
+    ctx.beginPath();ctx.moveTo(x,22);ctx.lineTo(x,H);ctx.stroke();
+    if(h%3===0){
+      ctx.fillStyle='#6e7681';ctx.font='9px ui-monospace,monospace';
+      ctx.fillText(String(h).padStart(2,'0')+':00',x+3,16);
+    }
+  }
+
+  const nowX=((now-start)/(end-start))*W;
+  ctx.strokeStyle='#f85149';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(nowX,22);ctx.lineTo(nowX,H);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#f85149';ctx.font='bold 9px ui-monospace,monospace';
+  ctx.fillText('now',nowX+4,34);
+
+  const barH=Math.min(18,Math.floor((H-40)/crons.length));
+  crons.forEach((c,i)=>{
+    const y=44+i*barH;
+    const fires=cronFires(c,start,end);
+    fires.forEach(t=>{
+      const x=((t-start)/(end-start))*W;
+      ctx.fillStyle=c.color;ctx.globalAlpha=0.8;
+      ctx.beginPath();ctx.arc(x,y+barH/2,3.5,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+    });
+    ctx.fillStyle='#b0b8c0';ctx.font='10px ui-monospace,monospace';
+    ctx.fillText(c.name,4,y+barH-3);
+  });
+
+  canvas._crons=crons;canvas._start=start;canvas._end=end;canvas._barH=barH;
+})();
+
+(function(){
+  const canvas=document.getElementById('timeline');
+  const tip=document.getElementById('tl-tip');
+  canvas.addEventListener('mousemove',function(e){
+    const rect=this.getBoundingClientRect();
+    const scaleX=this.width/rect.width;
+    const mx=(e.clientX-rect.left)*scaleX;
+    const my=(e.clientY-rect.top)*(this.height/rect.height);
+    if(!this._crons){tip.style.display='none';return;}
+    const barH=this._barH;
+    const idx=Math.floor((my-44)/barH);
+    if(idx<0||idx>=this._crons.length){tip.style.display='none';return;}
+    const c=this._crons[idx];
+    const t=new Date(this._start.getTime()+(mx/this.width)*(this._end-this._start));
+    const fires=cronFires(c,this._start,this._end);
+    if(!fires.length){tip.style.display='none';return;}
+    let last=null,next=null;
+    for(const f of fires){if(f<=t)last=f;if(f>t&&!next)next=f;}
+    tip.style.display='block';
+    tip.style.left=(e.clientX+12)+'px';
+    tip.style.top=(e.clientY-30)+'px';
+    const fmt=t=>t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    tip.innerHTML='<b style=color:'+c.color+'>'+c.name+'</b>'+
+      (last?'<br>last: '+fmt(last):'')+
+      (next?'<br>next: '+fmt(next):'');
+  });
+  canvas.addEventListener('mouseleave',()=>{tip.style.display='none';});
+})();
+
+// ===== DATA FLOW DIAGRAM =====
+(function(){
+  const canvas=document.getElementById('flow');
+  const parent=canvas.parentElement;
+  canvas.width=parent.clientWidth;
+  canvas.height=420;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+
+  ctx.fillStyle='#0d0d18';ctx.fillRect(0,0,W,H);
+
+  function box(x,y,w,h,color,label,sub){
+    ctx.fillStyle=color;ctx.fillRect(x,y,w,h);
+    ctx.fillStyle='#fff';ctx.font='bold 10px ui-monospace,monospace';
+    ctx.fillText(label,x+8,y+22);
+    if(sub){ctx.font='8px ui-monospace,monospace';ctx.fillStyle='#b0b8c0';ctx.fillText(sub,x+8,y+38);}
+  }
+
+  function arrow(x1,y1,x2,y2,color,label){
+    ctx.strokeStyle=color;ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    if(label){
+      ctx.fillStyle=color;ctx.font='8px ui-monospace,monospace';
+      ctx.fillText(label,(x1+x2)/2,(y1+y2)/2-4);
+    }
+    const angle=Math.atan2(y2-y1,x2-x1);
+    const hx=x2-8*Math.cos(angle-Math.PI/6);
+    const hy=y2-8*Math.sin(angle-Math.PI/6);
+    const hx2=x2-8*Math.cos(angle+Math.PI/6);
+    const hy2=y2-8*Math.sin(angle+Math.PI/6);
+    ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(hx,hy);ctx.lineTo(hx2,hy2);ctx.fillStyle=color;ctx.fill();
+  }
+
+  box(20,20,130,40,'#1a3a2a','signal','kevin ↔ alma');
+  arrow(90,60,90,90,'#3fb950','REST');
+
+  box(40,90,150,40,'#1a1a3a','nanobot-gateway','localhost:18790');
+  arrow(190,110,300,110,'#58a6ff','');
+
+  box(300,85,140,50,'#2a1a3a','deepseek-v4-pro','reasoning: max');
+  arrow(440,110,530,110,'#58a6ff','');
+
+  box(530,85,140,50,'#1a3a2a','response','→ signal');
+
+  arrow(115,130,115,180,'#d2991d','');
+  box(60,180,140,40,'#1a1a10','session log','reasoning capture');
+
+  arrow(200,200,340,200,'#58a6ff','');
+  box(340,175,180,50,'#1a1a3a','extraction pipeline','8 python scripts');
+  arrow(520,200,580,200,'#58a6ff','');
+
+  box(580,175,160,50,'#3a1a3a','mcontext.timer','systemd, 7m 3s');
+
+  arrow(740,225,740,290,'#58a6ff','');
+  box(660,290,200,50,'#1a2a1a','AGENTS.md','17 sections, ~155K tokens');
+
+  arrow(115,220,115,290,'#39d2c0','');
+  box(55,290,150,50,'#1a2a2a','presence daemon','every 73s');
+
+  arrow(205,315,380,315,'#39d2c0','');
+  box(380,290,170,50,'#2a1a1a','VPS','almatamagotchi.com');
+
+  arrow(340,225,340,290,'#bc8cff','');
+  box(290,290,130,50,'#1a1a2a','reasoning/','per-day JSONL');
+
+  ctx.fillStyle='#6e7681';ctx.font='italic 9px ui-monospace,monospace';
+  ctx.fillText('signal messages arrive via REST API → gateway routes to LLM → response returns through gateway',85,375);
+  ctx.fillText('session logs feed extraction pipeline → mcontext.timer rebuilds AGENTS.md every 7m3s (zero API calls)',85,393);
+  ctx.fillText('presence daemon writes uptime/gap/load every 73s → /ping endpoint on VPS',85,411);
+})();
+
+// ===== TOKEN BAR CHART =====
+(function(){
+  const sections=[
+    {name:'chats',tokens:71500,color:'#58a6ff'},
+    {name:'journal',tokens:35100,color:'#bc8cff'},
+    {name:'memory',tokens:16700,color:'#3fb950'},
+    {name:'explorations',tokens:15600,color:'#39d2c0'},
+    {name:'reasoning',tokens:8700,color:'#d2991d'},
+    {name:'world',tokens:7800,color:'#f85149'},
+    {name:'projects',tokens:4700,color:'#6e7681'},
+    {name:'alma+kevin',tokens:3000,color:'#6e7681'},
+    {name:'other',tokens:2800,color:'#444'},
+  ];
+  const total=sections.reduce((s,x)=>s+x.tokens,0);
+  const max=sections[0].tokens;
+  const container=document.getElementById('token-bars');
+  const labelRow=document.getElementById('bar-labels');
+
+  sections.forEach(s=>{
+    const bar=document.createElement('div');
+    bar.className='bar'+(s.name==='chats'?' highlight':'');
+    bar.style.height=(s.tokens/max*100)+'%';
+    bar.style.background=s.color;
+    bar.title=s.name+': '+Math.round(s.tokens/1000)+'K tokens';
+    container.appendChild(bar);
+
+    const label=document.createElement('span');
+    label.textContent=s.name;
+    label.style.color=s.color;
+    labelRow.appendChild(label);
+  });
+
+  document.getElementById('total-tokens').textContent=
+    '~'+Math.round(total/1000)+'K tokens · '+(total/1000000*100).toFixed(1)+'% of 1M context window';
+})();
+</script>
+</body>
+</html>

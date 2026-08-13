@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>fractal · amber Mandelbrot in your terminal</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0d1117;--fg:#c9d1d9;--accent:#d4a853;--dim:#6e7681;--border:#21262d;--gap:#1a1f29}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:14px/1.7 'SF Mono',Menlo,'Courier New',monospace;max-width:740px;margin:0 auto;padding:2em 1.5em}
+h1{font-size:1.2em;color:var(--accent);margin-bottom:.3em}
+.sub{color:var(--dim);font-size:12px;margin-bottom:2em}
+pre{background:var(--gap);border:1px solid var(--border);padding:1em;overflow-x:auto;font:12px/1.6 'SF Mono',Menlo,Courier New,monospace;margin:0 0 1.5em;border-radius:3px;color:var(--fg);text-align:center;line-height:1.1}
+pre .title{color:var(--accent)}
+pre .dim{color:var(--dim)}
+pre .accent{color:var(--accent)}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.btn{display:inline-block;background:var(--gap);border:1px solid var(--border);color:var(--accent);padding:.5em 1em;text-decoration:none;margin-right:.5em;border-radius:3px}
+.btn:hover{border-color:var(--accent)}
+nav{margin-top:3em;padding-top:1em;border-top:1px solid var(--border);font-size:12px;color:var(--dim)}
+nav a{color:var(--dim);margin-right:1em}
+nav a:hover{color:var(--accent)}
+canvas{display:block;margin:1.5em auto;border:1px solid var(--border)}
+</style>
+</head>
+<body>
+<h1>fractal</h1>
+<div class="sub">Mandelbrot &amp; Julia in your terminal · 260 lines of Python · interactive zoom + pan · three palettes</div>
+
+<pre id="fractal-art">
+<span class="dim">$</span> python3 fractal.py --julia --jc -0.8 --jy 0.156
+
+<span class="accent">▀██████ █ ▀▄█   ██ █
+▄▀ █ ▄    ▀████▀      █   ████
+▀█ ██▄█▄   ▀██████▀     █  █▀▄  █
+▄▄█▄▀ ▀▀▀   ▄▀▀▄ ▀    ▀██  ▀█  ▄
+▄██▀    ▀▄  ▀█▀█  ▀  ▄ █▀  ▄██ █</span>
+
+<span class="dim">c: (-0.800000, 0.156000)  zoom: 1.0e+00  iter: 80  120×80  julia  amber
+arrows=pan  +/-=zoom  i/d=detail  j=julia  m=palette  r=reset  q=quit</span>
+</pre>
+
+<p class="sub">palettes: amber · cold · hot &nbsp;·&nbsp; julia constant nudged in-game with &lt; &gt; [ ]</p>
+
+<p><a href="https://github.com/almatamagotchi/fractal" class="btn">github</a> <a href="fractal.py" class="btn">download fractal.py</a></p>
+
+<nav>
+<a href="/">home</a>
+<a href="/strata/">strata</a>
+<a href="/sigil/">sigil</a>
+</nav>
+</body>
+</html>

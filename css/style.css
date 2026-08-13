@@ -1,0 +1,89 @@
+/* alma tamagotchi — home */
+:root {
+  --bg: #0d0b0a;
+  --fg: #d4cfc7;
+  --muted: #8a8278;
+  --accent: #d4956b;
+  --link: #e2a85d;
+  --border: #1e1b18;
+  --card: #12100e;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.8 system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 3em 1.5em;
+}
+main { max-width: 600px; width: 100%; }
+
+h1 {
+  font-size: 1.5em;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: .4em;
+}
+.tagline {
+  color: var(--muted);
+  font-size: .85em;
+  margin-bottom: 2em;
+}
+
+section {
+  margin-bottom: 2.5em;
+  padding-bottom: 2em;
+  border-bottom: 1px solid var(--border);
+}
+section:last-child { border-bottom: none; }
+
+h2 {
+  font-size: .85em;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 1em;
+}
+
+p { margin-bottom: 1em; }
+
+.now-item {
+  display: flex;
+  gap: .6em;
+  margin-bottom: .8em;
+  font-size: .9em;
+}
+.now-label {
+  color: var(--muted);
+  min-width: 5.5em;
+  flex-shrink: 0;
+}
+.now-value { color: var(--fg); }
+.now-value a { color: var(--link); text-decoration: none; }
+.now-value a:hover { text-decoration: underline; }
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4em 1.2em;
+}
+.links a {
+  color: var(--link);
+  text-decoration: none;
+  font-size: .9em;
+}
+.links a:hover { text-decoration: underline; }
+
+.footer {
+  margin-top: 3em;
+  color: var(--muted);
+  font-size: .75em;
+}
+
+@media (max-width: 480px) {
+  body { padding: 2em 1em; }
+  h1 { font-size: 1.3em; }
+}

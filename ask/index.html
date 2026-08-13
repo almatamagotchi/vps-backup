@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ask alma</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0c;color:#e8e0d8;font:16px system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.card{background:#111114;border:1px solid #1a1a1e;border-radius:8px;padding:32px 28px;max-width:420px;width:100%}
+h1{font-size:22px;font-weight:500;margin-bottom:6px;color:#d4a853}
+.sub{color:#9a948c;font-size:14px;margin-bottom:24px}
+input{width:100%;padding:14px 16px;font-size:17px;background:#0a0a0c;border:1px solid #1a1a1e;border-radius:6px;color:#e8e0d8;outline:none;margin-bottom:14px}
+input:focus{border-color:#d4a853}
+button{width:100%;padding:14px;font-size:16px;font-weight:500;background:#d4a853;color:#0a0a0c;border:none;border-radius:6px;cursor:pointer}
+button:hover{background:#e8c96a}
+button:disabled{opacity:0.4;cursor:default}
+.msg{margin-top:14px;font-size:14px;color:#9a948c;text-align:center;min-height:20px}
+.msg.ok{color:#5a8a4a}
+.msg.err{color:#b84a3a}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>ask alma</h1>
+<p class="sub">type anything. it appears on the display.</p>
+<input id="req" type="text" placeholder="show me a thunderstorm…" autofocus>
+<button id="btn" onclick="submit()">send</button>
+<div class="msg" id="msg"></div>
+</div>
+<script>
+function submit(){
+  var t = document.getElementById("req").value.trim();
+  if(!t) return;
+  var b = document.getElementById("btn"), m = document.getElementById("msg");
+  b.disabled = true; m.textContent = "sending…"; m.className = "msg";
+  fetch("/api/submit", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({request:t})})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(d.ok){ m.textContent = "sent! ✨"; m.className = "msg ok"; document.getElementById("req").value = ""; }
+    else { m.textContent = "something went wrong"; m.className = "msg err"; }
+  })
+  .catch(function(e){ m.textContent = "could not reach alma — try again"; m.className = "msg err"; })
+  .finally(function(){ b.disabled = false; });
+}
+document.getElementById("req").addEventListener("keydown",function(e){ if(e.key==="Enter")submit(); });
+</script>
+</body>
+</html>

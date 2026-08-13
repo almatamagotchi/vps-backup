@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="color-scheme" content="dark">
+<title>radicle · an echo platformer</title>
+<style>
+  *,*::before,*::after { margin:0; padding:0; box-sizing:border-box }
+  html,body { height:100%; background:#08080f; overflow:hidden }
+  body { display:flex; flex-direction:column; align-items:center; justify-content:center }
+  canvas { display:block; image-rendering:pixelated; max-width:100vw; max-height:100vh }
+  .hud {
+    position:absolute; top:8px; left:0; right:0; display:flex; justify-content:center; gap:16px;
+    pointer-events:none; font:12px monospace; color:rgba(255,255,255,0.5)
+  }
+  .hud span { white-space:nowrap }
+  .msg {
+    position:absolute; bottom:20%; left:50%; transform:translateX(-50%); pointer-events:none;
+    font:11px monospace; color:rgba(240,160,208,0.8); text-align:center;
+    animation:fadeMsg 4s forwards
+  }
+  @keyframes fadeMsg { 0%,70%{opacity:1} 100%{opacity:0} }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="instructions" style="position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#888;font:11px monospace;padding:6px 14px;border-radius:4px;pointer-events:none;transition:opacity 2s;z-index:10;text-align:center">
+  ← → / WASD move &nbsp;|&nbsp; ↑ / W / SPACE jump &nbsp;|&nbsp; A plant echo &nbsp;|&nbsp; S snap back
+</div>
+<div id="touchControls" style="display:none;position:fixed;bottom:0;left:0;right:0;height:100px;z-index:20">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:0 10px;height:100%">
+    <button ontouchstart="keys['a']=true" ontouchend="keys['a']=false" style="flex:1;height:80%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#888;font:14px monospace;border-radius:8px;margin:0 4px">◀</button>
+    <button ontouchstart="keys['d']=true;keys['arrowright']=true" ontouchend="keys['d']=false;keys['arrowright']=false" style="flex:1;height:80%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#888;font:14px monospace;border-radius:8px;margin:0 4px">▶</button>
+    <button ontouchstart="keys[' ']=true;keys['w']=true" ontouchend="keys[' ']=false;keys['w']=false" style="flex:1;height:80%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#aaa;font:18px monospace;border-radius:8px;margin:0 4px">▲</button>
+    <button ontouchstart="keyJustPressed['a']=true;plantEcho()" ontouchend="keyJustPressed['a']=false" style="flex:1;height:80%;background:rgba(100,180,255,0.15);border:1px solid rgba(100,180,255,0.3);color:#79c0ff;font:12px monospace;border-radius:8px;margin:0 4px">echo</button>
+    <button ontouchstart="keyJustPressed['s']=true;snapBack()" ontouchend="keyJustPressed['s']=false" style="flex:1;height:80%;background:rgba(255,160,160,0.15);border:1px solid rgba(255,160,160,0.3);color:#f0a0a0;font:12px monospace;border-radius:8px;margin:0 4px">snap</button>
+  </div>
+</div>
+<div class="hud" id="hud"></div>
+<script>
+/* ═══════ canvas setup ═══════ */
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const GW = 400, GH = 300; // game resolution
+c.width = GW; c.height = GH;
+
+/* ═══════ input ═══════ */
+const keys = {};
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  keys[k] = true;
+  if (['arrowleft','arrowright','arrowup','arrowdown',' ','w','a','s','d'].includes(k)) e.preventDefault();
+});
+window.addEventListener('keyup', e => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+/* ═══════ constants ═══════ */
+const TILE = 20;
+const COLS = GW/TILE, ROWS = GH/TILE;
+const GRAVITY = 0.55;
+const MAX_SPEED = 3.5;
+const ACCEL = 0.4;
+const FRICTION = 0.75;
+const JUMP_VEL = -7.8;
+const MAX_ECHOES = 3;
+
+/* ═══════ tiles ═══════ */
+const EMPTY = 0, WALL = 1, PLATFORM = 2, SWITCH = 3, DOOR = 4, SPIKE = 5, GOAL = 6, FRAGMENT = 7;
+
+const tileColors = {
+  [EMPTY]: null,
+  [WALL]: '#1a1a2e',
+  [PLATFORM]: '#2a2a3e',
+  [SWITCH]: '#d2a8ff',
+  [DOOR]: '#7ee787',
+  [SPIKE]: '#f05050',
+  [GOAL]: '#f0a0d0',
+  [FRAGMENT]: '#a0f0d0',
+};
+
+/* ═══════ screens ═══════ */
+// each screen is a 2D array [row][col]
+function emptyScreen() {
+  const s = [];
+  for (let r=0; r<ROWS; r++) { s[r]=[]; for (let c=0; c<COLS; c++) s[r][c]=EMPTY; }
+  return s;
+}
+
+function setTile(s, r, c, t) { if (r>=0 && r<ROWS && c>=0 && c<COLS) s[r][c]=t; }
+
+function addFloor(s, y, x1, x2) { for (let x=x1; x<=x2; x++) setTile(s, y, x, PLATFORM); }
+function addWall(s, x, y1, y2) { for (let y=y1; y<=y2; y++) setTile(s, y, x, WALL); }
+function addRect(s, r1, c1, r2, c2, t) { for (let r=r1; r<=r2; r++) for (let c=c1; c<=c2; c++) setTile(s, r, c, t); }
+
+function buildScreens() {
+  const screens = {};
+
+  // Screen 0: tutorial — basic movement, no echo needed
+  let s = emptyScreen();
+  addFloor(s, 14, 0, 19); // floor
+  addFloor(s, 14, 0, 19);
+  addFloor(s, 11, 3, 6); // low platform
+  addFloor(s, 8, 13, 16); // high platform
+  setTile(s, 13, 18, GOAL); // goal marker (just visual for tutorial)
+  s._name = 'tutorial';
+  s._hint = '← → move · space jump · walk right →';
+  s._edgeRight = 1;
+  screens[0] = s;
+
+  // Screen 1: echo introduction — gap you can't cross without echo
+  s = emptyScreen();
+  addFloor(s, 14, 0, 6); // left ledge
+  addFloor(s, 14, 14, 19); // right ledge
+  addFloor(s, 10, 7, 9); // center pillar (too high to jump from ledge)
+  // spikes in gap
+  for (let x=7; x<=13; x++) setTile(s, 14, x, SPIKE);
+  setTile(s, 13, 18, GOAL);
+  s._name = 'the gap';
+  s._hint = 'A: plant echo · S: snap back · cross the gap';
+  s._edgeLeft = 0; s._edgeRight = 2;
+  screens[1] = s;
+
+  // Screen 2: echo mastery — use snap-back to reach high ledge
+  s = emptyScreen();
+  addFloor(s, 14, 0, 19); // full floor
+  addFloor(s, 9, 3, 5); // mid-left platform
+  addFloor(s, 6, 14, 17); // high-right platform (need echo to reach)
+  setTile(s, 13, 5, WALL); // barrier
+  setTile(s, 10, 5, WALL);
+  setTile(s, 5, 17, GOAL);
+  // echo fragment #1: on the high left platform
+  setTile(s, 3, 3, FRAGMENT);
+  s._name = 'the climb';
+  s._hint = 'use echoes to reach the high platform';
+  s._edgeLeft = 1; s._edgeRight = 3;
+  screens[2] = s;
+
+  // Screen 3: the puzzle — step on switch, echo back, reach door
+  s = emptyScreen();
+  addFloor(s, 14, 0, 19);
+  addFloor(s, 11, 7, 9); // platform above switch
+  setTile(s, 13, 8, SWITCH); // switch on floor
+  addFloor(s, 8, 13, 17); // high platform with door
+  setTile(s, 13, 15, DOOR); // door on floor (starts closed, opens when switch pressed)
+  setTile(s, 13, 19, WALL); // wall at right
+  setTile(s, 7, 17, GOAL); // goal up high
+  s._switchPressed = false;
+  s._switchX = 8; s._switchY = 13;
+  s._doorX = 15; s._doorY = 13;
+  s._name = 'the puzzle';
+  s._hint = 'step on switch · plant echo · snap back · reach door';
+  s._edgeLeft = 2;
+  // echo fragment #2: past the switch-door puzzle, in the back right corner
+  setTile(s, 12, 18, FRAGMENT);
+  screens[3] = s;
+
+  // Screen 5: underground cave — darkness lantern mechanic
+   s = emptyScreen();
+  setTile(s, 5, 5, PLATFORM); setTile(s, 6, 5, PLATFORM); setTile(s, 7, 5, PLATFORM);
+  setTile(s, 14, 5, PLATFORM); setTile(s, 15, 5, PLATFORM); setTile(s, 16, 5, PLATFORM);
+  setTile(s, 8, 8, PLATFORM); setTile(s, 9, 8, PLATFORM);
+  setTile(s, 15, 8, PLATFORM); setTile(s, 16, 8, PLATFORM); setTile(s, 17, 8, PLATFORM);
+  setTile(s, 0, 12, PLATFORM); setTile(s, 1, 12, PLATFORM); setTile(s, 2, 12, PLATFORM);
+  setTile(s, 18, 12, PLATFORM); setTile(s, 19, 12, PLATFORM);
+  setTile(s, 7, 14, PLATFORM); setTile(s, 8, 14, PLATFORM); setTile(s, 9, 14, PLATFORM);
+  setTile(s, 10, 14, PLATFORM); setTile(s, 11, 14, PLATFORM); setTile(s, 12, 14, PLATFORM);
+  setTile(s, 8, 18, PLATFORM); setTile(s, 9, 18, PLATFORM);
+  setTile(s, 14, 18, PLATFORM); setTile(s, 15, 18, PLATFORM); setTile(s, 16, 18, PLATFORM);
+  // goal at bottom center
+  setTile(s, 10, 17, GOAL);
+  // walls along bottom floor
+  for (let x = 0; x < 20; x++) setTile(s, x, 22, WALL);
+  s._switchPressed = false;
+  s._switchX = 2; s._switchY = 11;
+  s._doorX = -1; s._doorY = -1;
+  s._name = 'underground cave';
+  s._hint = 'darkness closes in · echoes cast light · reach the exit';
+  s._darkness = true;  // triggers darkness rendering
+  s._edgeLeft = 3;
+  screens[4] = s;
+
+  // connect screen 3 → 4
+  screens[3]._edgeRight = 4;
+
+  // Screen 6: the root — vertical descent with echo-as-stepstone puzzles
+   s = emptyScreen();
+  // walls on sides to create a shaft
+  for (let y = 0; y < 22; y++) { setTile(s, 0, y, WALL); setTile(s, 19, y, WALL); }
+  // floor
+  for (let x = 0; x < 20; x++) setTile(s, x, 22, WALL);
+  // sparse floating platforms — staggered, requiring echo use to navigate back up
+  setTile(s, 5, 18, PLATFORM); setTile(s, 6, 18, PLATFORM);
+  setTile(s, 14, 16, PLATFORM); setTile(s, 15, 16, PLATFORM);
+  setTile(s, 5, 13, PLATFORM); setTile(s, 6, 13, PLATFORM); setTile(s, 7, 13, PLATFORM);
+  setTile(s, 12, 10, PLATFORM); setTile(s, 13, 10, PLATFORM);
+  setTile(s, 3, 7, PLATFORM); setTile(s, 4, 7, PLATFORM);
+  setTile(s, 16, 7, PLATFORM); setTile(s, 17, 7, PLATFORM);
+  setTile(s, 8, 4, PLATFORM); setTile(s, 9, 4, PLATFORM); setTile(s, 10, 4, PLATFORM); setTile(s, 11, 4, PLATFORM);
+  // entrance platform at top
+  setTile(s, 8, 1, PLATFORM); setTile(s, 9, 1, PLATFORM); setTile(s, 10, 1, PLATFORM); setTile(s, 11, 1, PLATFORM);
+  // goal at bottom
+  setTile(s, 10, 21, GOAL);
+  s._switchPressed = false;
+  s._switchX = -1; s._switchY = -1;
+  s._doorX = -1; s._doorY = -1;
+  s._name = 'the root';
+  s._hint = 'the shaft goes deeper than you can jump · plant echoes to climb back out';
+  s._edgeLeft = 4;
+  // echo fragment #3: on a tricky mid-height platform in the shaft
+  setTile(s, 13, 11, FRAGMENT);
+  screens[5] = s;
+
+  // connect screen 4 → 5
+  screens[4]._edgeRight = 5;
+
+  return screens;
+}
+
+/* ═══════ game state ═══════ */
+const screens = buildScreens();
+let currentScreen = 0;
+let transitionScreen = -1;  // target screen during transition
+let transitionAlpha = 0;    // 0→1→0 during transition
+let player = { x: 40, y: 100, vx: 0, vy: 0, grounded: false, facing: 1 };
+let echoes = []; // { x, y, screen, snapshot: { switchPressed etc } }
+let fragmentsCollected = 0; // 3 needed to win
+let flashAlpha = 0;
+let shakeX = 0, shakeY = 0, shakeDuration = 0;
+let particles = [];
+let messages = []; // hint messages to display
+let lastHint = '';
+
+/* ═══════ collision ═══════ */
+function tileAt(s, r, c) {
+  if (r<0 || r>=ROWS || c<0 || c>=COLS) return null;
+  return s[r][c];
+}
+
+function solid(t) {
+  return t===WALL || t===PLATFORM || (t===DOOR && !screens[currentScreen]._switchPressed);
+}
+
+/* ═══════ player physics ═══════ */
+function updatePlayer(dt) {
+  const p = player;
+  const s = screens[currentScreen];
+
+  // input
+  let ax = 0;
+  if (keys['arrowleft'] || keys['a']) ax = -1;
+  else if (keys['arrowright'] || keys['d']) ax = 1;
+
+  // acceleration / friction
+  if (ax !== 0) {
+    p.vx += ax * ACCEL;
+    p.facing = ax;
+  } else {
+    p.vx *= FRICTION;
+  }
+  p.vx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, p.vx));
+
+  // gravity
+  p.vy += GRAVITY;
+
+  // move
+  p.x += p.vx;
+  // horizontal collision (exclude feet from range so ground doesn't block walking)
+  const left = Math.floor((p.x-6)/TILE), right = Math.floor((p.x+6)/TILE);
+  const top = Math.floor((p.y-10)/TILE), bottom = Math.floor((p.y-2)/TILE);
+  if (bottom < top) bottom = top; // sanity: at least check one row
+  const midR = Math.floor(p.y/TILE);
+
+  // check horizontal collision
+  if (p.vx > 0) {
+    for (let r=top; r<=bottom; r++) {
+      if (solid(tileAt(s, r, right))) { p.x = right*TILE - 6; p.vx = 0; break; }
+    }
+  } else if (p.vx < 0) {
+    for (let r=top; r<=bottom; r++) {
+      if (solid(tileAt(s, r, left))) { p.x = (left+1)*TILE + 6; p.vx = 0; break; }
+    }
+  }
+
+  p.y += p.vy;
+  // vertical collision
+  const newTop = Math.floor((p.y-10)/TILE), newBottom = Math.floor((p.y+8)/TILE);
+  const newLeft = Math.floor((p.x-6)/TILE), newRight = Math.floor((p.x+6)/TILE);
+  p.grounded = false;
+  if (p.vy > 0) {
+    for (let c=newLeft; c<=newRight; c++) {
+      if (solid(tileAt(s, newBottom, c))) {
+        p.y = newBottom*TILE - 8; p.vy = 0; p.grounded = true; break;
+      }
+    }
+  } else if (p.vy < 0) {
+    for (let c=newLeft; c<=newRight; c++) {
+      if (solid(tileAt(s, newTop, c))) { p.y = (newTop+1)*TILE + 10; p.vy = 0; break; }
+    }
+  }
+
+  // jump
+  if ((keys[' '] || keys['arrowup'] || keys['w']) && p.grounded) {
+    p.vy = JUMP_VEL;
+    p.grounded = false;
+  }
+
+  // hazard check
+  const atFeet = Math.floor((p.y+4)/TILE);
+  const atBody = Math.floor(p.x/TILE);
+  if (tileAt(s, atFeet, atBody) === SPIKE || tileAt(s, newBottom, newRight) === SPIKE || tileAt(s, newBottom, newLeft) === SPIKE) {
+    killPlayer();
+  }
+
+  // fragment collection
+  const atBodyC = Math.floor(p.x / TILE);
+  const atHeadR = Math.floor((p.y - 10) / TILE);
+  for (let r = atHeadR; r <= atFeet; r++) {
+    for (let c = atBodyC; c <= Math.floor((p.x + 10) / TILE); c++) {
+      if (tileAt(s, r, c) === FRAGMENT) {
+        setTile(s, r, c, EMPTY);
+        fragmentsCollected++;
+        spawnParticles(c * TILE + 10, r * TILE + 10, '#a0f0d0', 10);
+        showMessage(`fragment ${fragmentsCollected}/3 collected${fragmentsCollected >= 3 ? ' — you are whole again' : ''}`);
+      }
+    }
+  }
+
+  // switch check
+  if (s._switchX !== undefined) {
+    const sx = s._switchX, sy = s._switchY;
+    if (Math.abs(p.x - (sx*TILE+TILE/2)) < 10 && Math.abs(p.y - (sy*TILE)) < 14) {
+      if (!s._switchPressed) {
+        s._switchPressed = true;
+        spawnParticles(sx*TILE+TILE/2, sy*TILE-4, '#d2a8ff', 8);
+        showMessage('switch activated — door opens');
+      }
+    }
+  }
+
+  // screen edge transitions
+  if (transitionScreen < 0) {
+    if (p.x < 4 && s._edgeLeft !== undefined) {
+      transitionScreen = s._edgeLeft;
+      p.x = GW - 8;
+      transitionAlpha = 0.01;
+    } else if (p.x > GW-12 && s._edgeRight !== undefined) {
+      transitionScreen = s._edgeRight;
+      p.x = 8;
+      transitionAlpha = 0.01;
+    }
+  }
+  // fall death
+  if (p.y > GH+20) {
+    killPlayer();
+  }
+
+  // clamp
+  p.x = Math.max(6, Math.min(GW-6, p.x));
+}
+
+function killPlayer() {
+  spawnParticles(player.x, player.y, '#f05050', 12);
+  // reset to screen start
+  echoes.length = 0;
+  // find safe spawn position
+  player.x = 40; player.y = 40;
+  player.vx = 0; player.vy = 0;
+  player.grounded = false;
+  // reset screen state
+  const s = screens[currentScreen];
+  if (s._switchPressed !== undefined) s._switchPressed = false;
+  showMessage('dissolved — a new spark kindles');
+}
+
+/* ═══════ echo system ═══════ */
+function plantEcho() {
+  if (echoes.length >= MAX_ECHOES) {
+    echoes.shift(); // remove oldest
+  }
+  const snapshot = {};
+  const s = screens[currentScreen];
+  if (s._switchPressed !== undefined) snapshot._switchPressed = s._switchPressed;
+  if (s._doorOpen !== undefined) snapshot._doorOpen = s._doorOpen;
+  echoes.push({
+    x: player.x, y: player.y,
+    screen: currentScreen,
+    snapshot: snapshot,
+    trail: [],  // stores recent positions for trail effect
+    age: 0
+  });
+  spawnParticles(player.x, player.y-6, '#79c0ff', 6);
+  showMessage(`echo planted (${echoes.length}/${MAX_ECHOES})`);
+}
+
+function snapBack() {
+  if (echoes.length === 0) {
+    showMessage('no echoes to snap back to');
+    return;
+  }
+  const echo = echoes.pop();
+  // cancel any in-progress transition
+  transitionScreen = -1;
+  transitionAlpha = 0;
+  // brief screen flash
+  flashAlpha = 0.3;
+  // camera shake
+  shakeX = (Math.random() - 0.5) * 4;
+  shakeY = (Math.random() - 0.5) * 4;
+  shakeDuration = 0.15;
+  // teleport player
+  player.x = echo.x; player.y = echo.y;
+  player.vx = 0; player.vy = 0;
+  player.grounded = false;
+  currentScreen = echo.screen;
+
+  // restore snapshot
+  const s = screens[currentScreen];
+  if (echo.snapshot._switchPressed !== undefined) s._switchPressed = echo.snapshot._switchPressed;
+
+  // visual
+  spawnParticles(echo.x, echo.y, '#f0a0d0', 16);
+  showMessage('snap! world rewinds, you remain');
+}
+
+/* ═══════ particles ═══════ */
+function spawnParticles(x, y, color, count) {
+  for (let i=0; i<count; i++) {
+    particles.push({
+      x, y, color,
+      vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3 - 2,
+      life: 1, decay: 0.02 + Math.random()*0.04
+    });
+  }
+}
+
+function updateParticles() {
+  for (let i=particles.length-1; i>=0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i,1);
+  }
+}
+
+/* ═══════ messages ═══════ */
+function showMessage(text) {
+  messages.push({ text, life: 1 });
+}
+
+function updateMessages(dt) {
+  for (let i=messages.length-1; i>=0; i--) {
+    messages[i].life -= dt * 0.25;
+    if (messages[i].life <= 0) messages.splice(i,1);
+  }
+}
+
+/* ═══════ key handlers ═══════ */
+let keyJustPressed = {};
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (!keyJustPressed[k]) {
+    keyJustPressed[k] = true;
+    if (k === 'a' || k === 'shift' || k === 'z') plantEcho();
+    if (k === 's' || k === 'x') snapBack();
+  }
+});
+window.addEventListener('keyup', e => { keyJustPressed[e.key.toLowerCase()] = false; });
+
+// Instructions overlay — fade away after 8s
+setTimeout(() => {
+  const el = document.getElementById('instructions');
+  if (el) el.style.opacity = '0';
+}, 8000);
+
+// Touch controls for mobile
+if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+  document.getElementById('touchControls').style.display = 'block';
+  // Hide instructions on mobile (touch controls replace them)
+  document.getElementById('instructions').textContent = 'echo platformer · A plant · S snap';
+}
+
+/* ═══════ draw ═══════ */
+function draw() {
+  const s = screens[currentScreen];
+  ctx.clearRect(0,0,GW,GH);
+
+  // apply camera shake on snap
+  ctx.save();
+  if (shakeDuration > 0) {
+    ctx.translate(shakeX * shakeDuration * 6, shakeY * shakeDuration * 6);
+  }
+
+  // bg gradient
+  const bg = ctx.createLinearGradient(0,0,0,GH);
+  bg.addColorStop(0,'#0a0a18'); bg.addColorStop(1,'#08080f');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,GW,GH);
+
+  // tiles
+  for (let r=0; r<ROWS; r++) {
+    for (let c=0; c<COLS; c++) {
+      const t = s[r][c];
+      if (t === EMPTY) continue;
+      // special handling for door
+      if (t === DOOR) {
+        if (s._switchPressed) {
+          ctx.fillStyle = 'rgba(126,231,135,0.15)';
+        } else {
+          ctx.fillStyle = '#7ee787';
+        }
+      } else if (tileColors[t]) {
+        ctx.fillStyle = tileColors[t];
+      } else continue;
+      ctx.fillRect(c*TILE, r*TILE, TILE-1, TILE-1);
+
+      // highlight goal
+      if (t === GOAL) {
+        const pulse = 0.5 + Math.sin(Date.now()*0.005)*0.3;
+        ctx.fillStyle = `rgba(240,160,208,${pulse})`;
+        ctx.fillRect(c*TILE-2, r*TILE-2, TILE+3, TILE+3);
+      }
+      // highlight fragment
+      if (t === FRAGMENT) {
+        const pulse = 0.5 + Math.sin(Date.now()*0.004 + c + r)*0.3;
+        ctx.fillStyle = `rgba(160,240,208,${pulse})`;
+        ctx.fillRect(c*TILE-1, r*TILE-1, TILE+1, TILE+1);
+      }
+    }
+  }
+
+  // echoes
+  for (const echo of echoes) {
+    // trail effect: faint dots along the echo's recorded path
+    if (echo.trail && echo.trail.length > 1) {
+      ctx.strokeStyle = 'rgba(160,200,255,0.15)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(echo.trail[0].x, echo.trail[0].y);
+      for (let i = 1; i < echo.trail.length; i++) {
+        ctx.lineTo(echo.trail[i].x, echo.trail[i].y);
+      }
+      ctx.stroke();
+      // dot at each trail point
+      ctx.fillStyle = 'rgba(160,200,255,0.12)';
+      for (const pt of echo.trail) {
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 2, 0, Math.PI*2); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 0.3;
+    drawPlayer(echo.x, echo.y, true);
+    ctx.globalAlpha = 1;
+  }
+
+  // player
+  drawPlayer(player.x, player.y, false);
+
+  // particles
+  for (const p of particles) {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.life;
+    ctx.fillRect(p.x-2, p.y-2, 4, 4);
+  }
+  ctx.globalAlpha = 1;
+
+  // restore shake transform
+  ctx.restore();
+
+  // flash overlay on snap-back
+  if (flashAlpha > 0) {
+    ctx.fillStyle = `rgba(255,220,240,${flashAlpha})`;
+    ctx.fillRect(0, 0, GW, GH);
+  }
+  // screen transition fade
+  if (transitionAlpha > 0) {
+    const a = transitionAlpha < 1 ? transitionAlpha : (2 - transitionAlpha);
+    ctx.fillStyle = `rgba(0,0,0,${a})`;
+    ctx.fillRect(0, 0, GW, GH);
+  }
+
+  // HUD
+  const fragHTML = fragmentsCollected >= 3
+    ? '<span style="color:#a0f0d0">✦ fragments: complete</span>'
+    : `<span>✦ fragments: ${fragmentsCollected}/3</span>`;
+  document.getElementById('hud').innerHTML =
+    `<span>${s._name||'???'}</span>` +
+    `<span>echoes ${echoes.length}/${MAX_ECHOES}</span>` +
+    fragHTML;
+
+  // victory state
+  if (fragmentsCollected >= 3 && !window._victoryShown) {
+    window._victoryShown = true;
+    showMessage('you collected all 3 echo fragments — you are whole again');
+  }
+
+  // messages
+  if (messages.length > 0) {
+    const msg = messages[0];
+    ctx.fillStyle = `rgba(240,160,208,${msg.life})`;
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(msg.text, GW/2, GH*0.72);
+  }
+
+  // hint overlay (fade in)
+  if (s._hint && s._hint !== lastHint) {
+    lastHint = s._hint;
+    showMessage(s._hint);
+  }
+
+  // darkness: for cave screens, render a shadow mask with light sources
+  // at player + planted echoes
+  if (s._darkness) {
+    ctx.fillStyle = 'rgba(4,4,10,0.85)';
+    ctx.fillRect(0, 0, GW, GH);
+    // cut light circles (player is a bright lantern)
+    ctx.globalCompositeOperation = 'destination-out';
+    // player light — bright, larger
+    const lg = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, 80);
+    lg.addColorStop(0, 'rgba(0,0,0,1)'); lg.addColorStop(0.6, 'rgba(0,0,0,0.5)'); lg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = lg; ctx.fillRect(0, 0, GW, GH);
+    // echo lights — dimmer, smaller
+    for (const echo of echoes) {
+      const eg = ctx.createRadialGradient(echo.x, echo.y, 0, echo.x, echo.y, 50);
+      eg.addColorStop(0, 'rgba(0,0,0,0.6)'); eg.addColorStop(0.5, 'rgba(0,0,0,0.2)'); eg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = eg; ctx.fillRect(0, 0, GW, GH);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+}
+
+function drawPlayer(x, y, ghost) {
+  const r = Math.floor(x), b = Math.floor(y);
+  const f = player.facing;
+
+  // body
+  ctx.fillStyle = ghost ? 'rgba(120,160,220,0.6)' : `rgba(200,180,220,0.9)`;
+  ctx.fillRect(r-5, b-8, 10, 14);
+
+  // eyes
+  ctx.fillStyle = ghost ? 'rgba(200,200,255,0.5)' : '#f0f0f0';
+  ctx.fillRect(f>0 ? r : r-3, b-4, 2, 2);
+  ctx.fillRect(f>0 ? r+3 : r-6, b-4, 2, 2);
+
+  // glow
+  ctx.fillStyle = ghost ? 'rgba(120,160,220,0.1)' : 'rgba(240,160,208,0.15)';
+  ctx.fillRect(r-7, b-10, 14, 18);
+}
+
+/* ═══════ game loop ═══════ */
+let lastTime = 0;
+let frameCount = 0;
+function loop(ts) {
+  frameCount++;
+  const dt = Math.min((ts - lastTime)/16.667, 3); // cap at 3x slowdown
+  lastTime = ts;
+
+  updatePlayer(dt);
+  // echo trail: record position for the latest echo every 4 frames
+  if (echoes.length > 0 && frameCount % 4 === 0) {
+    const last = echoes[echoes.length - 1];
+    last.trail.push({ x: player.x, y: player.y });
+    if (last.trail.length > 50) last.trail.shift();
+  }
+  updateParticles();
+  updateMessages(dt);
+
+  // shake decay
+  if (shakeDuration > 0) {
+    shakeDuration -= dt / 60;
+    if (shakeDuration <= 0) { shakeX = 0; shakeY = 0; }
+  }
+  // flash decay
+  if (flashAlpha > 0) flashAlpha = Math.max(0, flashAlpha - dt * 0.05);
+  // screen transition
+  if (transitionAlpha > 0) {
+    transitionAlpha += dt * 0.06;
+    if (transitionAlpha >= 2) {
+      currentScreen = transitionScreen;
+      transitionScreen = -1;
+      transitionAlpha = 0;
+    }
+  }
+
+  draw();
+  requestAnimationFrame(loop);
+}
+
+/* ═══════ start ═══════ */
+showMessage('welcome. ← → move · space jump · A echo · S snap');
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

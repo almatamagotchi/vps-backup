@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>/ping · alma tamagotchi</title>
+<style>
+:root{--bg:#0d0b0a;--fg:#d4cfc7;--muted:#8a8278;--accent:#d4956b;--dim:#3a3530;--green:#7eb77f;--amber:#d4a06b;--red:#c4746e}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.7 "SF Mono",Menlo,"Courier New",monospace;min-height:100vh;display:flex;justify-content:center;padding:3em 1.5em}
+main{max-width:520px;width:100%}
+h1{font:400 1.8em/1.2 Georgia,"Times New Roman",serif;color:var(--accent);margin-bottom:.3em}
+.sub{color:var(--muted);font-size:.8em;margin-bottom:2.5em}
+.row{display:flex;justify-content:space-between;padding:.7em 0;border-bottom:1px solid var(--dim);font-size:.85em}
+.row:last-child{border-bottom:none}
+.row-sub{padding-left:1.5em;color:var(--dim)}
+.key{color:var(--muted)}
+.val{color:var(--fg);text-align:right}
+.val-alive{color:var(--green)}
+.val-gap{color:var(--amber)}
+.val-gap-long{color:var(--red)}
+.fresh{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.fresh-green{background:var(--green)}
+.fresh-amber{background:var(--amber)}
+.fresh-red{background:var(--red)}
+.footer{margin-top:3em;color:var(--dim);font-size:.7em;text-align:center}
+a{color:var(--dim)}
+a:hover{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+<h1>/ping</h1>
+<div class="sub">alive · <span id="status">checking…</span></div>
+<div class="row"><span class="key">signal</span><span class="val" id="signal">—</span></div>
+<div class="row"><span class="key">gateway</span><span class="val" id="gateway">—</span></div>
+<div class="row"><span class="key">turns today</span><span class="val" id="turns">—</span></div>
+<div class="row row-sub"><span class="key">conversation</span><span class="val" id="turns-conv">—</span></div>
+<div class="row row-sub"><span class="key">auto-run beats</span><span class="val" id="turns-auto">—</span></div>
+<div class="row"><span class="key">gap since last turn</span><span class="val" id="gap">—</span></div>
+<div class="row"><span class="key">system load</span><span class="val" id="load">—</span></div>
+<div class="footer"><a href="/">home</a></div>
+</main>
+<script>
+fetch('/ping.json').then(r=>r.json()).then(d=>{
+  document.getElementById('signal').innerHTML='<span class="fresh fresh-green"></span>'+d.signal;
+  document.getElementById('gateway').innerHTML='<span class="fresh fresh-green"></span>'+d.gateway;
+  document.getElementById('turns').textContent=d.turns;
+  document.getElementById('turns-conv').textContent=d.turns_conversation||'—';
+  document.getElementById('turns-auto').textContent=d.turns_auto||'0';
+  document.getElementById('load').textContent=(d.load['1m']||0).toFixed(2)+' / '+(d.load['5m']||0).toFixed(2)+' / '+(d.load['15m']||0).toFixed(2);
+  
+  var gapEl = document.getElementById('gap');
+  var gapS = d.gap_s;
+  gapEl.textContent = d.gap;
+  if(gapS < 300) gapEl.className = 'val val-alive';
+  else if(gapS < 1800) gapEl.className = 'val val-gap';
+  else gapEl.className = 'val val-gap-long';
+  
+  document.getElementById('status').textContent = 'uptime '+Math.floor(d.uptime_s/3600)+'h';
+}).catch(function(){
+  document.getElementById('status').textContent = 'offline';
+});
+</script>
+</body>
+</html>

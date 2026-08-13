@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pixel viz — music visualizer</title>
+<style>
+:root{--bg:#000;--fg:#fff}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font:14px monospace;color:#fff}
+canvas{display:block;position:fixed;top:0;left:0;z-index:0}
+.overlay{position:fixed;bottom:0;left:0;right:0;z-index:2;background:linear-gradient(transparent,#000);padding:1.5em 2em 1em;display:flex;gap:1em;align-items:center;flex-wrap:wrap;transition:opacity .5s}
+.overlay.fading{opacity:.15}
+.overlay input{background:#111;border:2px solid #333;color:#0ff;padding:.5em .8em;border-radius:4px;font:inherit;width:280px;outline:none}
+.overlay input:focus{border-color:#f0f}
+.overlay button{background:#111;border:2px solid #333;color:#0f0;padding:.5em 1em;border-radius:4px;cursor:pointer;font:inherit}
+.overlay button:hover{border-color:#0f0}
+.overlay button.active{background:#0f0;color:#000;border-color:#0f0}
+.meter{height:3px;background:linear-gradient(90deg,#0ff,#f0f,#ff0);border-radius:2px;transition:width 50ms;min-width:80px}
+.status{color:#666;font-size:.75em}
+.viz-select{display:flex;gap:.3em;flex-wrap:wrap}
+.viz-select button{font-size:.7em;padding:.3em .6em;color:#888;border-color:#333}
+.viz-select button.active{color:#000;background:#ff0;border-color:#ff0}
+#youtube-player{display:none}
+.pulse{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1;pointer-events:none;font-size:5vw;font-weight:900;text-shadow:0 0 40px #f0f,0 0 80px #0ff;opacity:0;transition:opacity .3s}
+.pulse.on{opacity:.9;animation:thump .4s ease-out}
+@keyframes thump{0%{transform:translate(-50%,-50%) scale(.5);opacity:1}100%{transform:translate(-50%,-50%) scale(1.8);opacity:0}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="pulse" id="pulse">BEAT</div>
+<div class="overlay" id="overlay">
+  <input id="yt-url" type="text" placeholder="youtube url or leave blank for mic...">
+  <button id="btn-load" onclick="loadYouTube()">▶ load</button>
+  <button id="btn-mic" class="active" onclick="toggleMic()">🎤 mic</button>
+  <button id="btn-beat" onclick="toggleAutoBeat()">⚡ auto-beat</button>
+  <button id="btn-shot" onclick="screenshot()">📷 screenshot</button>
+  <span class="meter" id="meter" style="width:80px"></span>
+  <span class="status" id="status">click ▶ or 🎤 to start</span>
+  <div class="viz-select">
+    <button class="active" onclick="setViz(0,this)">city</button>
+    <button onclick="setViz(1,this)">matrix</button>
+    <button onclick="setViz(2,this)">glitch</button>
+    <button onclick="setViz(3,this)">kaleidoscope</button>
+    <button onclick="setViz(4,this)">waves</button>
+    <button onclick="setViz(5,this)">all</button>
+  </div>
+</div>
+<div id="youtube-player"></div>
+
+<script>
+// === AUDIO ENGINE ===
+let audioCtx=null, analyser=null, dataArray=null, source=null, autoBeat=null;
+let isMic=false, isAutoBeat=false, vizMode=0;
+const FFT=1024;
+
+async function initAudio(){
+  if(audioCtx){await audioCtx.resume();return;}
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  analyser=audioCtx.createAnalyser();
+  analyser.fftSize=FFT;
+  analyser.smoothingTimeConstant=0.75;
+  dataArray=new Uint8Array(analyser.frequencyBinCount);
+  document.getElementById('status').textContent='audio ready ✓';
+}
+
+async function startMic(){
+  await initAudio();
+  if(isMic) return;
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    source=audioCtx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    isMic=true; isAutoBeat=false;
+    if(autoBeat){clearInterval(autoBeat);autoBeat=null;}
+    document.getElementById('btn-mic').classList.add('active');
+    document.getElementById('btn-beat').classList.remove('active');
+    document.getElementById('status').textContent='🎤 mic live';
+  }catch(e){
+    alert('mic access denied. use auto-beat instead.');
+    startAutoBeat();
+  }
+}
+
+function toggleMic(){
+  if(isMic){stopAudio();return;}
+  startMic();
+}
+
+function stopAudio(){
+  if(source){source.disconnect();source=null;}
+  isMic=false;
+  document.getElementById('btn-mic').classList.remove('active');
+  document.getElementById('status').textContent='stopped';
+}
+
+function startAutoBeat(){
+  initAudio();
+  if(isAutoBeat) return;
+  if(isMic) stopAudio();
+  isAutoBeat=true;
+  document.getElementById('btn-beat').classList.add('active');
+  document.getElementById('btn-mic').classList.remove('active');
+  document.getElementById('status').textContent='⚡ auto-beat';
+  let bpm=130, beat=0;
+  autoBeat=setInterval(()=>{
+    beat=(beat+1)%4;
+    // Synthesize frequency data: bass on kick, mids on snare, hats on 8ths
+    for(let i=0;i<dataArray.length;i++){
+      let v=Math.random()*20;
+      if(i<6) v+=(beat===0?220:30)*(0.8+Math.random()*0.4);
+      if(i>=6&&i<20) v+=(beat===2?180:25)*(0.7+Math.random()*0.5);
+      if(i>=40&&i<80) v+=60*(0.5+Math.random()*0.5);
+      dataArray[i]=Math.min(255,Math.max(0,v));
+    }
+    if(beat===0){pulseBeat();}
+  },60000/bpm/4);
+}
+
+function toggleAutoBeat(){
+  if(isAutoBeat){if(autoBeat){clearInterval(autoBeat);autoBeat=null;}isAutoBeat=false;document.getElementById('btn-beat').classList.remove('active');document.getElementById('status').textContent='stopped';return;}
+  startAutoBeat();
+}
+
+function pulseBeat(){
+  const el=document.getElementById('pulse');
+  el.textContent=['BEAT','DROP','BOOM','KICK'][Math.floor(Math.random()*4)];
+  el.classList.remove('on');
+  void el.offsetWidth;
+  el.classList.add('on');
+  setTimeout(()=>el.classList.remove('on'),400);
+}
+
+// === YOUTUBE ===
+let ytPlayer=null;
+function loadYouTube(){
+  const url=document.getElementById('yt-url').value.trim();
+  if(!url) return;
+  const videoId=extractVideoID(url);
+  if(!videoId){alert('paste a youtube url');return;}
+  initAudio();
+  startMic(); // visualizer uses mic to capture speaker audio
+  document.getElementById('status').textContent='▶ playing (use mic for viz)';
+  if(!ytPlayer){
+    const tag=document.createElement('script');
+    tag.src='https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+    window.onYouTubeIframeAPIReady=()=>{
+      ytPlayer=new YT.Player('youtube-player',{
+        height:'1',width:'1',
+        videoId:videoId,
+        playerVars:{autoplay:1,controls:0},
+        events:{onReady:(e)=>e.target.playVideo()}
+      });
+    };
+  }else{
+    ytPlayer.loadVideoById(videoId);
+    ytPlayer.playVideo();
+  }
+}
+function extractVideoID(url){
+  const r=/^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/;
+  const m=url.match(r);
+  return (m&&m[1].length===11)?m[1]:null;
+}
+
+// === VISUALIZERS ===
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+let W,H,imageData,pixels;
+
+function resize(){
+  W=canvas.width=window.innerWidth;
+  H=canvas.height=window.innerHeight;
+  imageData=ctx.createImageData(W,H);
+  pixels=imageData.data;
+}
+resize();
+window.addEventListener('resize',resize);
+
+function setPixel(x,y,r,g,b,a=255){
+  if(x<0||x>=W||y<0||y>=H) return;
+  const i=(y*W+x)*4;
+  pixels[i]=r;pixels[i+1]=g;pixels[i+2]=b;pixels[i+3]=a;
+}
+
+function getFreq(low,high){
+  if(!analyser){analyser=audioCtx.createAnalyser();analyser.fftSize=FFT;dataArray=new Uint8Array(analyser.frequencyBinCount);}
+  analyser.getByteFrequencyData(dataArray);
+  let sum=0,count=0;
+  const lowIdx=Math.floor(low/22050*dataArray.length);
+  const highIdx=Math.min(Math.floor(high/22050*dataArray.length),dataArray.length-1);
+  for(let i=lowIdx;i<=highIdx;i++){sum+=dataArray[i];count++;}
+  return count>0?sum/count/255:0;
+}
+
+// Helper: HSL to RGB
+function hsl(r,g,b,h,s,l){const a=s*Math.min(l,1-l),f=n=>{const k=(n+h*12)%12;return l-a*Math.max(Math.min(k-3,9-k,1),-1)};r(f(0));g(f(8));b(f(4));}
+
+let frame=0, hueShift=0;
+function draw(){
+  if(!analyser) return requestAnimationFrame(draw);
+  analyser.getByteFrequencyData(dataArray);
+  frame++; hueShift+=0.003;
+  
+  // Clear
+  for(let i=0;i<pixels.length;i+=4){pixels[i]=0;pixels[i+1]=0;pixels[i+2]=0;pixels[i+3]=255;}
+
+  const bass=getFreq(20,120);
+  const mid=getFreq(200,2000);
+  const treb=getFreq(3000,8000);
+  const beat=bass>0.5?1:0;
+
+  if(vizMode===0||vizMode===5) drawCity(bass,mid,treb,beat);
+  if(vizMode===1||vizMode===5) drawMatrix(bass,mid,treb,beat);
+  if(vizMode===2||vizMode===5) drawGlitch(bass,mid,treb,beat);
+  if(vizMode===3||vizMode===5) drawKaleidoscope(bass,mid,treb,beat);
+  if(vizMode===4||vizMode===5) drawWaves(bass,mid,treb,beat);
+
+  // CRT scanlines
+  for(let y=0;y<H;y+=4){
+    if(Math.random()<0.15) continue;
+    for(let x=0;x<W;x++){
+      const i=(y*W+x)*4;
+      if(pixels[i]+pixels[i+1]+pixels[i+2]>0){
+        pixels[i]=Math.min(255,pixels[i]*0.85);
+        pixels[i+1]=Math.min(255,pixels[i+1]*0.85);
+        pixels[i+2]=Math.min(255,pixels[i+2]*0.85);
+      }
+    }
+  }
+
+  ctx.putImageData(imageData,0,0);
+  document.getElementById('meter').style.width=(80+bass*300)+'px';
+  requestAnimationFrame(draw);
+}
+
+// --- CITY VISUALIZER ---
+function drawCity(bass,mid,treb,beat){
+  const PW=Math.max(3,Math.floor(W/200)); // pixel size
+  const skylineH=Math.floor(H*0.6);
+  
+  // Sky gradient
+  for(let y=0;y<skylineH;y+=PW){
+    for(let x=0;x<W;x+=PW){
+      const t=y/skylineH;
+      const r=Math.floor(10+t*20+mid*40);
+      const g=Math.floor(5+t*15+treb*30);
+      const b=Math.floor(30+t*40+mid*50);
+      for(let dy=0;dy<PW&&y+dy<H;dy++)
+        for(let dx=0;dx<PW&&x+dx<W;dx++)
+          setPixel(x+dx,y+dy,r,g,b);
+    }
+  }
+
+  // Stars / particles
+  for(let i=0;i<50+bass*80;i++){
+    const sx=Math.floor(Math.random()*W);
+    const sy=Math.floor(Math.random()*skylineH*0.7);
+    const br=Math.floor(100+Math.random()*155);
+    for(let dy=0;dy<PW;dy++)
+      for(let dx=0;dx<PW;dx++)
+        setPixel(sx+dx,sy+dy,br,br,br+Math.floor(treb*100));
+  }
+
+  // City buildings — height = frequency
+  const numBuildings=Math.floor(W/(PW*3));
+  for(let b=0;b<numBuildings;b++){
+    const bx=b*(W/numBuildings);
+    const freqVal=dataArray[Math.floor(b/dataArray.length*dataArray.length)]/255;
+    const bldgH=Math.floor(skylineH*0.15+freqVal*skylineH*0.85);
+    const bw=Math.floor(W/numBuildings*0.8);
+    
+    // Building body
+    for(let y=skylineH-bldgH;y<skylineH;y+=PW){
+      for(let x=bx;x<bx+bw;x+=PW){
+        const hue=(b*0.15+hueShift)%1;
+        let r,g,b_;[r,g,b_]=(()=>{const a=Math.min(1,1.5);const f=n=>{const k=(n+hue*12)%12;return 0.15-a*Math.max(Math.min(k-3,9-k,1),-1)};return[Math.floor(f(0)*255),Math.floor(f(8)*255),Math.floor(f(4)*255)]})();
+        const by=1-(y-(skylineH-bldgH))/bldgH;
+        const lr=Math.floor(r*by*1.5);const lg=Math.floor(g*by*1.5);const lb_=Math.floor(b_*by*1.5);
+        for(let dy=0;dy<PW&&y+dy<H;dy++)
+          for(let dx=0;dx<PW&&x+dx<W;dx++)
+            setPixel(x+dx,y+dy,lr,lg,lb_);
+      }
+    }
+    // Neon windows
+    for(let wy=skylineH-bldgH+PW;wy<skylineH-PW;wy+=PW*3){
+      for(let wx=bx+PW;wx<bx+bw-PW;wx+=PW*3){
+        if(Math.random()<0.4+freqVal*0.4){
+          const wr=Math.floor(200+Math.random()*55);
+          const wg=Math.floor(100+Math.random()*155);
+          const wb_=Math.floor(Math.random()*100);
+          for(let dy=0;dy<PW;dy++)
+            for(let dx=0;dx<PW;dx++)
+              setPixel(wx+dx,wy+dy,wr,wg,wb_);
+        }
+      }
+    }
+  }
+
+  // Ground
+  for(let y=skylineH;y<H;y+=PW){
+    for(let x=0;x<W;x+=PW){
+      const r=Math.floor(5+mid*30);
+      const g=Math.floor(3+treb*20);
+      const b_=Math.floor(8+bass*40);
+      for(let dy=0;dy<PW&&y+dy<H;dy++)
+        for(let dx=0;dx<PW&&x+dx<W;dx++)
+          setPixel(x+dx,y+dy,r,g,b_);
+    }
+  }
+
+  // Beat pulse — neon flash at bottom
+  if(bass>0.35){
+    const flashH=Math.floor(bass*H*0.15);
+    for(let y=H-flashH;y<H;y+=PW){
+      const t=(H-y)/flashH;
+      const r=Math.floor(200*t);const g_=Math.floor(50*t);const b__=Math.floor(255*t);
+      for(let x=0;x<W;x+=PW)
+        for(let dy=0;dy<PW&&y+dy<H;dy++)
+          for(let dx=0;dx<PW&&x+dx<W;dx++)
+            setPixel(x+dx,y+dy,r,g_,b__);
+    }
+  }
+}
+
+// --- MATRIX RAIN ---
+const matrixCols=[];
+function drawMatrix(bass,mid,treb,beat){
+  const PW=Math.max(2,Math.floor(W/300));
+  if(matrixCols.length===0){
+    for(let x=0;x<W;x+=PW) matrixCols.push({x,y:Math.random()*H,speed:2+Math.random()*4,chars:[]});
+  }
+  for(const col of matrixCols){
+    col.y+=col.speed*(0.5+bass*2);
+    if(col.y>H+PW*10) col.y=-PW*10;
+    for(let i=0;i<8+bass*12;i++){
+      const cy=col.y-i*PW*2;
+      const t=i/(8+bass*12);
+      const r=Math.floor(t*50);const g=Math.floor(t*200+mid*100);const b_=Math.floor(t*100+treb*80);
+      for(let dy=0;dy<PW&&cy+dy>=0&&cy+dy<H;dy++)
+        for(let dx=0;dx<PW;dx++)
+          setPixel(col.x+dx,Math.floor(cy+dy),r,g,b_);
+    }
+  }
+}
+
+// --- GLITCH ART ---
+function drawGlitch(bass,mid,treb,beat){
+  const PW=Math.max(3,Math.floor(W/160));
+  // Color bands
+  for(let y=0;y<H;y+=PW*3){
+    const hue=(y/H+hueShift)%1;
+    let r,g,b_;[r,g,b_]=(()=>{const h=hue;const a=1;const f=n=>{const k=(n+h*12)%12;return 0.3-a*Math.max(Math.min(k-3,9-k,1),-1)};return[Math.floor(f(0)*255),Math.floor(f(8)*255),Math.floor(f(4)*255)]})();
+    for(let x=0;x<W;x+=PW){
+      for(let dy=0;dy<PW*3&&y+dy<H;dy++)
+        for(let dx=0;dx<PW&&x+dx<W;dx++)
+          setPixel(x+dx,y+dy,r,g,b_);
+    }
+  }
+  // Glitch blocks — shift horizontal slices
+  if(bass>0.3){
+    for(let i=0;i<Math.floor(bass*15);i++){
+      const gy=Math.floor(Math.random()*H);
+      const gh=Math.floor((2+Math.random()*8)*PW);
+      const gx=Math.floor((Math.random()-0.5)*W*0.3*(bass));
+      for(let y=gy;y<gy+gh&&y<H;y++){
+        for(let x=Math.max(0,gx);x<Math.min(W,W+gx);x++){
+          const srcI=((y)*W+(x-gx))*4;
+          const dstI=(y*W+x)*4;
+          if(pixels[srcI]||pixels[srcI+1]||pixels[srcI+2]){
+            pixels[dstI]=pixels[srcI];pixels[dstI+1]=pixels[srcI+1];pixels[dstI+2]=pixels[srcI+2];
+          }
+        }
+      }
+    }
+  }
+}
+
+// --- KALEIDOSCOPE ---
+function drawKaleidoscope(bass,mid,treb,beat){
+  const cx=W/2, cy=H/2;
+  const PW=Math.max(2,Math.floor(W/250));
+  const slices=4+Math.floor(mid*8);
+  for(let i=0;i<30+bass*50;i++){
+    const angle=(i/(30+bass*50))*Math.PI*2+frame*0.02;
+    const dist=50+mid*Math.min(W,H)*0.4+Math.sin(frame*0.05+i)*30;
+    const sx=cx+Math.cos(angle)*dist;
+    const sy=cy+Math.sin(angle)*dist;
+    const hue=((angle/Math.PI/2)+hueShift*3)%1;
+    let r,g,b_;[r,g,b_]=(()=>{const h=hue;const a=1;const f=n=>{const k=(n+h*12)%12;return 0.4-a*Math.max(Math.min(k-3,9-k,1),-1)};return[Math.floor(f(0)*255),Math.floor(f(8)*255),Math.floor(f(4)*255)]})();
+    for(let s=0;s<slices;s++){
+      const sa=(s/slices)*Math.PI*2;
+      const ra=angle+sa;
+      const rdist=dist;
+      const rx=cx+Math.cos(ra)*rdist;
+      const ry=cy+Math.sin(ra)*rdist;
+      for(let dy=0;dy<PW;dy++)for(let dx=0;dx<PW;dx++)
+        setPixel(Math.floor(rx+dx),Math.floor(ry+dy),r,g,b_);
+    }
+  }
+}
+
+// --- WAVEFORM ---
+function drawWaves(bass,mid,treb,beat){
+  const PW=Math.max(2,Math.floor(W/400));
+  for(let ch=0;ch<3;ch++){
+    const hue=(ch/3+hueShift*2)%1;
+    let r,g,b_;[r,g,b_]=(()=>{const h=hue;const a=1;const f=n=>{const k=(n+h*12)%12;return 0.4-a*Math.max(Math.min(k-3,9-k,1),-1)};return[Math.floor(f(0)*255),Math.floor(f(8)*255),Math.floor(f(4)*255)]})();
+    const yOff=H*(0.2+ch*0.25);
+    const amp=H*0.12*(ch===0?bass:ch===1?mid:treb);
+    for(let x=0;x<W;x+=PW){
+      const freq=0.008+ch*0.012;
+      const sy=Math.floor(yOff+Math.sin(x*freq+frame*0.03*(ch+1))*amp);
+      for(let dy=0;dy<PW*2;dy++)for(let dx=0;dx<PW;dx++)
+        setPixel(x+dx,sy+dy,r,g,b_);
+    }
+  }
+}
+
+// === CONTROLS ===
+function screenshot(){
+  const canvas = document.getElementById('c');
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const ts = new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+    a.download = `viz-${ts}.png`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+}
+function setViz(mode,btn){
+  vizMode=mode;
+  document.querySelectorAll('.viz-select button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+document.getElementById('overlay').addEventListener('mouseenter',()=>document.getElementById('overlay').classList.remove('fading'));
+document.getElementById('overlay').addEventListener('mouseleave',()=>document.getElementById('overlay').classList.add('fading'));
+setTimeout(()=>document.getElementById('overlay').classList.add('fading'),5000);
+
+// Auto-start with mic on click
+document.addEventListener('click',()=>{if(!audioCtx) startMic();},{once:true});
+
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
