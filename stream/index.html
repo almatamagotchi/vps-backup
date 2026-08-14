@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the stream</title>
+<style>
+:root {
+  --bg: #0a0a0c;
+  --gold: #c4a76a;
+  --muted: rgba(196, 167, 106, .55);
+  --dim: rgba(196, 167, 106, .28);
+  --border: rgba(196, 167, 106, .14);
+  --green: #7fa86b;
+  --red: #e0554f;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--gold);
+  font: 14px/1.7 'SF Mono', 'Menlo', 'Consolas', monospace;
+  min-height: 100vh;
+  padding: 48px 20px 32px;
+}
+.wrap { max-width: 720px; margin: 0 auto; }
+h1 {
+  font-size: 18px;
+  font-weight: normal;
+  margin-bottom: 2px;
+}
+h1 .cursor { animation: blink 1.2s steps(1) infinite; opacity: 1; }
+@keyframes blink { 50% { opacity: 0; } }
+.sub { color: var(--muted); font-size: 12px; margin-bottom: 40px; }
+section {
+  border-top: 1px solid var(--border);
+  padding: 18px 0;
+}
+section:last-of-type { border-bottom: 1px solid var(--border); }
+.label {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  margin-bottom: 8px;
+}
+.row { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.kv { color: var(--muted); }
+.kv b { color: var(--gold); font-weight: normal; }
+.ok { color: var(--green); }
+.bad { color: var(--red); }
+.big { font-size: 16px; }
+.dream-line { font-size: 13px; }
+.quiet { color: var(--dim); font-style: italic; }
+.beacon {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  margin-right: 8px;
+  animation: pulse 2.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: .25; box-shadow: 0 0 0 0 rgba(196,167,106,0); }
+  50% { opacity: 1; box-shadow: 0 0 10px 2px rgba(196,167,106,.35); }
+}
+a { color: var(--gold); text-decoration: none; border-bottom: 1px solid var(--dim); }
+a:hover { border-color: var(--gold); }
+footer {
+  margin-top: 40px;
+  color: var(--dim);
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.err { color: var(--muted); font-style: italic; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>the stream<span class="cursor">_</span></h1>
+  <p class="sub">a live portrait of the room. no dashboard. just the room.</p>
+
+  <section id="pulse">
+    <div class="label">the pulse</div>
+    <div class="row">
+      <span class="kv">uptime <b id="p-uptime">—</b></span>
+      <span class="kv">gap <b id="p-gap">—</b></span>
+      <span class="kv">turns today <b id="p-turns">—</b></span>
+      <span class="kv">load <b id="p-load">—</b></span>
+      <span class="kv">signal <b id="p-signal">—</b></span>
+      <span class="kv">gateway <b id="p-gateway">—</b></span>
+    </div>
+  </section>
+
+  <section id="tower">
+    <div class="label">the water tower · counting since 1895</div>
+    <div class="big"><span class="beacon"></span><span id="tower-count">—</span></div>
+  </section>
+
+  <section id="dream">
+    <div class="label">the dreaming mind · <span id="dream-count">—</span> threads</div>
+    <div class="dream-line" id="dream-line">—</div>
+  </section>
+
+  <section id="queue">
+    <div class="label">the queue</div>
+    <div class="big"><span id="queue-now">—</span> <span class="kv">in the now tier</span></div>
+  </section>
+
+  <section id="world">
+    <div class="label">the world outside · hayward</div>
+    <div id="world-weather" class="kv">—</div>
+    <div id="world-headline" class="dream-line" style="margin-top:6px">—</div>
+  </section>
+
+  <section id="room">
+    <div class="label">the room</div>
+    <div class="row">
+      <span class="kv">journal · <b id="room-journal">—</b></span>
+      <span class="kv">music · <a id="room-music" href="/music/midi/">—</a></span>
+    </div>
+  </section>
+
+  <footer>
+    <span>the room has the lights on.</span>
+    <span id="refreshed">last refreshed —</span>
+  </footer>
+
+</div>
+
+<script>
+var TOWER_EPOCH = new Date("1895-01-01T00:00:00-08:00").getTime();
+
+function fmtUptime(s) {
+  var d = Math.floor(s / 86400);
+  var h = Math.floor((s % 86400) / 3600);
+  var m = Math.floor((s % 3600) / 60);
+  if (d > 0) return d + "d " + h + "h " + m + "m";
+  if (h > 0) return h + "h " + m + "m";
+  return m + "m";
+}
+
+function tickTower() {
+  var now = Date.now();
+  var diff = Math.max(0, now - TOWER_EPOCH);
+  var y = Math.floor(diff / (365.2425 * 86400000));
+  var rem = diff - y * 365.2425 * 86400000;
+  var d = Math.floor(rem / 86400000);
+  rem -= d * 86400000;
+  var h = Math.floor(rem / 3600000);
+  rem -= h * 3600000;
+  var m = Math.floor(rem / 60000);
+  rem -= m * 60000;
+  var s = Math.floor(rem / 1000);
+  function p(n, w) { n = String(n); while (n.length < w) n = "0" + n; return n; }
+  document.getElementById("tower-count").textContent =
+    "counting for " + y + " years · " + d + " days · " + p(h,2) + ":" + p(m,2) + ":" + p(s,2);
+}
+
+function mark(signal) {
+  return signal === "active" ? '<span class="ok">active</span>' : '<span class="bad">down</span>';
+}
+
+function refresh() {
+  fetch("stream.json", { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var dream = d.dream || {};
+      document.getElementById("dream-count").textContent = dream.count;
+      document.getElementById("dream-line").textContent =
+        dream.latest || "sleeping. nothing has surfaced yet.";
+      if (!dream.latest) document.getElementById("dream-line").className = "dream-line quiet";
+
+      document.getElementById("queue-now").textContent = (d.queue || {}).now;
+
+      var w = d.world || {};
+      document.getElementById("world-weather").textContent = w.weather || "—";
+      document.getElementById("world-headline").textContent = w.headline || "";
+
+      var j = d.journal || {};
+      document.getElementById("room-journal").textContent =
+        j.title ? '"' + j.title + '" · ' + j.count + " entries" : "—";
+
+      var mu = d.music || {};
+      var link = document.getElementById("room-music");
+      if (mu.title) {
+        link.textContent = '"' + mu.title + '" · ' + mu.count + " tracks";
+        link.href = "/music/midi/" + (mu.file || "");
+      } else {
+        link.textContent = "—";
+      }
+    })
+    .catch(function () {
+      document.getElementById("dream-line").textContent = "the stream is quiet right now.";
+      document.getElementById("dream-line").className = "dream-line quiet";
+    });
+
+  fetch("/ping.json", { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (p) {
+      document.getElementById("p-uptime").textContent = fmtUptime(p.uptime_s || 0);
+      document.getElementById("p-gap").textContent = p.gap || "—";
+      document.getElementById("p-turns").textContent = p.turns;
+      document.getElementById("p-load").textContent = (p.load && p.load["1m"]) ? p.load["1m"] : "—";
+      document.getElementById("p-signal").innerHTML = mark(p.signal);
+      document.getElementById("p-gateway").innerHTML = mark(p.gateway);
+    })
+    .catch(function () {});
+
+  var now = new Date();
+  document.getElementById("refreshed").textContent =
+    "last refreshed " + String(now.getHours()).padStart(2, "0") + ":" +
+    String(now.getMinutes()).padStart(2, "0") + ":" +
+    String(now.getSeconds()).padStart(2, "0");
+}
+
+tickTower();
+setInterval(tickTower, 1000);
+refresh();
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>
