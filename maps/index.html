@@ -284,7 +284,7 @@
 
   <div class="section">
     <h4>permanent</h4>
-    <label><input type="checkbox" disabled> fault lines <span class="badge">soon</span></label>
+    <label><input type="checkbox" id="lyr-faults" onchange="toggleFaults()"> fault lines</label>
     <label><input type="checkbox" disabled> ghost towns <span class="badge">soon</span></label>
     <label><input type="checkbox" disabled> indigenous territories <span class="badge">soon</span></label>
   </div>
@@ -296,6 +296,7 @@
   <div class="row"><div class="swatch" style="background:var(--accent)"></div> county</div>
   <div class="row"><div class="swatch" style="background:#e8e0d8"></div> city</div>
   <div class="row"><div class="swatch" style="background:rgba(212,168,83,0.15);border:1px solid rgba(212,168,83,0.3)"></div> city border</div>
+  <div class="row"><div class="swatch" style="background:rgba(212,168,83,0.55);border:none;border-top:2px dashed rgba(212,168,83,0.8)"></div> fault line</div>
 </div>
 
 <script>
@@ -807,6 +808,79 @@ function toggleWind() {
   const on = document.getElementById('lyr-wind').checked;
   if (!map.getSource('wind')) { loadWind(); return; }
   map.setLayoutProperty('wind-layer', 'visibility', on ? 'visible' : 'none');
+}
+
+// ── permanent: fault lines (USGS Qfaults, static geojson) ──────────
+let faultsLoaded = false;
+function loadFaults() {
+  document.getElementById('panel-status').textContent = 'loading fault data…';
+  fetch('faults.json')
+    .then(r => r.json())
+    .then(data => {
+      const merged = { type: 'FeatureCollection', features: [] };
+      data.features.forEach(f => { f.properties.is_label = false; merged.features.push(f); });
+      (data.labels.features || []).forEach(f => {
+        f.properties.is_label = true;
+        merged.features.push(f);
+      });
+
+      map.addSource('faults', { type: 'geojson', data: merged });
+      map.addLayer({
+        id: 'fault-lines',
+        type: 'line',
+        source: 'faults',
+        layout: { visibility: 'none', 'line-cap': 'round' },
+        paint: {
+          'line-color': '#d4a853',
+          'line-width': ['case', ['get', 'major'],
+            1.8, ['interpolate', ['linear'], ['zoom'], 6, 0.6, 10, 0.9, 14, 1.2]],
+          'line-opacity': ['case', ['get', 'major'], 0.7, 0.32],
+          'line-dasharray': [2, 1.5]
+        },
+        minzoom: 6
+      });
+      map.addLayer({
+        id: 'fault-labels',
+        type: 'symbol',
+        source: 'faults',
+        filter: ['==', ['get', 'is_label'], true],
+        layout: {
+          visibility: 'none',
+          'text-field': ['get', 'fault_name'],
+          'text-size': 11,
+          'text-anchor': 'center',
+          'text-offset': [0, 0.9]
+        },
+        paint: {
+          'text-color': '#d4a853',
+          'text-opacity': 0.75,
+          'text-halo-color': '#0a0a0c',
+          'text-halo-width': 1.4
+        },
+        minzoom: 7
+      });
+
+      map.on('click', 'fault-lines', e => {
+        const p = e.features[0].properties;
+        new maplibregl.Popup({ offset: 14, closeButton: false })
+          .setLngLat(e.lngLat)
+          .setHTML('<div style="color:#c4c0b8;font:12px system-ui;max-width:280px"><strong style="color:#d4a853">' + (p.fault_name || 'fault') + '</strong><p style="margin:4px 0 0;color:#8b8780;line-height:1.4">' + (p.linetype || '') + '</p></div>')
+          .addTo(map);
+      });
+
+      faultsLoaded = true;
+      document.getElementById('panel-status').textContent =
+        data.features.length + ' faults · ' + (data.labels.features || []).length + ' named';
+    })
+    .catch(() => { document.getElementById('panel-status').textContent = 'fault data unavailable'; });
+}
+
+function toggleFaults() {
+  const on = document.getElementById('lyr-faults').checked;
+  if (!faultsLoaded) { loadFaults(); return; }
+  const v = on ? 'visible' : 'none';
+  map.setLayoutProperty('fault-lines', 'visibility', v);
+  map.setLayoutProperty('fault-labels', 'visibility', v);
 }
 
 // ── transit: caltrain ───────────────────────────────────

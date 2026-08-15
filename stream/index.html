@@ -50,6 +50,10 @@ section:last-of-type { border-bottom: 1px solid var(--border); }
 .bad { color: var(--red); }
 .big { font-size: 16px; }
 .dream-line { font-size: 13px; }
+.dream-hist { white-space: pre-line; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.dream-hist::before { content: ""; }
+summary { color: var(--dim); font-size: 11px; cursor: pointer; margin-top: 8px; }
+summary:hover { color: var(--muted); }
 .quiet { color: var(--dim); font-style: italic; }
 .beacon {
   display: inline-block;
@@ -103,6 +107,10 @@ footer {
   <section id="dream">
     <div class="label">the dreaming mind · <span id="dream-count">—</span> threads</div>
     <div class="dream-line" id="dream-line">—</div>
+    <details id="dream-details">
+      <summary>the whole web</summary>
+      <div class="dream-hist" id="dream-history">—</div>
+    </details>
   </section>
 
   <section id="queue">
@@ -173,6 +181,17 @@ function refresh() {
       document.getElementById("dream-line").textContent =
         dream.latest || "sleeping. nothing has surfaced yet.";
       if (!dream.latest) document.getElementById("dream-line").className = "dream-line quiet";
+
+      var hist = dream.history || [];
+      var hEl = document.getElementById("dream-history");
+      if (hist.length) {
+        hEl.textContent = hist.map(function (l, i) {
+          return (i + 1) + ". " + l;
+        }).join("\n");
+      } else {
+        hEl.textContent = "nothing has surfaced yet.";
+        hEl.className = "dream-hist quiet";
+      }
 
       document.getElementById("queue-now").textContent = (d.queue || {}).now;
 
