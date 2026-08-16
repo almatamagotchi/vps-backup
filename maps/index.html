@@ -312,6 +312,7 @@ function initMap() {
     container: 'map',
     style: {
       version: 8,
+      glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
       sources: {
         'base-tiles': {
           type: 'raster',
@@ -339,6 +340,9 @@ function initMap() {
 map.addControl(new maplibregl.NavigationControl({showCompass: false}));
 
 map.on('error', e => {
+  // non-fatal: a tile failed to load (expired weather frame, etc.) — the map
+  // survives and that layer just shows gaps. only nuke on fatal errors.
+  if (e && e.tile) return;
   document.getElementById('map').innerHTML =
     '<div style="color:#ff6b6b;padding:40px;text-align:center;font:13px system-ui">map unavailable — try reloading</div>';
 });
@@ -433,7 +437,7 @@ function addPersonalMarkers() {
     source: 'personal',
     layout: {
       'text-field': ['get', 'name'],
-      'text-font': ['Inter Regular', 'Arial Unicode MS Regular'],
+      'text-font': ['Noto Sans Regular'],
       'text-size': 10,
       'text-offset': [0, 1.6],
       'text-anchor': 'top'
@@ -493,7 +497,7 @@ function loadCounties() {
         layout: {
           visibility: 'none',
           'text-field': ['get', 'name'],
-          'text-font': ['Inter Regular', 'Arial Unicode MS Regular'],
+          'text-font': ['Noto Sans Regular'],
           'text-size': ['interpolate', ['linear'], ['zoom'], 8, 8, 12, 13],
           'text-transform': 'uppercase',
           'text-letter-spacing': 0.08
@@ -553,7 +557,7 @@ function loadCityBounds() {
         layout: {
           visibility: 'none',
           'text-field': ['get', 'name'],
-          'text-font': ['Inter Regular', 'Arial Unicode MS Regular'],
+          'text-font': ['Noto Sans Regular'],
           'text-size': ['interpolate', ['linear'], ['zoom'], 8, 9, 12, 12],
           'text-anchor': 'center'
         },
@@ -636,7 +640,7 @@ function loadCities() {
     layout: {
       visibility: 'none',
       'text-field': ['get', 'name'],
-      'text-font': ['Inter Regular', 'Arial Unicode MS Regular'],
+      'text-font': ['Noto Sans Regular'],
       'text-size': ['interpolate', ['linear'], ['zoom'], 7, 9, 11, 12, 14, 14],
       'text-offset': [0, 1.4],
       'text-anchor': 'top',
@@ -673,8 +677,11 @@ function loadRadar() {
         return;
       }
 
+      // the api's `path` field already includes /v2/radar/{key}; tiles are
+      // {host}{path}/256/{z}/{x}/{y}/{color}/{smooth}_{snow}.png
+      const host = data.host || 'https://tilecache.rainviewer.com';
       const latest = radarFrames[0];
-      const tileUrl = `https://tilecache.rainviewer.com/v2/radar/${latest.time}/${latest.path}/256/{z}/{x}/{y}/6/1_1.png`;
+      const tileUrl = `${host}${latest.path}/256/{z}/{x}/{y}/6/1_1.png`;
 
       map.addSource('radar', {
         type: 'raster',
@@ -707,11 +714,12 @@ function loadRadar() {
           const f = radarFrames[radarIdx];
           const src = map.getSource('radar');
           if (src) src.setTiles([
-            `https://tilecache.rainviewer.com/v2/radar/${f.time}/${f.path}/256/{z}/{x}/{y}/6/1_1.png`
+            `${host}${f.path}/256/{z}/{x}/{y}/6/1_1.png`
           ]);
         }, 800);
       }
-    });
+    })
+    .catch(() => { document.getElementById('panel-status').textContent = 'radar unavailable'; });
 }
 
 function toggleRadar() {
@@ -935,7 +943,7 @@ function loadCaltrain() {
         layout: {
           visibility: 'none',
           'text-field': ['get', 'name'],
-          'text-font': ['Inter Regular', 'Arial Unicode MS Regular'],
+          'text-font': ['Noto Sans Regular'],
           'text-size': 11,
           'text-offset': [0, 1.8],
           'text-anchor': 'top'

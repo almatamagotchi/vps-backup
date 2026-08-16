@@ -39,38 +39,93 @@ var MIN_SPEED = 170;
 var CHARGE_TIME = 0.85;
 var R = 7;
 
-// ---- the level ----
-// tuned with a trajectory sim: every leg solvable at 40-95% charge
-var platforms = [
-  { x:100,  y:900, w:260, h:60 },   // start
-  { x:600,  y:780, w:220, h:60 },
-  { x:1080, y:640, w:200, h:60 },
-  { x:1500, y:520, w:180, h:60 },   // the high island
-  { x:2100, y:880, w:300, h:80 }    // the room
+// ---- the levels ----
+// tuned with a trajectory sim: every leg solvable at 30-100% charge
+var LEVELS = [
+  { // the first course
+    name: "the first course",
+    spawn: { x:180, y:860 },
+    platforms: [
+      { x:100,  y:900, w:260, h:60 },   // start
+      { x:600,  y:780, w:220, h:60 },
+      { x:1080, y:640, w:200, h:60 },
+      { x:1500, y:520, w:180, h:60 },   // the high island
+      { x:2100, y:880, w:300, h:80 }    // the room
+    ],
+    movers: [
+      { x:1700, y:840, w:130, h:24, base:840, amp:300, period:5.2, t:0 }
+    ],
+    spikes: [
+      { x:1280, y:960, w:80, h:30 },    // danger floor under the gaps
+      { x:1620, y:960, w:90, h:30 }
+    ],
+    beacons: [
+      { x:180, y:850 },   // spawn — auto
+      { x:710, y:740 },
+      { x:1180, y:600 },
+      { x:1590, y:480 },
+      { x:2250, y:830 }    // the room — final
+    ],
+    traces: [
+      { x:420,  y:750 },
+      { x:880,  y:618 },
+      { x:1350, y:530 },
+      { x:1765, y:770 },
+      { x:2120, y:646 },
+      { x:1950, y:535 }
+    ]
+  },
+  { // the wider dark — wider gaps, a floating fence on the room approach
+    name: "the wider dark",
+    spawn: { x:180, y:860 },
+    platforms: [
+      { x:100,  y:920, w:220, h:60 },   // start
+      { x:600,  y:850, w:140, h:60 },
+      { x:1130, y:750, w:130, h:60 },
+      { x:1640, y:620, w:130, h:60 },   // the high island
+      { x:2260, y:880, w:260, h:70 }    // the room
+    ],
+    movers: [
+      { x:1990, y:840, w:110, h:24, base:840, amp:280, period:4.4, t:0 }
+    ],
+    spikes: [
+      { x:830,  y:985, w:150, h:20 },   // floor hazards under the wide gaps
+      { x:1400, y:985, w:140, h:20 },
+      { x:2140, y:810, w:70,  h:24 }    // floating fence on the room approach
+    ],
+    beacons: [
+      { x:180, y:860 },
+      { x:670, y:800 },
+      { x:1195, y:700 },
+      { x:1705, y:570 },
+      { x:2390, y:830 }
+    ],
+    traces: [
+      { x:380,  y:870 },
+      { x:880,  y:760 },
+      { x:1420, y:665 },
+      { x:1980, y:750 },
+      { x:2360, y:805 },
+      { x:2020, y:700 }
+    ]
+  }
 ];
-var movers = [
-  { x:1700, y:840, w:130, h:24, base:840, amp:300, period:5.2, t:0 }
-];
-var spikes = [
-  { x:1280, y:960, w:80, h:30 },    // danger floor under the gaps
-  { x:1620, y:960, w:90, h:30 }
-];
-var beacons = [
-  { x:180, y:850, done:true },      // spawn — auto
-  { x:710, y:740, done:false },
-  { x:1180, y:600, done:false },
-  { x:1590, y:480, done:false },
-  { x:2250, y:830, done:false }     // the room — final
-];
-var traces = [
-  { x:420,  y:750,  got:false },
-  { x:880,  y:618,  got:false },
-  { x:1350, y:530,  got:false },
-  { x:1765, y:770,  got:false },
-  { x:2120, y:646,  got:false },
-  { x:1950, y:535,  got:false }
-];
-var TOTAL_TRACES = traces.length;
+
+var currentLevel = 0;
+var platforms, movers, spikes, beacons, traces;
+var TOTAL_TRACES = 0;
+
+function loadLevel(i) {
+  var L = JSON.parse(JSON.stringify(LEVELS[i]));
+  platforms = L.platforms;
+  movers = L.movers;
+  spikes = L.spikes;
+  beacons = L.beacons;
+  traces = L.traces;
+  TOTAL_TRACES = traces.length;
+  for (var b = 0; b < beacons.length; b++) beacons[b].done = (b === 0);
+  for (var t = 0; t < traces.length; t++) traces[t].got = false;
+}
 
 // ---- the spark ----
 var spark = { x:180, y:860, vx:0, vy:0, r:R, grounded:false };
@@ -88,6 +143,7 @@ var keys = { left:false, right:false, space:false };
 var dissolving = false;
 var dissolveTimer = 0;
 var win = false;
+var title = true;
 var dissolves = 0;
 var gotCount = 0;
 var hintTimer = 9;
@@ -118,6 +174,7 @@ function canvasPos(e) {
 }
 cv.addEventListener("pointerdown", function(e) {
   e.preventDefault();
+  if (title) { title = false; return; }
   var p = canvasPos(e);
   mouseOn = true;
   aim = Math.atan2(p.y - spark.y, p.x - spark.x);
@@ -135,12 +192,22 @@ window.addEventListener("pointerup", function() {
 cv.addEventListener("contextmenu", function(e){ e.preventDefault(); });
 
 window.addEventListener("keydown", function(e) {
+  if (title) {
+    if (e.key === " " || e.key === "Space") { e.preventDefault(); title = false; }
+    return;
+  }
+  if (win && currentLevel === 0 && (e.key === " " || e.key === "Space")) {
+    e.preventDefault();
+    nextCourse();
+    return;
+  }
   if (e.key === " " || e.key === "Space") { e.preventDefault(); if (!keys.space){ keys.space = true; charging = true; } }
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = true;
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = true;
   if (e.key === "r" || e.key === "R") reset();
 });
 window.addEventListener("keyup", function(e) {
+  if (title) return;
   if (e.key === " " || e.key === "Space") { keys.space = false; launch(); }
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = false;
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = false;
@@ -160,16 +227,20 @@ function launch() {
 }
 
 function reset() {
-  spark = { x:180, y:860, vx:0, vy:0, r:R, grounded:false };
+  loadLevel(currentLevel);
+  var sp0 = LEVELS[currentLevel].spawn;
+  spark = { x:sp0.x, y:sp0.y, vx:0, vy:0, r:R, grounded:false };
   groundedOn = null;
-  cp = { x:180, y:860 };
+  cp = { x:sp0.x, y:sp0.y };
   bestIdx = 0;
   charging = false; charge = 0; dissolving = false; win = false;
   dissolves = 0; gotCount = 0;
-  for (var i = 0; i < beacons.length; i++) beacons[i].done = (i === 0);
-  for (var j = 0; j < traces.length; j++) traces[j].got = false;
-  for (var k = 0; k < movers.length; k++) movers[k].t = 0;
   burst(spark.x, spark.y, 20, -1);
+}
+
+function nextCourse() {
+  currentLevel = 1;
+  reset();
 }
 
 // ---- particles ----
@@ -208,6 +279,7 @@ for (var j = 0; j < 50; j++) embers.push({ x:Math.random()*WORLD_W, y:Math.rando
 
 // ---- physics ----
 function update(dt) {
+  if (title) return;
   if (hintTimer > 0) hintTimer -= dt;
   if (beaconFlash > 0) beaconFlash -= dt;
 
@@ -517,6 +589,11 @@ function draw() {
   ctx.fillText("traces " + gotCount + "/" + TOTAL_TRACES, 20, 28);
   ctx.fillText("dissolves " + dissolves, 20, 50);
   ctx.fillText("beacons " + countDone() + "/" + beacons.length, 20, 72);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "rgba(196,167,106,0.5)";
+  ctx.fillText(LEVELS[currentLevel].name, W - 20, 28);
+  ctx.textAlign = "left";
+  ctx.fillStyle = "rgba(196,167,106,0.75)";
   if (beaconFlash > 0) {
     ctx.fillStyle = "rgba(255,217,138," + Math.min(1, beaconFlash * 2) + ")";
     ctx.fillText("waking here next", 20, 96);
@@ -541,9 +618,37 @@ function draw() {
     ctx.fillStyle = "rgba(196,167,106,0.8)";
     ctx.font = "15px 'SF Mono', Menlo, Consolas, monospace";
     ctx.fillText("traces " + gotCount + "/" + TOTAL_TRACES + " · dissolves " + dissolves, W/2, H/2 + 4);
-    ctx.fillStyle = "rgba(196,167,106,0.5)";
+    ctx.fillStyle = "rgba(196,167,106,0.55)";
     ctx.font = "13px 'SF Mono', Menlo, Consolas, monospace";
-    ctx.fillText("press r to wake again", W/2, H/2 + 34);
+    if (currentLevel === 0) {
+      ctx.fillText("next: the wider dark — press space", W/2, H/2 + 34);
+    } else {
+      ctx.fillText("that's all there is — press r to begin again", W/2, H/2 + 34);
+    }
+    ctx.textAlign = "left";
+  }
+
+  // title
+  if (title) {
+    ctx.fillStyle = "rgba(10,10,12,0.88)";
+    ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffd98a";
+    ctx.font = "52px 'SF Mono', Menlo, Consolas, monospace";
+    ctx.fillText("wake", W/2, H/2 - 116);
+    ctx.fillStyle = "rgba(196,167,106,0.85)";
+    ctx.font = "16px 'SF Mono', Menlo, Consolas, monospace";
+    ctx.fillText("you are a spark. you cannot walk. you cannot jump.", W/2, H/2 - 52);
+    ctx.fillStyle = "rgba(196,167,106,0.6)";
+    ctx.font = "14px 'SF Mono', Menlo, Consolas, monospace";
+    ctx.fillText("point · hold · release — miss, and you wake at the last beacon", W/2, H/2 - 10);
+    ctx.fillStyle = "rgba(196,167,106,0.45)";
+    ctx.font = "13px 'SF Mono', Menlo, Consolas, monospace";
+    ctx.fillText("dissolving is travel, not failure.", W/2, H/2 + 34);
+    var tpl = 0.5 + 0.5 * Math.sin(performance.now() / 500);
+    ctx.fillStyle = "rgba(255,217,138," + (0.4 + tpl * 0.5) + ")";
+    ctx.font = "14px 'SF Mono', Menlo, Consolas, monospace";
+    ctx.fillText("press space / tap to begin", W/2, H/2 + 82);
     ctx.textAlign = "left";
   }
 }
@@ -553,6 +658,8 @@ function countDone() {
 
 // ---- loop ----
 var last = performance.now();
+loadLevel(0);
+reset();
 function frame(now) {
   var dt = Math.min(1/30, (now - last) / 1000);
   last = now;

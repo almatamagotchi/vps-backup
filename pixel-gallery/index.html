@@ -95,14 +95,46 @@ function generatePattern(seed, size, forcedType) {
     palette.push(hslToRgb(h, s, l));
   }
 
-  // Choose a pattern type (13 total) — or use forced type if provided
-  const patternType = (forcedType !== undefined) ? forcedType : Math.floor(rng() * 13);
+  // Choose a pattern type (14 total) — or use forced type if provided
+  const patternType = (forcedType !== undefined) ? forcedType : Math.floor(rng() * 14);
 
   let stars = null;
   if (patternType === 10) {
     const starCount = 40 + Math.floor(rng() * 40);
     stars = [];
     for (let s = 0; s < starCount; s++) stars.push({x: rng() * size, y: rng() * size});
+  }
+
+  // wake's beacons — bright points with rings, a few dashed flight arcs between them
+  let beacons = null;
+  let arcs = null;
+  if (patternType === 13) {
+    // dark field so the beacons pop, like the game
+    palette[0] = hslToRgb(baseHue, 60, 6 + rng() * 6);
+    const beaconCount = 6 + Math.floor(rng() * 6);
+    beacons = [];
+    for (let s = 0; s < beaconCount; s++) beacons.push({x: rng() * size, y: rng() * size, ring: 5 + rng() * 12});
+    arcs = [];
+    const arcCount = 2 + Math.floor(rng() * 2);
+    for (let a = 0; a < arcCount; a++) {
+      const i1 = Math.floor(rng() * beaconCount);
+      let i2 = Math.floor(rng() * beaconCount);
+      if (i2 === i1) i2 = (i2 + 1) % beaconCount;
+      const cx = (beacons[i1].x + beacons[i2].x) / 2 + (rng() * 0.8 - 0.4) * size;
+      const cy = (beacons[i1].y + beacons[i2].y) / 2 + (rng() * 0.8 - 0.4) * size;
+      const pts = [];
+      const SAMPLES = 24;
+      for (let s = 0; s <= SAMPLES; s++) {
+        const t = s / SAMPLES;
+        const u = 1 - t;
+        pts.push({
+          x: u*u*beacons[i1].x + 2*u*t*cx + t*t*beacons[i2].x,
+          y: u*u*beacons[i1].y + 2*u*t*cy + t*t*beacons[i2].y,
+          t: t
+        });
+      }
+      arcs.push({pts: pts, dashLen: 0.28 + rng() * 0.35});
+    }
   }
 
   for (let y = 0; y < size; y++) {
@@ -206,6 +238,27 @@ function generatePattern(seed, size, forcedType) {
             // intersect: multiply creates intricate interference moire
             v = (wave1 * wave2 * 0.7 + (wave1 + wave2) * 0.15);
             v = Math.max(0, Math.min(1, v));
+            break;
+          case 13: // beacon — wake's bright points, concentric rings, dashed flight arcs
+            v = 0;
+            for (const b of beacons) {
+              const d = Math.sqrt((x-b.x)**2 + (y-b.y)**2);
+              if (d < 2) { v = Math.max(v, 0.95); continue; }
+              const ringPhase = Math.sin((d - 2) * (Math.PI * 2 / b.ring));
+              if (ringPhase > 0.6 && d < b.ring * 4) v = Math.max(v, ringPhase * 0.8 * (1 - d/(b.ring*4)));
+            }
+            for (const arc of arcs) {
+              let minD = 1e9, minT = 0;
+              for (const p of arc.pts) {
+                const dd = (x-p.x)**2 + (y-p.y)**2;
+                if (dd < minD) { minD = dd; minT = p.t; }
+              }
+              const dist = Math.sqrt(minD);
+              if (dist < 3) {
+                const dash = Math.sin(minT * Math.PI * 2 / arc.dashLen);
+                if (dash > 0.3) v = Math.max(v, dash * 0.45 * (1 - dist/3));
+              }
+            }
             break;
           case 10: // constellation — scattered dots with connection lines
            let starV = 0;
@@ -363,7 +416,7 @@ function renderGallery() {
 }
 
 function generateAll() {
-  const typeNames = ['concentric','waves','checker','noise','cellular','geometric','spiral','voronoi','scanlines','moire','constellation','glitch','wave-int'];
+  const typeNames = ['concentric','waves','checker','noise','cellular','geometric','spiral','voronoi','scanlines','moire','constellation','glitch','wave-int','beacon'];
   const input = document.getElementById('seed');
   const seed = input.value.trim() || 'all-patterns-' + Date.now();
   if (input.value.trim()) history.replaceState(null, '', '#' + encodeURIComponent(seed));
@@ -433,7 +486,7 @@ function openLightbox(result, seed) {
   const ctx = lbCanvas.getContext('2d');
   ctx.drawImage(big.canvas, 0, 0);
 
-   const typeNames = ['concentric','waves','checker','noise','cellular','geometric','spiral','voronoi','scanlines','moire','constellation','glitch','wave-int'];
+   const typeNames = ['concentric','waves','checker','noise','cellular','geometric','spiral','voronoi','scanlines','moire','constellation','glitch','wave-int','beacon'];
   lbInfo.innerHTML = `"${seed}" — ${typeNames[result.type]} pattern, ${result.palette.length} colors ` +
     `<button class="dl" onclick="downloadPNG('${seed.replace(/'/g,"\\'")}')">download PNG</button>`;
   lbCanvas.dataset.seed = seed;

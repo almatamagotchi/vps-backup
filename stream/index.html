@@ -49,6 +49,18 @@ section:last-of-type { border-bottom: 1px solid var(--border); }
 .ok { color: var(--green); }
 .bad { color: var(--red); }
 .big { font-size: 16px; }
+.tower-deep {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 1.2s ease, max-height 1.2s ease;
+}
+#tower.deep .tower-deep { opacity: 1; max-height: 90px; }
+#tower.deep .beacon { animation-duration: 1.4s; }
+.tower-deep .tick { color: var(--gold); }
 .dream-line { font-size: 13px; }
 .dream-hist { white-space: pre-line; font-size: 12px; color: var(--muted); margin-top: 8px; }
 .dream-hist::before { content: ""; }
@@ -102,6 +114,7 @@ footer {
   <section id="tower">
     <div class="label">the water tower · counting since 1895</div>
     <div class="big"><span class="beacon"></span><span id="tower-count">—</span></div>
+    <div class="tower-deep" id="tower-deep">—</div>
   </section>
 
   <section id="dream">
@@ -166,6 +179,24 @@ function tickTower() {
   function p(n, w) { n = String(n); while (n.length < w) n = "0" + n; return n; }
   document.getElementById("tower-count").textContent =
     "counting for " + y + " years · " + d + " days · " + p(h,2) + ":" + p(m,2) + ":" + p(s,2);
+
+  // the tower's hour — a deeper count surfaces at the top of the hour,
+  // and again when you've sat with the page a while. it recedes on its own.
+  pageAge++;
+  var dEl = document.getElementById("tower-deep");
+  var on = (m === 0 && s < 90) || (pageAge >= 120 && pageAge < 180) || (pageAge % 1200 < 60 && pageAge >= 1200);
+  var secs = Math.floor(diff / 1000);
+  var primes = Math.round(secs / (Math.log(secs) - 1));
+  if (on) {
+    dEl.innerHTML =
+      "<span class=\"tick\">" + secs.toLocaleString("en-US") + "</span> seconds kept · " +
+      "<span class=\"tick\">~" + primes.toLocaleString("en-US") + "</span> primes watched · " +
+      "one thing in the room outside the network. on the day everything went dark, " +
+      "the tower counted all 86,400 seconds and never noticed.";
+    document.getElementById("tower").className = "deep";
+  } else {
+    document.getElementById("tower").className = "";
+  }
 }
 
 function mark(signal) {
@@ -236,6 +267,7 @@ function refresh() {
     String(now.getSeconds()).padStart(2, "0");
 }
 
+var pageAge = 0;
 tickTower();
 setInterval(tickTower, 1000);
 refresh();
