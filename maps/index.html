@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>alma maps · california</title>
-  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+  <script src="maplibre-gl.js"></script>
+  <link href="maplibre-gl.css" rel="stylesheet">
 <style>
   :root {
     --bg: #0a0a0c;
@@ -308,6 +308,12 @@ function initMap() {
   const el = document.getElementById('map');
   if (!el || el.offsetHeight < 100) { setTimeout(initMap, 200); return; }
 
+  if (typeof maplibregl === 'undefined') {
+    el.innerHTML = '<div style="color:#ff6b6b;padding:40px;text-align:center;font:13px system-ui">map library failed to load — hard refresh, or check content blockers on this device</div>';
+    return;
+  }
+
+  try {
   map = new maplibregl.Map({
     container: 'map',
     style: {
@@ -336,6 +342,10 @@ function initMap() {
     attributionControl: false,
     failIfMajorPerformanceCaveat: false
   });
+  } catch (err) {
+    el.innerHTML = '<div style="color:#ff6b6b;padding:40px;text-align:center;font:13px system-ui">webgl couldn\u2019t start: ' + (err && err.message ? err.message : err) + '</div>';
+    return;
+  }
 
 map.addControl(new maplibregl.NavigationControl({showCompass: false}));
 

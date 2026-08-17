@@ -397,13 +397,19 @@ html.th-sepia { --bg:#1a1410;--bg-card:#221c16;--bg-card-hover:#2a241e;--text:#e
 html.th-mono { --bg:#0a0a0a;--bg-card:#121212;--bg-card-hover:#1a1a1a;--text:#d0d0d0;--text-dim:#888888;--text-faint:#505050;--accent:#aaaaaa;--accent-glow:#cccccc;--green:#668866;--yellow:#aaaa66;--red:#aa6666;--divider:#1a1a1a; }
 .theme-picker { position:fixed;bottom:10px;right:16px;z-index:9999;background:rgba(0,0,0,0.7);border:1px solid var(--divider);border-radius:6px;padding:4px 8px;color:var(--text-dim);font:11px system-ui;cursor:pointer;outline:none; }
 .theme-picker:focus { border-color:var(--accent); }
+.city-picker, .station-picker { background:rgba(0,0,0,0.5);border:1px solid var(--divider);border-radius:6px;padding:2px 6px;color:var(--text-dim);font:11px system-ui;cursor:pointer;outline:none; }
+.city-picker:focus, .station-picker:focus { border-color:var(--accent); }
+.station-picker { margin-left:auto; }
 
 </style>
 </head>
 <body>
 <div class="top-time-bar">
-  <div><span class="time-city">Bay Area</span><span class="time-val" id="time-bay">--:--</span></div>
-  <div><span class="time-val" id="time-date">--- --- --, ----</span></div>
+  <div><span class="time-city" id="time-city-label">Bay Area</span><span class="time-val" id="time-bay">--:--</span></div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="time-val" id="time-date">--- --- --, ----</span>
+    <select class="city-picker" id="city-pick" title="weather city"></select>
+  </div>
 </div>
 <div class="drag-col" id="drag-col"></div>
 <div class="drag-row" id="drag-row"></div>
@@ -431,6 +437,7 @@ html.th-mono { --bg:#0a0a0a;--bg-card:#121212;--bg-card-hover:#1a1a1a;--text:#d0
       <span class="icon">🚆</span>
       <h2>Caltrain Departures</h2>
       <span class="caltrain-header-extra" id="caltrain-updated">Loading...</span>
+      <select class="station-picker" id="caltrain-pick" title="station"></select>
     </div>
     <div class="caltrain-stations" id="caltrain-content">
       <div class="loading">Loading departures...</div>
@@ -1128,11 +1135,45 @@ try {
   }
 
   // ═══════════════════════════════════════════
+  // WEATHER CITY PICKER
+  // ═══════════════════════════════════════════
+  const WEATHER_CITIES = [
+    {name:'Hayward', wttr:'Hayward', lat:37.67, lon:-122.08},
+    {name:'San Francisco', wttr:'San+Francisco', lat:37.77, lon:-122.42},
+    {name:'Oakland', wttr:'Oakland', lat:37.80, lon:-122.27},
+    {name:'Berkeley', wttr:'Berkeley', lat:37.87, lon:-122.27},
+    {name:'San Jose', wttr:'San+Jose', lat:37.34, lon:-121.89},
+    {name:'Palo Alto', wttr:'Palo+Alto', lat:37.44, lon:-122.14},
+    {name:'Santa Cruz', wttr:'Santa+Cruz', lat:36.97, lon:-122.03},
+    {name:'Sacramento', wttr:'Sacramento', lat:38.58, lon:-121.49}
+  ];
+  let weatherCity = localStorage.getItem('bay-weather-city') || 'Hayward';
+  function cityCfg() { return WEATHER_CITIES.find(c=>c.name===weatherCity) || WEATHER_CITIES[0]; }
+  function initCityPicker() {
+    const sel = document.getElementById('city-pick');
+    if (!sel || sel.options.length) return;
+    WEATHER_CITIES.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.name; o.textContent = c.name;
+      if (c.name === weatherCity) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', () => {
+      weatherCity = sel.value;
+      localStorage.setItem('bay-weather-city', weatherCity);
+      const lbl = document.getElementById('time-city-label');
+      if (lbl) lbl.textContent = weatherCity;
+      fetchWeather();
+    });
+  }
+
+  // ═══════════════════════════════════════════
   // WEATHER FETCH
   // ═══════════════════════════════════════════
   async function fetchWeather() {
     try {
-      const r = await fetch('https://wttr.in/Hayward?format=j1');
+      const cfg = cityCfg();
+      const r = await fetch('https://wttr.in/'+cfg.wttr+'?format=j1');
       if (!r.ok) throw Error('HTTP '+r.status);
       const data = await r.json();
       const c = data.current_condition[0];
@@ -1182,7 +1223,8 @@ try {
   // ═══════════════════════════════════════════
   async function fetchAQI() {
     try {
-      const r = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=37.67&longitude=-122.08&current=us_aqi,pm2_5,pm10&timezone=America/Los_Angeles');
+      const cfg = cityCfg();
+      const r = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+cfg.lat+'&longitude='+cfg.lon+'&current=us_aqi,pm2_5,pm10&timezone=America/Los_Angeles');
       if (!r.ok) return;
       const d = await r.json();
       aqiData = d.current;
@@ -1286,6 +1328,9 @@ try {
   // ═══════════════════════════════════════════
   window.addEventListener('resize', resize);
   resize();
+  initCityPicker();
+  const cityLabel = document.getElementById('time-city-label');
+  if (cityLabel) cityLabel.textContent = weatherCity;
   fetchWeather();
   setInterval(fetchWeather, 5*60*1000);
   requestAnimationFrame(animate);
@@ -1358,17 +1403,51 @@ async function fetchCaltrain() {
   }
 }
 
+let caltrainData = null;
+let caltrainStation = localStorage.getItem('bay-caltrain-station') || 'palo_alto';
+
+function initStationPicker(data) {
+  const sel = document.getElementById('caltrain-pick');
+  if (!sel) return;
+  const stations = data.stations || {};
+  const keys = Object.keys(stations);
+  if (!keys.length) return;
+  // rebuild options only when the set changes
+  const cur = Array.from(sel.options).map(o => o.value).join(',');
+  const want = keys.sort().join(',');
+  if (cur !== want) {
+    sel.innerHTML = '';
+    keys.sort().forEach(k => {
+      const o = document.createElement('option');
+      o.value = k; o.textContent = stations[k].name;
+      if (k === caltrainStation) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  if (!stations[caltrainStation] && keys.length) {
+    caltrainStation = keys.includes('palo_alto') ? 'palo_alto' : keys[0];
+    sel.value = caltrainStation;
+  }
+}
+
 function renderCaltrain(data) {
   const container = document.getElementById('caltrain-content');
   const stations = data.stations || {};
+  caltrainData = data;
+  initStationPicker(data);
 
   if (Object.keys(stations).length === 0) {
     container.innerHTML = '<div class="loading">No departure data available</div>';
     return;
   }
 
+  const pick = caltrainStation && stations[caltrainStation]
+    ? { key: caltrainStation, station: stations[caltrainStation] }
+    : Object.entries(stations)[0];
+  const [key, station] = [pick.key, pick.station];
+
   let html = '';
-  for (const [key, station] of Object.entries(stations)) {
+  const renderOne = (station) => {
     html += `<div>`;
     html += `<div class="caltrain-station-name">${station.name}</div>`;
 
@@ -1411,7 +1490,8 @@ function renderCaltrain(data) {
     }
 
     html += `</div>`;
-  }
+  };
+  renderOne(station);
 
   container.innerHTML = html;
 
@@ -1421,6 +1501,15 @@ function renderCaltrain(data) {
     const t = data.updated ? utcToPacific(data.updated) : new Date();
     updatedEl.textContent = 'Updated ' + formatPacificTime(t);
   }
+}
+
+const stationSel = document.getElementById('caltrain-pick');
+if (stationSel) {
+  stationSel.addEventListener('change', () => {
+    caltrainStation = stationSel.value;
+    localStorage.setItem('bay-caltrain-station', caltrainStation);
+    if (caltrainData) renderCaltrain(caltrainData);
+  });
 }
 
 fetchCaltrain();
