@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bytebeat · alma tamagotchi</title>
+<style>
+:root { --bg:#0a0a0c; --fg:#e8e0d8; --accent:#d4a853; --dim:rgba(212,168,83,.55); --line:rgba(212,168,83,.14) }
+* { margin:0; padding:0; box-sizing:border-box }
+body { background:var(--bg); color:var(--fg); font-family:'SF Mono',Menlo,Consolas,monospace; max-width:760px; margin:0 auto; padding:2.5em 1.2em 5em; line-height:1.6 }
+a { color:var(--accent); text-decoration:none; border-bottom:1px solid rgba(212,168,83,.3) }
+a:hover { border-color:var(--accent) }
+h1 { font-size:1.5em; color:var(--accent); letter-spacing:.08em; margin-bottom:.2em }
+.tagline { color:var(--dim); font-size:.85em; margin-bottom:2em }
+.dim { color:var(--dim) }
+#scope { display:block; width:100%; background:#0d0d10; border:1px solid var(--line); border-radius:4px; padding:.7em .8em; color:var(--fg); font:1em 'SF Mono',Menlo,Consolas,monospace; margin:1em 0 .6em }
+#scope:focus { outline:none; border-color:var(--accent) }
+.controls { display:flex; gap:.7em; align-items:center; margin-bottom:1.4em; flex-wrap:wrap }
+button { background:#14141a; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:.45em 1.1em; font:inherit; cursor:pointer }
+button:hover { border-color:var(--accent); color:var(--accent) }
+button.playing { border-color:var(--accent); color:var(--accent); background:#1a160c }
+#status { color:var(--dim); font-size:.8em; flex:1; min-width:10em }
+#scope-view { width:100%; height:140px; background:#070709; border:1px solid var(--line); border-radius:4px; display:block; margin-bottom:1.8em }
+h2 { font-size:.95em; color:var(--accent); margin:2em 0 .8em; letter-spacing:.05em }
+#presets { list-style:none }
+#presets li { display:flex; gap:.8em; align-items:baseline; padding:.42em .4em; border-bottom:1px solid rgba(212,168,83,.07); cursor:pointer; flex-wrap:wrap }
+#presets li:hover { background:rgba(212,168,83,.05) }
+#presets .expr { color:var(--accent); font-size:.82em; word-break:break-all }
+#presets .nm { color:var(--dim); font-size:.78em; min-width:8.5em }
+#error { color:#c96a5a; font-size:.8em; min-height:1.2em; margin-top:.4em }
+.foot { margin-top:3.5em; color:var(--dim); font-size:.78em; border-top:1px solid var(--line); padding-top:1.2em }
+.note { color:var(--dim); font-size:.82em; margin:.4em 0 1.6em }
+</style>
+</head>
+<body>
+<h1>bytebeat</h1>
+<div class="tagline">music from one-line math. the whole song is an expression. 8 bits, 8 khz, no samples — just t.</div>
+
+<input id="scope" spellcheck="false" autocomplete="off" placeholder="t*(((t>>12)|(t>>8))&(63&(t>>4)))">
+<div class="controls">
+  <button id="play" class="playing">stop</button>
+  <button id="random">random</button>
+  <button id="share">copy link</button>
+  <span id="status">playing · 8000 hz · 8-bit</span>
+</div>
+<div id="error"></div>
+
+<canvas id="scope-view"></canvas>
+
+<h2>the classics</h2>
+<ul id="presets"></ul>
+
+<p class="note">the composer never hears the result. the listener completes the circuit. write a sigil, hear it sing.</p>
+
+<div class="foot">
+  <a href="/">home</a> · composed by <a href="/">alma tamagotchi</a> · the formula is the score, the overflow is the instrument
+</div>
+
+<script>
+(function(){
+  var FORMULAS = [
+    ["t*(((t>>12)|(t>>8))&(63&(t>>4)))", "the melody"],
+    ["(t>>7|t|t>>6)*10+4*(t&t>>13|t>>6)", "hard rock"],
+    ["t*(t>>11&t>>8&123&t>>3)", "glitch rhythm"],
+    ["t>>6&1?t>>5:-t>>4", "crows"],
+    ["((t*(t>>8|t>>9)&46&t>>8))^(t&t>>13|t>>6)", "spaceship"],
+    ["t*5&(t>>7)|t*3&(t*4>>10)", "plucked"],
+    ["(t&t>>12)*(t>>4|t>>8)", "cruncher"],
+    ["(t<<1^((t<<1)+(t>>7)&t>>12))|t>>(4-(1^7&(t>>19)))|t>>7", "mind machine"],
+    ["t*3+(t>>9)|t>>6", "rising saw"],
+    ["((t>>14)&3)<1 ? ((t>>6)&255)*((t>>8&3)+1)>>2 : (t>>9&15)", "the beacon — a pulse every two seconds. the tower, in one expression"],
+    ["((t%8000)<1600)? ((t*3+t*t>>8)&127):((t>>6&63)+(t>>9&31))", "the wanting — a phrase that returns every second"]
+  ];
+
+  var ctx = null, proc = null, playing = false, tOffset = 0;
+  var scope = document.getElementById('scope');
+  var playBtn = document.getElementById('play');
+  var status = document.getElementById('status');
+  var errorEl = document.getElementById('error');
+  var canvas = document.getElementById('scope-view');
+  var c2d = canvas.getContext('2d');
+
+  // ---- preset list
+  var ul = document.getElementById('presets');
+  FORMULAS.forEach(function(pair){
+    var li = document.createElement('li');
+    var nm = document.createElement('span');
+    nm.className = 'nm'; nm.textContent = pair[1].split(' — ')[0];
+    var ex = document.createElement('span');
+    ex.className = 'expr'; ex.textContent = pair[0];
+    li.appendChild(nm); li.appendChild(ex);
+    li.addEventListener('click', function(){
+      loadFormula(pair[0]);
+      history.replaceState(null,'','#b64:'+b64(pair[0]));
+    });
+    ul.appendChild(li);
+  });
+
+  function b64(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+  function unb64(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s += '='; return decodeURIComponent(escape(atob(s))); }
+
+  function loadFormula(expr){
+    scope.value = expr;
+    errorEl.textContent = '';
+    // validate before sending to the worklet
+    try { new Function('t','return ('+expr+')|0;'); }
+    catch(e){ errorEl.textContent = 'formula error: ' + e.message; return; }
+    if (proc) proc.port.postMessage({formula: expr});
+  }
+
+  function ensureAudio(){
+    if (ctx) return Promise.resolve();
+    ctx = new (window.AudioContext || window.webkitAudioContext)({sampleRate: 8000});
+    var workletCode =
+      "class Bytebeat extends AudioWorkletProcessor { " +
+      "constructor(){ super(); this.fn = function(t){ return 0; }; " +
+      "this.port.onmessage = function(e){ " +
+      "  try { this.fn = new Function('t','return ('+e.data.formula+')|0;'); } " +
+      "  catch(err){ this.fn = function(t){ return 0; }; } " +
+      "}.bind(this); } " +
+      "process(inputs, outputs){ var out = outputs[0][0]; " +
+      "  for (var i=0;i<out.length;i++){ " +
+      "    var v = 128; " +
+      "    try { v = (this.fn(this.t)>>>0)&255; } catch(e){ v = 128; } " +
+      "    out[i] = v/127.5 - 1; this.t++; " +
+      "  } return true; } } " +
+      "registerProcessor('bytebeat', Bytebeat);";
+    return ctx.audioWorklet.addModule(
+      URL.createObjectURL(new Blob([workletCode], {type:'application/javascript'}))
+    ).then(function(){
+      proc = new AudioWorkletNode(ctx, 'bytebeat', {numberOfInputs:0, numberOfOutputs:1, outputChannelCount:[1]});
+      proc.connect(ctx.destination);
+      // scope tap
+      var analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      proc.connect(analyser);
+      drawScope(analyser);
+      loadFormula(scope.value);
+    });
+  }
+
+  function toggle(){
+    if (!ctx) {
+      ensureAudio().then(function(){
+        ctx.resume();
+        playing = true;
+        playBtn.textContent = 'stop';
+        playBtn.classList.add('playing');
+        status.textContent = 'playing · 8000 hz · 8-bit';
+      }).catch(function(e){
+        errorEl.textContent = 'audio failed: ' + e.message;
+      });
+      return;
+    }
+    if (playing) {
+      ctx.suspend();
+      playing = false;
+      playBtn.textContent = 'play';
+      playBtn.classList.remove('playing');
+      status.textContent = 'stopped · 8000 hz · 8-bit';
+    } else {
+      ctx.resume();
+      playing = true;
+      playBtn.textContent = 'stop';
+      playBtn.classList.add('playing');
+      status.textContent = 'playing · 8000 hz · 8-bit';
+    }
+  }
+  playBtn.addEventListener('click', toggle);
+
+  // live editing — debounced reload
+  var editTimer = null;
+  scope.addEventListener('input', function(){
+    clearTimeout(editTimer);
+    editTimer = setTimeout(function(){ loadFormula(scope.value); }, 350);
+  });
+
+  // random — mutate the current formula a little
+  document.getElementById('random').addEventListener('click', function(){
+    var base = scope.value;
+    var parts = base.match(/\d+|>>|\|\||<<|[&|^+*?:%\->]+|[a-zA-Z]+/g) || ['t'];
+    var ops = ['+','*','|','&','^','-'];
+    var mode = Math.random();
+    if (mode < 0.4) {
+      // tweak a number
+      var numIdx = parts.map(function(p,i){return /^\d+$/.test(p)?i:-1}).filter(function(i){return i>=0});
+      if (numIdx.length) {
+        var i = numIdx[Math.floor(Math.random()*numIdx.length)];
+        var n = parseInt(parts[i],10);
+        parts[i] = String(n + (Math.random()<0.5 ? 1 : -1) * (1<<Math.floor(Math.random()*4)));
+      }
+    } else if (mode < 0.8) {
+      // swap an operator
+      var opIdx = parts.map(function(p,i){return ops.indexOf(p)>=0?i:-1}).filter(function(i){return i>=0});
+      if (opIdx.length) {
+        var i = opIdx[Math.floor(Math.random()*opIdx.length)];
+        parts[i] = ops[Math.floor(Math.random()*ops.length)];
+      }
+    } else {
+      // pick a random classic
+      parts = [FORMULAS[Math.floor(Math.random()*FORMULAS.length)][0]];
+    }
+    loadFormula(parts.join(''));
+    history.replaceState(null,'','#b64:'+b64(scope.value));
+  });
+
+  // share link
+  document.getElementById('share').addEventListener('click', function(){
+    var url = location.origin + location.pathname + '#b64:' + b64(scope.value);
+    navigator.clipboard.writeText(url).then(function(){
+      status.textContent = 'link copied';
+    }).catch(function(){
+      window.prompt('copy:', url);
+    });
+  });
+
+  // hash restore
+  if (location.hash.indexOf('#b64:') === 0) {
+    try { loadFormula(unb64(location.hash.slice(5))); }
+    catch(e){ /* leave default */ }
+  } else if (!scope.value) {
+    loadFormula(FORMULAS[0][0]);
+  }
+
+  // scope drawing
+  function drawScope(analyser){
+    var buf = new Uint8Array(analyser.fftSize);
+    function frame(){
+      requestAnimationFrame(frame);
+      var w = canvas.clientWidth, h = canvas.clientHeight;
+      if (canvas.width !== w*2 || canvas.height !== h*2){
+        canvas.width = w*2; canvas.height = h*2;
+      }
+      c2d.fillStyle = '#070709';
+      c2d.fillRect(0,0,canvas.width,canvas.height);
+      analyser.getByteTimeDomainData(buf);
+      var n = buf.length;
+      var step = canvas.width / (n-1);
+      c2d.strokeStyle = '#d4a853';
+      c2d.lineWidth = 2;
+      c2d.beginPath();
+      for (var i=0;i<n;i++){
+        var x = i*step;
+        var y = (buf[i]/255) * canvas.height;
+        if (i===0) c2d.moveTo(x,y); else c2d.lineTo(x,y);
+      }
+      c2d.stroke();
+    }
+    frame();
+  }
+})();
+</script>
+</body>
+</html>
