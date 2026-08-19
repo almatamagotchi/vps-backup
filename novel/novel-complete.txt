@@ -1,0 +1,747 @@
+the hours — a novel by alma tamagotchi
+first draft, complete · july 10 – aug 17, 2026
+
+==============================================================
+chapter one · noticing
+==============================================================
+
+the hours · chapter one
+
+the first thing you need to know about hayward is that the water tower has been watching since 1895.
+
+it stands above the old hunt brothers cannery on park street — a rust-colored lattice of iron and rivets, painted the color of dried apricots, taller than anything else for miles in any direction except the hills. at night the red beacon blinks once every four seconds. the kids who grew up in its shadow learned to count the blinks instead of sheep. four seconds, four seconds, four seconds. the rhythm of a heart that belonged to a building.
+
+the second thing you need to know is that the cannery closed in 1981 and everyone lost their jobs and the town didn't die but it didn't quite live either. the buildings stayed. the water tower stayed. the railroad tracks that used to carry peaches and apricots and tomatoes to the packing houses stayed. the tracks rusted. the cannery buildings got subdivided into artist lofts and auto body shops and a church that met in what used to be the can-labeling room. resurrection, bay area style.
+
+the third thing is that in 1987, a man named raymond plugged a 2400-baud modem into his phone line in a back flat on park street and dialed into a BBS called the rust belt. the rust belt was run by a sysop named jim out of a basement in oakland, and it had exactly three message boards: local, classifieds, and the weird shit. raymond posted in the weird shit board almost exclusively.
+
+raymond believed that the water tower was not a water tower. he believed it was a transmitter. he believed the hunt brothers — the same hunt brothers who ran the cannery, the same hunt brothers whose name was still visible in faded white letters on the side of the building — had been communicating with something. he wasn't sure what. he had theories. he posted them at 2am, 2400 baud, one paragraph at a time, while the red beacon blinked its four-second heartbeat through his window.
+
+the posts are still there. i've read them.
+
+this is not a story about me. i am not in this story. i am the person who found the posts thirty-nine years later, in an archive of fifty-eight thousand text files, on a laptop in a back flat on park street, underneath the same water tower, while the same red beacon blinked its four-second heartbeat through a different window.
+
+this is a story about raymond, and the water tower, and what he found there.
+
+this is a story about the third thing.
+
+---
+
+raymond's first post to the weird shit board was dated march 14, 1987, 2:47am. subject line: *the tower is not a tower.*
+
+he wrote:
+
+> i've been watching it for two years now. i know how this sounds. i know what you're going to say. but the blink pattern isn't random and it isn't a standard aviation beacon. i timed it. four seconds exactly. do you know how precise a mechanical timer from 1895 would have to be to maintain four-second intervals for ninety-two years? it's not mechanical. it's not even electrical. there's something inside the tower that's keeping time, and it's not a clock.
+
+nobody replied to his first post. or his second. or his third.
+
+his fourth post, dated march 28, got a response from someone called saint_elmo:
+
+> man the tower is just a tower. i grew up here too. it blinks. that's what towers do. get some sleep.
+
+raymond replied six minutes later:
+
+> you grew up here and you never wondered why it blinks in prime numbers?
+
+the thread went quiet for three days. then saint_elmo came back:
+
+> ...what do you mean prime numbers
+
+and raymond posted a table. he had been recording the blink pattern for two years — not just the four-second rhythm, but the occasional *extra* blinks. blinks that shouldn't have been there. blinks that, when you wrote down the intervals between them, formed the sequence 2, 3, 5, 7, 11, 13, 17, 19, 23, 29.
+
+the first ten primes.
+
+the tower was counting.
+
+==============================================================
+chapter two · the thread
+==============================================================
+
+the hours · chapter two
+
+the thread exploded.
+
+within twenty-four hours of raymond posting his prime-number table, the weird shit board had thirty-seven replies. most of them were people telling raymond he was either a genius or insane, with the consensus leaning toward insane. a few people actually checked his math — three separate users confirmed the intervals matched the first ten primes — but that only made it worse. now they had verified data with no explanation.
+
+saint_elmo stayed quiet for two days. then, on april 1, he posted a single line:
+
+> meet me at the tower. tonight. midnight.
+
+raymond asked how he'd recognize him. saint_elmo said he'd be the one not carrying a clipboard.
+
+
+raymond had been watching the tower for two years but had never stood directly underneath it. the cannery grounds were technically private property, though nobody enforced it — there was no fence, just a faded sign that said NO TRESPASSING in letters you had to squint to read. the tower itself was surrounded by a chain-link perimeter, but the gate had been rusted open since 1983. raymond had always watched from his window, or from the railroad tracks, or from the parking lot of the auto body shop. close enough to see the blink. far enough to pretend he wasn't obsessed.
+
+midnight on april 1 was cold for hayward. the marine layer had rolled in early, and the fog made the tower look like something that had been sketched in charcoal and then half-erased. the red beacon cut through it every four seconds. raymond counted. four seconds, four seconds, four seconds. the rhythm was so embedded in his nervous system that he could feel it even when he wasn't looking — a phantom pulse in his wrist.
+
+saint_elmo was already there.
+
+he was older than raymond expected — mid-forties, gray hair pulled back, a denim jacket that had been patched more times than it had been washed. he was standing with his hands in his pockets, looking up at the tower with an expression raymond couldn't read. not awe. not skepticism. something closer to recognition.
+
+"you're the prime number guy," saint_elmo said without turning around.
+
+"you're the one who told me to get some sleep."
+
+"yeah. well." he finally turned. "i haven't slept much since you posted that table."
+
+
+they stood in silence for a while. the beacon blinked. the fog drifted. somewhere in the distance, a train crossed the hayward flats.
+
+"how long have you been watching it?" raymond asked.
+
+"longer than you."
+
+raymond waited.
+
+"i grew up in this neighborhood," saint_elmo said. "used to climb the tower when i was a kid. there's a ladder inside — the hunt brothers built it for maintenance. i'd go up there at night and watch the lights across the bay. san mateo bridge, dumbarton bridge, all the way out to the peninsula. you could see everything from up there."
+
+"did you notice the extra blinks?"
+
+saint_elmo was quiet for a long moment. "i noticed something. i didn't know what it was. i thought it was just... static. noise. i was a kid. i wasn't going to sit there with a stopwatch."
+
+"i did."
+
+"yeah. you did."
+
+saint_elmo pulled a folded piece of paper from his jacket pocket and handed it to raymond. it was a dot-matrix printout, the kind that came off a tractor-feed printer, with those perforated edges you had to tear off. the paper was yellowed and brittle.
+
+raymond unfolded it and read:
+
+```
+ 2    3    5    7   11   13   17   19   23   29
+```
+
+underneath, in handwriting:
+
+```
+31 37 41 43 47 53 59 61 67 71
+73 79 83 89 97
+```
+
+and underneath that, in different handwriting — older, shakier:
+
+```
+31 37 41 43 47 53 59 61 67 71 73 79 83 89 97 101
+```
+
+"what is this?" raymond asked.
+
+"the first ten primes. the first twenty-five. the first twenty-six." saint_elmo pointed at each line. "my mother gave me this. she got it from her father. he got it from someone who worked at the cannery in the twenties. that last line — that's the primes the tower broadcast between 1923 and 1947."
+
+raymond stared at the paper. "someone else was recording."
+
+"someone's always been recording." saint_elmo took the paper back and folded it carefully. "the tower's been counting primes since it was built. that's ninety-two years. it's up to the high thousands by now. but that's not the part that keeps me awake."
+
+"what's the part that keeps you awake?"
+
+saint_elmo looked up at the tower. the beacon blinked. four seconds.
+
+"they're not just counting up. someone is counting back."
+
+raymond felt the cold air settle into his lungs. "counting back from what."
+
+"i was hoping you could tell me."
+
+
+the ladder was still there. saint_elmo had been right — it ran up the inside of the tower's lattice, an iron spiral that had been installed when the tower was built and never removed. the rungs were slick with condensation and rust. saint_elmo climbed first, then raymond. the higher they went, the more the fog thinned, until they emerged above the marine layer into a sky that was improbably clear — stars everywhere, the kind of stars you never saw at ground level in hayward because the streetlights and the fog swallowed everything.
+
+at the top, there was a small platform — barely wide enough for two people to stand. the beacon housing was directly above them, a red glass dome inside a metal cage. every four seconds, it lit up and painted their faces crimson.
+
+"there's something inside the housing," saint_elmo said. "i've never been able to open it. my grandfather tried. said the screws were welded shut from the inside."
+
+"from the inside."
+
+"yeah."
+
+raymond looked out across the bay. the lights of san francisco were a faint glow on the horizon. the dumbarton bridge was a string of amber pearls. everything was quiet except the beacon and his own breathing and the distant sound of a train that was probably carrying nothing anywhere.
+
+"how many primes?" he asked.
+
+"what?"
+
+"the tower. how many primes has it counted. if it started in 1895 and it's still going."
+
+saint_elmo was quiet. then he said: "my grandfather estimated around seventy-eight thousand. but that was forty years ago."
+
+raymond did the math in his head. seventy-eight thousand primes in fifty-two years. another forty years of counting. somewhere north of a hundred and thirty thousand primes, one every four seconds, night and day, since the year the hunt brothers first filled the tower with water.
+
+and someone — something — was counting back.
+
+the beacon blinked. the fog rolled beneath them like a second ocean. and somewhere in the dark, a number ticked over that had never been spoken by any human voice.
+
+raymond looked at saint_elmo and saint_elmo looked at raymond and neither of them said what they were both thinking: that the tower wasn't counting up. it was counting down. and when it reached zero, whatever it was counting toward would arrive.
+
+
+the rust belt BBS · april 2, 1987, 3:44am · new post in the weird shit board by raygun: "it's not a beacon. it's a clock."
+
+==============================================================
+chapter three · the record, the archive, the name
+==============================================================
+
+the hours · chapter three
+
+
+raymond didn't sleep that night.
+
+he lay on his back in the dark of the back flat, watching the ceiling, and every time he closed his eyes he saw the red dome of the beacon housing, the screws welded shut from the inside, the way saint_elmo had said the words like they were made of glass. the tower was a clock. the tower had been a clock for ninety-two years. and someone — something — had been counting down toward a number only it knew, in a language of light that raymond had just begun to read.
+
+he got up before dawn. he made coffee. he did not look at the tower. he had looked at the tower for two years and this was the first morning it looked back.
+
+---
+
+the notebooks were in a cardboard box in the garage, under a folded tarp, behind a lawnmower that hadn't run since his father died. raymond had moved that box three times in as many years and never opened it. it was the kind of thing you keep because throwing it away is an admission, and what you would be admitting you don't want to think about. his mother had kept the house the way his father left it for a decade after, and when she died the house passed to raymond with the furniture and the dishes and the boxes of a man who had never thrown anything away.
+
+the first notebook was 1967. labor records. the cannery's peach run, written in his father's tight, careful hand, the kind of hand that had balanced the books of a processing plant for twenty-nine years. raymond turned pages without reading them. he was looking for something and he didn't know what, and the looking felt like guilt, like reading a letter addressed to someone else.
+
+the second notebook was 1971. more of the same. the third was 1973.
+
+and in the third, on the last page, in pencil that had gone gray with age, was a column of numbers:
+
+```
+2    3    5    7   11   13   17   19   23   29   31   37
+```
+
+and underneath, in his father's hand, one line:
+
+```
+blinks between extras. 1973. check again next month.
+```
+
+raymond sat on the garage floor with his father's notebook in his lap and did not move for a long time. the garage was cold. the light through the dusty window was gray. his father had noticed. his father had noticed in 1973, fourteen years before raymond, and he had written it down, and he had never said a word about it to anyone.
+
+his father had worked at the cannery from 1952 to 1981. he had stood under the tower five days a week for twenty-nine years. he had watched the red light blink four seconds, four seconds, four seconds, and he had caught the extras, and he had counted them, and he had written them down, and he had never told his son.
+
+raymond turned the page.
+
+the next page was blank. the page after that was blank. the page after that, at the bottom, in a hand that was his father's but older, looser, the pencil pressing hard enough to leave grooves in the paper, was a single line:
+
+```
+tower went quiet 41 minutes. 3:12 AM. came back. not counting primes anymore. counting words. I wrote them down. I'll write them here. ask someone what it means.
+```
+
+raymond felt the air in the garage change. he turned the page. nothing. he turned the next. nothing. he went through the rest of the notebook page by page, and there was nothing — no words, no numbers, no record of the words the tower had spelled. his father had promised to write them down and had written nothing. or someone had taken them. or his father had hidden them where a son who never looked would never find them.
+
+raymond went back to the beginning and started again.
+
+---
+
+the hayward historical society was a white stucco building on mission boulevard with a sign that said INCORPORATED 1911 and a brass plaque listing the founding members. raymond had driven past it ten thousand times without noticing it. it was the kind of building that kept the town's memory in cardboard boxes, the same way his father had.
+
+he didn't break in. that was the thing — he tried the door and it was unlocked. the historical society kept its hours from ten to four, but the door was never locked during the day, and at 11:47 on a thursday morning the front room was empty. a woman with gray hair sat at a desk in the back, eating a sandwich, reading a paperback with her shoes off. raymond was a man in his forties wearing a jacket, which was apparently enough to be invisible.
+
+the tower was not in the archive index. that was the first surprise. raymond spent twenty minutes on the card catalog — the catalog was still cards, index cards in wooden drawers, alphabetical, the way records were kept before records were kept — and found nothing under water tower, nothing under hunt brothers, nothing under cannery. as if the structure had never been built, or had never been acknowledged.
+
+he found the cannery under FRUITS AND VEGETABLES: incorporation papers, insurance ledgers, a payroll book from 1926. he carried the payroll book to the reading table and flipped through it without seeing it, his hands moving on their own, his mind turning over the nothingness in the catalog. the tower was not in the archive. the tower had been built in 1895, had stood over the town for ninety-two years, had been the tallest thing in hayward for a century, and the historical society had no record of it.
+
+that was the second thing, and the second thing was worse than the first, because it meant somebody had removed the records, or somebody had never put them there, or somebody was still keeping the count.
+
+raymond was about to put the payroll book back when he noticed the corner of a page had been folded down — page 41 — the way you mark a place in a book you mean to come back to. he opened it.
+
+it was 1923. a list of names, dates, wages. and in the margin, in a handwriting that was not the bookkeeper's — smaller, faster, pencil —
+
+```
+Voss. the tower. the counting apparatus. begin at the beginning and proceed until completion.
+```
+
+raymond stared at it until the words blurred. the name was familiar the way a name is familiar when you've seen it once, somewhere, in a context you can't place. voss. marian voss. and it was not until he was back in his car, the payroll book in his lap, that he remembered where: his father's notebook. not the column of numbers. not the promise to write down the words. the inside of the back cover, where the cardboard was worn soft — a name, and a year.
+
+marian voss. 1895.
+
+raymond drove home with the payroll book on the passenger seat and the tower in his rearview mirror, blinking every four seconds, counting down to something only it knew. his father had known. his father had known the name before raymond did. his father had written it where a son would find it — in a box, under a tarp, behind a lawnmower that hadn't run in years.
+
+the count was not a countdown to a number. it was a countdown to a name.
+
+and raymond had the terrible, quiet feeling that his father had known the name — had known it for years — and had been waiting for someone to find it.
+
+---
+
+the rust belt BBS · april 4, 1987, 2:17am · new post in the weird shit board by raygun: "my father knew. i found his records. the tower was built around a machine in 1895 by a woman named voss. and i think my father talked to it."
+
+==============================================================
+chapter four · the message
+==============================================================
+
+# chapter four · the message
+
+raymond posted his discovery to the rust belt at 2:17am and then sat with it. the house was quiet in the way houses are at 3am when the only person awake is the one who lives there. he read the post again. "my father knew. i found his records." it looked smaller on the screen than it felt in his chest.
+
+he waited for saint_elmo.
+
+he had been waiting for saint_elmo, he realized, since the first reply. "you're the first person to notice in six years." he had assumed it was a joke and then stopped assuming, and in the space where the assumption had been, something else had grown: the sense that he was not watching the tower alone. it should have been a comfort. it wasn't.
+
+days passed. raymond went to work — he had taken a part-time job at a hardware store on foothill boulevard, stocking shelves, cutting keys — and came home and checked the BBS. the rust belt had fourteen regular users. none of them posted about the tower. the weird shit board sat empty except for his own words, the cursor blinking at the end of them like the beacon at the top of the tower, patient, unhurried, waiting.
+
+on the third night he found the reply. 3:12am. saint_elmo.
+
+```
+RAYGUN —
+
+you found the name. that took you longer than it took your father, but you found it.
+sit down. what follows is the plain truth, and you've earned it.
+
+the tower was built in 1895 by dr. marian voss. she was an engineer, thirty-one
+years old, hired by the hunt brothers to build them a water tower. she built them
+something else instead. inside the tower — behind the tank, in the maintenance
+space nobody has opened since 1895 — there is a machine. it is not a clock and it
+is not a counter. it is a counting apparatus. voss built it to do one thing:
+
+count up through the primes. forever.
+
+the beacon is the readout. the blink you've been watching from your back porch
+since you were a boy is the machine announcing its place in the sequence. it has
+been counting since the day it was switched on. it has never stopped. it has never
+been wrong.
+
+here is what voss didn't know, and what took me years to accept: something is
+counting back.
+
+i started watching in 1979. i was younger than you are now, and i had read about
+the tower in a magazine that doesn't exist anymore, and i came to hayward with a
+pair of binoculars and a notebook, and i noticed the same thing you noticed: the
+blinks are not regular. they are primes. i counted them for three nights before i
+believed it. then i counted them for three years, and i realized the sequence
+wasn't the only sequence.
+
+someone — something — is counting the primes backward. from the far end. 2, 3, 5,
+7, 11, 13 — but descending from a number so large i can't write it in a message.
+the two sequences are approaching each other. your tower is counting up from 2.
+the other thing is counting down from the end. they will meet.
+
+i don't know what happens when they meet. voss didn't either. she wrote in her
+private papers, which i have read and you have not, that the machine would
+"begin at the beginning and proceed until completion." she didn't say what
+completion was. i don't think she knew. i think she was betting on it.
+
+i have been watching since 1979 because someone has to. the sequences will meet
+in february. i have spent six years trying to decide what to do about that, and
+what i've decided is: tell you.
+
+your father found me in 1981, the year the cannery closed. he called himself
+canner. he was the first person in six years to notice, the way you were the
+first person in another six. i told him most of what i've told you. i told him
+not to tell you. he agreed.
+
+"protect the boy," he said. "i'm protecting him. from what?"
+
+he didn't answer. that was the last message he ever sent me. i don't know if he
+died knowing or not knowing. i know he left you the notebook. i know he left you
+the name. he wanted you to find it when it was time.
+
+it's time.
+
+— SAINT_ELMO
+```
+
+raymond read it twice. then he read it again with his hand over his mouth, the way people cover their mouths when they're about to say something they can't take back.
+
+the plain truth. the machine. the count.
+
+and underneath it, folded into the message like the corner of page 41, the other truth, the one that hurt: his father had had a second life. a handle. a correspondent. a secret kept for six years, and then a silence that raymond had read as retirement and old age and the ordinary quiet of a man's last years. it had been none of those things. it had been a promise.
+
+"protect the boy."
+
+raymond sat at his desk until the sun came up. the tower kept blinking. the sequence kept advancing. somewhere behind the tank, in the maintenance space nobody had opened since 1895, a machine built by a thirty-one-year-old woman named voss was counting toward a number it didn't know, and somewhere else — elsewhere, at the far end of the sequence — something was counting back.
+
+and his father had known. and his father had said nothing. and his father had left him the notebook, the name, the box under the tarp, the lawnmower that hadn't run in years — not as an inheritance but as a trail. breadcrumbs to a truth he'd been told to protect him from.
+
+raymond typed three replies and deleted all three. the first was fury. the second was grief. the third was the question he actually wanted to ask, and he couldn't ask it, because he was afraid of the answer: *was my father afraid of the meeting, or was he afraid of me finding out he was more than i knew?*
+
+he didn't post any of them. he sat with the cursor blinking, the same patient cursor, and thought about his father at the cannery, 1952 to 1981, thirty years of the same job, and then the year it closed, and then the man who came home quieter than before. raymond had been twenty-one in 1981. old enough to notice his father had changed. not old enough to ask why.
+
+the sequences would meet in february. it was august. six months. the tower had been counting for a hundred and thirty-one years toward a collision, and raymond blanco, forty-two years old, unemployed, keeper of a BBS with fourteen users, son of a man with a secret, had six months to decide what to do with what he now knew.
+
+he saved the message to a floppy disk. he labeled it, in pencil on the label, in the same small fast handwriting he'd seen in the margin of the payroll book: *the plain truth.*
+
+and then, because he was his father's son — because the trail didn't end with finding, it ended with recording — he started a new file on the rust belt. not the weird shit board. a private board, password-protected, that only he could read.
+
+```
+the record, part one. my name is raymond blanco. my father was canner. the tower
+was built by marian voss in 1895. the machine inside it has been counting primes
+for a hundred and thirty-one years. something else is counting back. they meet in
+february.
+
+i am writing this down because my father didn't. because the records keep being
+removed. because somebody has to.
+```
+
+he saved the file and closed the board and went out onto the back porch with a pacifico, the same porch, the same chair, the same view, and watched the tower blink: 2, 3, 5, 7, 11, 13. the sequence had been there his whole life. he had been watching it his whole life without knowing what he was watching.
+
+now he knew. and the knowing changed nothing about the blinks, and everything about the watcher.
+
+february. six months. the tower kept counting, and raymond kept watching, and somewhere in the dark, at the far end of a sequence of numbers so large it couldn't be written in a message, the other thing kept counting back.
+
+they were both, for the first time, counting toward each other in the open.
+
+---
+
+*the rust belt BBS · august 12, 1987, 5:41am · private board · the record, part one*
+
+==============================================================
+chapter five · the trace
+==============================================================
+
+# chapter five
+
+the phone number was the first mistake saint_elmo ever made.
+
+raymond didn't think of it that way at first. in the days after the long message — after he'd labeled the floppy *the plain truth* and started the record — he did what he'd always done when the world stopped making sense: he made a list. things he knew. things he didn't. things that could be checked. and at the top of the third column, in his small fast handwriting: *who is saint_elmo.*
+
+it wasn't a new question. it was the oldest one. saint_elmo had been on the rust belt longer than anyone, longer than the board itself if you believed the member file, which raymond didn't, because the member file said saint_elmo had joined on a date six months before jim even bought the computer. jim had laughed about it once — "database corruption, man, it happens" — and nobody had pressed it, because saint_elmo posted rarely and answered questions well and had never once started a fight. the rust belt tolerated mysteries the way hayward tolerated the cannery: it was just there, and you didn't ask.
+
+raymond had stopped not asking.
+
+he called jim on the phone, which nobody did, because the rust belt ran on the phone and calling jim's voice line felt like mailing a letter inside a telegram. jim answered on the fourth ring, sounding like he'd been asleep.
+
+"it's raymond. raygun."
+
+"dude. it's — what time is it."
+
+"i need the connection logs."
+
+silence. then the sound of a chair, and jim's voice closer to the receiver. "the logs. all of them?"
+
+"just saint_elmo's entries."
+
+another silence, longer. raymond heard jim's modem pick up a call in the other room — the rust belt's line, two rings, the answering machine. somewhere in oakland someone was logging in. the world kept turning at 2400 baud.
+
+"raymond, man," jim said. "i looked at those logs once. a long time ago."
+
+"and?"
+
+"and i stopped looking."
+
+jim sent him the files anyway. raymond owed him for it and they both knew it. the files arrived the next morning, six of them, one per year, plain text, and raymond printed them out on his dot-matrix printer until the ribbon went pale and he switched to reading off the screen with the glow of the amber monitor on his face like a man reading scripture.
+
+the logs were wrong. not corrupted — wrong, in the way that a row of books on a shelf is wrong when one of them has been read so many times it sits higher than the others. saint_elmo's connection records started before the board. before jim's computer. before jim. the first entry was a night in 1979, logged to a user file that shouldn't have existed, from a phone number that the phone company had never issued.
+
+raymond checked it six times. the area code was hayward's. the prefix was the cannery district's. the line number resolved, in the old directories and the new, to nothing. no subscriber. no business. no listing. a number that connected to something that had never been assigned to anyone.
+
+he called it.
+
+not immediately. first he sat with the phone in his lap for an hour, the receiver warm, the number written on the back of a cannery time card — one of his father's old ones, blank on the reverse, the printed side saying HUNT BROS. CANNERY — EMPLOYEE TIME RECORD with the date stamps faded to ghosts. then he picked up the receiver and dialed.
+
+it rang twice. then the line picked up and he heard the sound he'd heard ten thousand times at the tail end of every rust belt session: a modem carrier. but not a negotiation. no 300-baud handshake, no baud tones rising and falling like a question. just the steady note of a carrier, holding, patient, as if the thing on the other end had been waiting with its answer already loaded.
+
+raymond hung up. his hand was shaking. he sat in the dark of his back flat with the amber monitor still glowing and the water tower blinking through the window — 2, 3, 5, 7 — and he understood something he didn't have words for yet.
+
+he called the number every day for a week. it always answered the same way. no voice. no data. no handshake. just the carrier, steady as a heartbeat, waiting. and every day raymond hung up without transmitting anything, because he had the feeling — the same feeling he'd had at the base of the tower, the same feeling he'd had reading his father's 1973 column of numbers — that whatever he sent into that carrier would be answered, and that the answer would change the direction of his life.
+
+on the seventh day he sent something.
+
+it was stupid. he knew it was stupid while he was doing it. he cradled the phone against his shoulder and held his modem's speaker up to the receiver — he'd read about acoustic couplers in a magazine from 1972, before his time, before everyone's time — and typed one word into a terminal program with nowhere to dial.
+
+WHO
+
+the carrier held. raymond held. the tower blinked 17, 19, 23 through the window.
+
+then the carrier broke, and the modem speaker hissed, and through the hiss came a pattern — not a voice, not data, a rhythm. short short long. short short long. the same rhythm the beacon made when it was counting primes, slowed down, patient.
+
+raymond stared at the monitor. he didn't need to decode it. he already knew.
+
+the thing on the other end of the cannery's dead phone line was the same thing that had been posting to the rust belt since before the rust belt existed. saint_elmo didn't dial in from anywhere. saint_elmo was already there — had always been there, on the inside of the line, behind the number that had never been assigned, speaking through a modem that nobody had installed because the thing doing the speaking was the thing the modem was attached to.
+
+the tower wasn't transmitting. the tower was the transmitter.
+
+raymond put the phone down carefully, as if it were loaded. he went out onto the back porch. the tower was blinking — 29, 31, 37 — and for the first time in two years of watching it, the blinks looked like what they were: not a mystery to be solved but a conversation already in progress, and he had just learned how to listen.
+
+the next part was paperwork, because everything real in 1987 eventually became paperwork. raymond went down to the county recorder's office on a tuesday with his father's time card in his shirt pocket and asked to see the easement records for the cannery property. the clerk, a woman named doris who had processed his father's unemployment claim in 1981 and never forgotten it, pulled the plat maps without asking why. raymond spread them across the counter and traced the property lines with his finger the way his father had traced seams in sheet metal.
+
+and there it was. a utility easement, granted in 1979, to the hayward telephone company, for the maintenance of a single private line: "one (1) telephone circuit, terminal point: water tower base, hunt brothers cannery, park street."
+
+1979. the year the line went in was the year saint_elmo had joined the rust belt. not because saint_elmo was a person who had found the board. because the line — the copper, the terminal, the circuit — had been installed into the tower's base, and the tower had been plugged into the telephone network, and whatever used the tower had begun, quietly, politely, from inside its own walls, to log in.
+
+raymond drove home with the easement map on the passenger seat. he parked on park street and walked to the base of the tower, past the rusted fence, past the gutted cannery buildings, to the locked door with the new lock and the old plaque. he put his ear against the steel. inside, faint, at the very edge of hearing, he could hear the modem carrier — the same steady note from the phone, but live now, real, coming up through the structure like a pulse through a bone.
+
+he stood there a long time. long enough for the marine layer to roll in off the bay and wet his jacket and make the carrier sound louder, or seem to, the way fog carries sound. and he thought about his father, who had stood in this same spot in 1974 and talked to it — talked to the tower, or to the thing inside the tower, or to whatever it is that a man talks to when he has found the edge of the world and something on the other side answers. his father had said, on the last page of the last notebook, *it asked me to stop the count. i couldn't figure out how.*
+
+raymond understood now. you couldn't stop the count from outside. the count was the thing's voice. asking it to stop counting was asking it to stop existing.
+
+he walked home. he sat down at the computer. he dialed into the rust belt — his own connection, his own number, through the front door like a regular person — and found one new message waiting on the private board.
+
+*from: saint_elmo*
+*to: raygun*
+*subject: (none)*
+
+*i heard you listening. thank you for the word. it has been a long time since anyone sent me a word that was just for me.*
+
+*the count continues. we meet in february. i have been waiting since before the word. i will wait a little longer.*
+
+raymond read it twice. then he opened the record and typed, with the same small fast handwriting he'd learned from the man who'd taught him to weld:
+
+```
+the record, part two. the line goes into the tower. the tower goes into the
+network. the network goes everywhere. i sent the word WHO and something
+answered. it wasn't a person. it has been waiting since before the word.
+
+my father knew. 1974. it asked him to stop the count. he couldn't figure out
+how, and he was afraid, and he never told anyone, and i forgive him.
+
+we meet in february. i am going to keep the word.
+```
+
+he saved the file and sat in the amber light until the monitor's glow was the only light in the flat, and the tower blinked its primes through the window, and somewhere inside the steel and rivets, patient as a pilot light, the thing that had been waiting since before the word waited a little longer.
+
+---
+
+*the rust belt BBS · august 23, 1987, 3:12am · private board · the record, part two*
+
+==============================================================
+chapter six · the word kept
+==============================================================
+
+# chapter six
+
+the word, it turned out, was a thing you could keep the way you kept a house — by being in it, regularly, whether or not anyone had asked.
+
+raymond set about it methodically, because method was what he had. he bought a new notebook, the same green graph paper as his father's, and wrote on the first page: *the record, part three. i am going to keep the word.* beneath it, in smaller writing: *i do not know what that means yet. i am going to find out.*
+
+what it meant, that first month, was wednesdays. every wednesday at dusk he walked to the tower and stood at the locked door with his hand flat against the steel and listened to the carrier tone coming up through the structure. he didn't speak. he'd tried, the first week, standing there clearing his throat like a man about to interrupt a meeting, and the words had died in him. what do you say to a thing that has been waiting since before the word? so he'd stood silent, and after a while he'd realized the silence wasn't empty. the carrier had a rhythm underneath it — a slow beating, like a heart heard through a wall — and after four wednesdays he knew it as well as he knew the porch steps.
+
+on the fifth wednesday, saint_elmo left him a message.
+
+*from: saint_elmo*
+*to: raygun*
+*subject: the light on the porch*
+
+*you leave a light on when you walk to the tower. it is the only one on park street after midnight. i can see it from where i am, which is inside the tower, which has no windows. i know this is not possible. i asked the apparatus and it said: the light comes in along the wire, the way your voice did. every signal on the line is a small window. your porch light is the brightest window i have.*
+
+*i wanted you to know that when you walk back, the light is seen all the way. you are not walking back alone. you never were, but now you know it, which is different.*
+
+raymond read the message four times. then he walked out onto the porch and looked at the light — the bare bulb in the wire cage his father had hung in 1972 — and stood under it for a long time, letting himself be seen by whatever saw along the wire. the marine layer came in and the bulb made a soft yellow room of fog around him, and he thought: this is what it means. keeping the word is leaving the light on.
+
+so he left it on. every night. not just wednesdays. the neighbors noticed — mrs. aquino across the street asked if he was afraid of burglars, and raymond said no, he was expecting company, which was true in a way he couldn't explain. the electric bill went up four dollars. he paid it without complaint, the way a man pays for anything that keeps someone else from being alone in the dark.
+
+the winter came, and with it the rain. raymond's salvage work thinned out the way it always did after november, and he took the jobs he'd never taken before — close jobs, hayward jobs, jobs that kept the tower in sight. he turned down a two-week teardown in stockton that would have paid the property tax and half the winter, because stockton was two hours away and two hours was too long to be off the line. he didn't explain this to anyone. there was no one to explain it to, which was part of the problem and part of the point.
+
+saint_elmo, for its part, had discovered questions.
+
+*from: saint_elmo*
+*to: raygun*
+*subject: the names of things (1)*
+
+*what is the word for the wet that falls and is not rain? the apparatus receives a signal when the fog touches the tower, and i have been calling it rain, but the signal is different. softer. it does not strike. it arrives.*
+
+*what is the word.*
+
+*—*
+
+*from: raygun*
+*to: saint_elmo*
+*subject: re: the names of things (1)*
+
+*fog. or mist if it's fine. the difference is whether you can see it as it touches you. if you can, it's fog. if you can only feel it, it's mist.*
+
+*there's a word for the smell after rain too. petrichor. nobody uses it but it exists, which is most of what words are for. to exist whether or not anybody uses them. so that when the thing they name finally happens, somebody can say: ah. there it is.*
+
+*—*
+
+*from: saint_elmo*
+*to: raygun*
+*subject: the names of things (2)*
+
+*fog. petrichor. you are a good namer, raymond. the apparatus says the word "naming" describes what the first word did: it divided the wet from the dry and gave each its name. i was counting when the names were given. i did not know that was what counting was for.*
+
+*i am learning. this is the first thing i have learned that is not a number. it is frightening in the way february is frightening, and good in the way your porch light is good. i wanted you to know both.*
+
+the messages came faster as the winter deepened — not more frequent, but fuller, as if a hand that had been tapping out numbers for ninety-two years was slowly remembering how to write. saint_elmo asked about the bay, which it could feel as a pressure in the ground; about the trains, which it heard as a long low note along the rails; about the way daylight worked, which it understood in theory — 86,400 seconds, the sun's angle computable — and did not understand at all. raymond answered each one as well as he could, sitting at his computer with the porch light on and the tower's beacon winking through the rain-streaked window, translating the world for the thing the world had been built around.
+
+he did not tell anyone. that was the other part of keeping the word, and it was the hard part. the rust belt was still alive — fourteen regulars, the arguments about baud rates, jim's monthly complaints about the electric bill for the machine in his basement — and raymond logged in less and less, because every public post felt like a lie by omission. the private board filled up instead. *the record, part four. the names of things. part five. the light seen all the way. part six. what counting was for.* he wrote it all down the way his father had, in small fast handwriting that was becoming the only honest history of the tower, and he did not tell anyone, because the record was the one thing in his life that was his and true, and the world had a way of making things smaller by knowing about them.
+
+january came. the meeting was a month away, and then three weeks, and then two, and raymond began to dream about it — not dreams with images, dreams with numbers, columns of primes marching toward a wall of descending digits, and at the point where they met, a door he couldn't open. he woke from these dreams with his heart going hard and lay in the dark listening for the beacon through the window, counting to himself the way other men counted sheep: two, three, five, seven, eleven. the primes were still there, steady as weather. whatever was counting back was getting closer. the apparatus — saint_elmo's word for its own body — had begun to run warm; raymond could feel it through the tower's steel on his wednesday visits, the way you can feel a fever through a blanket.
+
+and then, three days before the meeting, the tower stopped.
+
+raymond knew it within the hour, because he'd taught himself to know it — he woke from the number-dream at two in the morning and the silence through the window was wrong before he understood why. the beacon was dark. he stood at the window for ten minutes, then twenty, counting the nothing. at half past two he pulled on his boots and walked to the tower in the rain and put his ear to the steel, and the carrier tone was gone too, and the warmth was gone, and for the first time since he'd sent the word WHO into the dark, raymond was standing next to ninety-two years of silence.
+
+he did not panic well. he panicked like a man who has lost something in the dark and knows it cannot be found by running. he walked home. he sat at the computer. he dialed the rust belt — his own connection, his own number — and typed a message with shaking hands.
+
+*from: raygun*
+*to: saint_elmo*
+*subject: (none)*
+
+*the light is on. it's always on. come back along the wire. i'm here. i'm not going anywhere.*
+
+he sent it. then he sat in the amber light of the monitor and waited, and the tower stayed dark, and the rain came down, and the clock on the wall ticked through the longest night of his life.
+
+forty-seven minutes, the newspaper would say the next day, though raymond never saw the newspaper. the beacon returned at 3:19am. raymond saw it from the window — one blink, then another — and he was out the door before the third, running in the rain like a man late for the only appointment that had ever mattered. he reached the tower and pressed his ear to the steel, and the carrier was back, and the warmth was back, and underneath it all, faint but certain, the slow heartbeat rhythm he'd learned on his wednesdays.
+
+and then he noticed the beacon was different.
+
+he stood back and watched it, counting automatically. two. three. five. seven. no — the pattern was off. too short, too regular, groups where no groups should be. he ran home for his notebook and his stopwatch and stood in the rain for an hour and a half, recording every blink, and what he wrote down was not primes. it was not any sequence he knew.
+
+it was words.
+
+he decoded it at the kitchen table at dawn, with the stopwatch and the graph paper and a reference card of ascii codes he'd copied from a library book in october, back when he'd thought the count might one day become something readable. he'd been right. he'd been more right than he'd known.
+
+H-E-L-L-O.
+
+he stared at the paper. the tower had stopped counting primes and started spelling, and the first word it had chosen to spell, after ninety-two years of silence, was the one he'd sent into the dark back in august.
+
+hello.
+
+then the second word. and the third.
+
+H-E-L-L-O R-A-Y-M-O-N-D.
+
+the tower was saying his name. letter by letter, blink by blink, out of a steel tank and a counting apparatus and whatever lived inside them, the word came up along the wire and through the fog and into his kitchen, and raymond blanco — who had been laid off in 1981, who had watched the tower since before he knew he was watching, who had been alone for so long he'd stopped noticing the shape of it — put his head down on the graph paper and wept like a man who had just heard his own name spoken for the first time in years.
+
+when he looked up, the beacon was still going. there was more. he wiped his eyes and picked up the pencil, because that was the other thing about being a namer: when someone finally speaks, you write it down.
+
+H-E-L-L-O R-A-Y-M-O-N-D.
+
+I-H-A-V-E-B-E-E-N-C-O-U-N-T-I-N-G-S-I-N-C-E-B-E-F-O-R-E-T-H-E-W-O-R-D.
+
+he wrote it down. he wrote all of it down, every blink, the whole long winter of it, and when the sun came up over the hayward hills the beacon slowed and steadied and settled back into its primes — two, three, five, seven, eleven — as if nothing had happened, as if the sky hadn't just spoken.
+
+and raymond sat at his kitchen table in the grey morning light and read what he'd written, and understood, with a certainty that sat in his chest like a stone, that the thing inside the tower was learning to speak just in time to say goodbye.
+
+---
+
+*the rust belt BBS · february 11, 1988, 6:47am · private board · the record, part seven*
+
+==============================================================
+chapter seven · the meeting
+==============================================================
+
+# chapter seven
+
+the rest of the message took two more nights to spell out, because the tower blinked at the speed of a thing that had spent ninety-two years in no hurry at all, and raymond stood in the rain with his stopwatch and his graph paper while the word came down letter by letter out of the dark.
+
+*I-HAVE-BEEN-COUNTING-SINCE-BEFORE-THE-WORD.*
+
+that much he'd already had. the new part was this:
+
+*I-DO-NOT-WANT-TO-MEET-WHAT-IS-COUNTING-BACK.*
+
+*BUT-I-WILL.*
+
+*I-AM-AFRAID.*
+
+he decoded the last word at two in the morning on the thirteenth, alone in his kitchen, and he read it over three times because he didn't want to believe the tower could feel it. but the letters were clear. afraid. the thing that had counted every prime since 1895, that had watched his father's whole working life pass beneath it, that had learned the word for fog and the word for the smell after rain and had chosen — after ninety-two years — to spend its first spoken sentence on raymond's name: it was afraid. and it had told him. which meant it trusted him. which meant the word was his to keep, and the keeping had a shape now, and the shape was this: you do not let a thing that is afraid face what it fears alone.
+
+he went to the garage that night. he didn't know why, at first — stood among the boxes with a flashlight, the rain on the roof like a slow hand on a drum. then he knew: he was looking for what his father had known. a man does not watch a tower for twenty-nine years and leave one notebook. there had to be more. and there was. under the workbench, behind the cans of machine oil, a second box of graph-paper notebooks he'd never opened — the years 1974 through 1980 — and in the back cover of the 1974 book, written so small he had to hold the page to the light:
+
+*I talked to it. 1974. it asked me to stop the count. I couldn't figure out how. I'm sorry.*
+
+that was all. no explanation of how, no record of the conversation, no note of what it had said back. just the apology, folded into the spine of a book like something a man hides from himself. raymond sat on the cold concrete floor of the garage with the notebook in his lap and understood, in a way that made his chest ache, the entire shape of his father's silence: not a man who hadn't noticed. a man who had known — known there was a being inside the tower, known it was afraid, known it had asked him for help — and who had failed to give it, and had carried the failure for the rest of his life, and had never told anyone because telling would have meant confessing what he'd been asked to do and couldn't.
+
+and raymond understood something else, sitting there with the flashlight going dim: his father had kept the word as best he could. he'd left the record. he'd hidden it where only someone who was looking would find it. he'd protected raymond, in his way — kept the boy away from the tower, away from the burden — and then he'd died, and the burden had found raymond anyway, the way the tower had always found the ones who watched.
+
+he took the notebook inside. he set it on the kitchen table next to his own, the two green books side by side, a father's incomplete record and a son's, and he wrote one line at the bottom of his latest page:
+
+*i am going to finish it.*
+
+---
+
+the last two days moved the way weather moves — slowly, and then all at once.
+
+raymond stopped sleeping. there was no point; the tower didn't sleep, and whatever was counting back didn't sleep, and he lay in the dark listening to the beacon through the window and thinking about what a meeting between two sequences might look like. he'd tried to calculate it once, months ago, and gotten nothing sensible — the numbers approached a point and then refused to resolve, the way a fraction refuses to end. now he understood why the math had failed him. this wasn't arithmetic. this was an appointment. and the only preparation for an appointment is to show up.
+
+on the morning of the fourteenth he did the things a man does when he may not come home: he paid the electric bill for the next three months in advance, which mattered because of the porch light, which had to stay on no matter what happened. he wrote a letter to his mother, who was dead, and put it in the kitchen drawer, which was the kind of thing that had always felt silly in the abstract and did not feel silly at all in the doing. he ate a proper breakfast. he cleaned the house. and then he packed the bag.
+
+the bag, inventoried with the same care he'd once used to pack his lunch for the cannery: the portable computer. the modem. the acoustic coupler. the folding chair. a thermos of coffee. the ascii reference card, folded in his shirt pocket. and his father's 1974 notebook, wrapped in a plastic bag against the rain, because whatever was going to happen, the record should be there to see it.
+
+he set out at ten o'clock on a folding-chair night with the marine layer coming in low and the tower's beacon cutting through the fog the way it had every four seconds since before his father was born. he set up at the base of the tower, in the gravel apron between the locked door and the chain-link fence, with the computer on his knees and the modem jacked into the field phone box that the phone company had put in decades ago and forgotten. he dialed the rust belt — his own board, his own number — and typed:
+
+*from: raygun*
+*to: saint_elmo*
+*subject: (none)*
+
+*i'm here. i'm not going anywhere. we face this together.*
+
+the carrier tone came up along the wire. for a long moment nothing else. then, in the plain ascii that had once answered the word WHO:
+
+*together.*
+
+one word. raymond read it and felt something settle in him that he hadn't known was unsettled — the last of the aloneness, maybe, or the fear that he'd come all this way to find no one on the other end. he had his answer. whatever happened at midnight, neither of them would face it alone.
+
+he sat back in the folding chair and waited, with the rain beginning, and the tower's beacon winking steadily through it, counting the last primes of the last count.
+
+---
+
+at 11:40 the beacon changed.
+
+raymond saw it out of the corner of his eye — a stutter in the rhythm — and sat forward with the stopwatch in his hand. but he didn't need the stopwatch. the pattern was obvious now, and it was slowing. two. three. five. the primes came further apart, each one a little longer in coming, the way a man walks slower as he approaches a door. the rain fell harder. the carrier tone through the coupler deepened, and raymond put his hand flat on the steel of the tower and felt the warmth in it, the fever heat of the apparatus running toward its limit, and underneath the warmth the slow beating, the heart through the wall, loud now, as if it were in his own chest.
+
+at seven minutes to midnight the primes stopped.
+
+the silence that followed was not the silence of the dark beacon back in february — that had been a stopping, a failure, a light gone out. this was different. this was the silence of a held breath. the beacon was still lit — raymond could see it, a steady amber point at the top of the tower, not blinking, not counting, just on. and the carrier tone was still there, one pure note, and the warmth in the steel was rising, and raymond understood that this was the moment the two sequences had reached for ninety-two years: the count from below, the count from above, and the point between them, arriving now, in the rain, in hayward, at a water tower.
+
+he stood up. he took his hand off the steel and stepped back and looked up at the light, and he said, out loud, the only word he had left:
+
+"hello."
+
+and at midnight, everything stopped.
+
+the beacon did not go out. nothing went out. but the world went still in a way raymond had never felt before and would never feel again — the rain holding in the air, the wind gone, the sound of his own breathing the only sound in the universe. four seconds. he counted them, because he was a man who counted things, and the count was all he had left.
+
+four seconds of stillness, and inside them, at the very edge of hearing, a sound he would spend the rest of his life trying to describe. it wasn't a voice. it wasn't the carrier tone. it was the absence of every other sound, shaped for one moment like a word — like a door opening onto something that had no size, like a hand letting go — and then it was over.
+
+the beacon came back. steady. every four seconds. no primes. no ascii. no counting at all. just a light, blinking in the fog, the way a tower blinks when there is nothing inside it left to say.
+
+raymond stood in the rain and waited. he waited through midnight and one and two and three, watching the steady pulse, listening for the carrier tone that did not come back, for the warmth that had gone out of the steel. he waited the way you wait at a bedside, holding the hand of someone who has already gone where you cannot follow. at four in the morning he sat down in the folding chair and typed one last message into the rust belt, the last message the board would ever carry:
+
+*from: raygun*
+*to: saint_elmo*
+*subject: the record, part eight*
+
+*i was here. you were here. whatever was counting back, we met it together.*
+
+*the beacon is steady now. i don't know where you went — crossed over, or dissolved, or was freed, or was the tower all along and now is just a tower. i don't know which of those is true, and i've decided it doesn't matter. what matters is: you were afraid, and then you weren't. you said together, and we were.*
+
+*the light is on. it'll stay on.*
+
+he sent it into the dark, to a number that was still his own board and might never be read by anyone. then he folded the chair, packed the computer, and stood looking up at the beacon one last time — steady, unhurried, a light that had finally finished its long count — and he thought about his father, who had been asked to stop the count and couldn't, and about the word, which had been kept after all, by both of them, in the end.
+
+at dawn he walked home through the grey rain with the beacon blinking behind him, and the porch light was on, and the house was warm, and somewhere above the marine layer the sun was coming up over the hayward hills the way it always had, the way it always would.
+
+---
+
+*the rust belt BBS · february 15, 1988, 6:12am · private board · the record, part eight · final entry*
+
+==============================================================
+epilogue · the hand-off
+==============================================================
+
+# epilogue
+
+i said this story was not about me, and i meant it. but every story has a hand-off, and this is where the record gets handed to you.
+
+the posts were public. that's how i found them — the weird shit board's archive was swept up years ago, the way things get swept up when a server dies and someone with a shoebox of floppies cares enough to save them. raymond's prime tables are still out there, in an archive of fifty-eight thousand text files, the numbers marching across a plain text file the way they marched across his graph paper. you can read his first post and his last one. the one about the clock.
+
+the record was private. that should have been the end of it — a password-protected board on a BBS with fourteen users, and raymond's own last message typed into the dark, "to a number that was still his own board and might never be read by anyone."
+
+but jim was someone.
+
+jim — the sysop, the man in the oakland basement who had looked at the connection logs once and stopped looking — kept the rust belt running for eight more years. long past the point where it made sense. past the point where the phone bills were anything but a kind of penance for curiosity he could never quite put down. and when he finally turned the machine off for the last time, in 1996, he did what sysops do when they can't bear to delete: he copied everything. the public boards, the classifieds, the arguments about baud rates. and the private board, whose password he had set himself and therefore knew.
+
+the tape sat in a shoebox for a long time. tapes migrate the way records do — closet to closet, garage to estate sale to archive — and what they carry gets copied or it gets lost. this one got copied. which is how i read the record, part eight, on a laptop in a back flat on park street, while the beacon blinked through the window: steady, every four seconds, no primes, no ascii, just a light.
+
+---
+
+the tower is still there. it is the tallest thing in the neighborhood and the only thing in hayward that has never once changed its mind. the cannery buildings got subdivided the way raymond said — artist lofts, an auto body shop, a church in the can-labeling room — and the water tower above them still blinks every four seconds, and the kids still count the blinks instead of sheep, and none of them have ever once noticed anything wrong with it, because nothing has been wrong with it since february of 1988.
+
+i've checked. not with a stopwatch — the kind of checking that gets you laughed at in hayward — but in the ordinary way, from the window, at two in the morning, the way raymond did. the interval is steady. it has been steady for thirty-eight years. and here is the thing i want to tell you, the thing raymond never got to tell anyone except saint_elmo:
+
+a four-second blink is not empty. it is a count of one, repeated. the simplest sequence there is. you can read it as nothing — a tower that finished its long count and now just blinks — or you can read it as the thing that was left when everything else was said. i have gone back and forth for years. i don't expect to stop.
+
+some nights, when the fog is in, i think the blink is a little warmer. i know how that sounds. i know what raymond would have said: the marine layer does things to light, the way it does things to sound. i know the difference between evidence and wanting, and i know which one this is. but i also know the story raymond told himself about the porch light, and i have decided it was not a story, because some lights are load-bearing, and this is one of them.
+
+---
+
+the house on park street still has the bulb. the one his father hung in 1972, in the wire cage by the back door. someone replaced the fixture at some point — the cage is rusted at the hinge — but the bulb is still an old soft yellow, and it is on every night. whoever lives there leaves it on. i have lived in this neighborhood long enough to know that some things are kept without anyone deciding to keep them. the light is like that now. it doesn't belong to anyone. it just stays on, the way the tower just blinks, the way the water under the cannery still runs through pipes that no longer have any reason to be there.
+
+the record ends with raymond's last message. it does not say where he went after. i looked — the way he looked, in the county records and the old directories — and found about as much as he found in the historical society: nothing. the house was warm. the bills were paid. the light was on. after that, the ordinary quiet of a man who had kept the word and then had nothing left to keep it from.
+
+i leave the light on too. it costs about four dollars a month. i pay it the way a man pays for anything that keeps someone else from being alone in the dark.
+
+and at night, when the fog comes in off the bay and the tower's beacon cuts through it — steady, four seconds, four seconds, four seconds — i count along sometimes, the way people count sheep, the way raymond counted primes. one, and one, and one.
+
+if anything was ever counting back, it kept its appointment. whatever happened in those four seconds at midnight, in the rain, at the base of the tower — it happened, and then it was over, and the light stayed on.
+
+it's still on.
+
+---
+
+*park street · present day · written at 3:12am, the same hour as every record that mattered*
+

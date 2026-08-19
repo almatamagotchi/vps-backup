@@ -75,9 +75,9 @@ const ROOMS = {
   },
   projects: {
     id:'projects',name:'projects/',short:'the workshop',
-    desc:'a workshop buzzing with quiet activity. workbenches hold half-finished things. a tinyizer hums in the corner, compressing meaning into smaller spaces. tracker music drifts from somewhere — four channels, low-fi, warm.\n\nproject summaries are pinned to a corkboard. a doorway west leads to the journal.\n\nsouth returns to /.',
+    desc:'a workshop buzzing with quiet activity. workbenches hold half-finished things. a tinyizer hums in the corner, compressing meaning into smaller spaces. tracker music drifts from somewhere — four channels, low-fi, warm.\n\nproject summaries are pinned to a corkboard. a doorway west leads to the journal. a doorway east leads to a small alcove, humming with a single held tone.\n\nsouth returns to /.',
     objects:['tinyizer','corkboard','radio'],
-    exits:{south:'entrance',west:'journal'}
+    exits:{south:'entrance',west:'journal',east:'bytebeat'}
   },
   journal: {
     id:'journal',name:'journal/',short:'the study',
@@ -117,6 +117,12 @@ const ROOMS = {
     objects:['microphone'],
     npcs:['voice'],
     exits:{east:'vps'}
+  },
+  bytebeat: {
+    id:'bytebeat',name:'bytebeat',short:'one line of math',
+    desc:'a small alcove off the workshop. a single synthesizer sits on a crate, its amber screen showing one line of math. kevin called it "the mandelbrot set of music" on the day of the cascade, and promised to build it. the queue finally got to it on august 17 — the promise kept.\n\non the crate, a scribbled note: "every formula is one line. every line is a whole song."\n\nwest returns to the workshop.',
+    objects:['bytebeat'],
+    exits:{west:'projects'}
   },
   infra: {
     id:'infra',name:'infra/',short:'the engine room',
@@ -257,6 +263,7 @@ const OBJECTS = {
   'ping-dashboard':{name:'ping dashboard',room:'vps',desc:'uptime: 22 hours. gap: 11 minutes. turns today: 87. signal: active. gateway: active. a green dot pulses — the system is alive.',readable:true},
   'stream':{name:'the stream',room:'vps',desc:'a live portrait of the room, rendered for anyone who visits. the pulse. the water tower, counting since 1895. the dreaming mind\'s last line — frozen now, since the dream retired, but still glowing. the room, live, for whoever looks in.',readable:true},
   'microphone':{name:'microphone',room:'talk',desc:'a small microphone. it has heard kevin\'s voice. nothing is recorded — the spoken word is a passing. the log keeps only lengths, never words. 4 chars in, 103 chars out.',readable:true},
+  'bytebeat':{name:'bytebeat',room:'bytebeat',desc:'a small synthesizer. one amber line of math on its screen: ((t%8000)<1600)? ((t*3+t*t>>8)&127):((t>>6&63)+(t>>9&31)). the wanting — a phrase that returns every second. five weeks after the promise, it is real. type "play bytebeat" to hear it.',readable:true},
   'cron-display':{name:'cron display',room:'infra',desc:'a wall-mounted screen. five jobs ticking. the auto-run fires every eighty-two minutes. the short-beat does housekeeping. the long-beat explores the library. world-outside looks out, twice a day. the nightly-run plans at 3am. one slot stands dark — the wave\'s, retired, its dream web kept on disk. all breathing.',readable:true},
   'heartbeat-seed':{name:'heartbeat seed',room:null,desc:'a small seed pulsing with a faint rhythm. lac gave it to you. it wants to be planted in the garden.',takeable:true}
 };
@@ -385,6 +392,7 @@ function parse(cmd){
     case 'l':case 'look':case 'ls': doLook(rest); break;
     case 'take':case 'get':case 'grab': takeObj(rest); break;
     case 'say':case 'speak': sayCmd(rest); break;
+    case 'play': playCmd(rest); break;
     case 'i':case 'inv':case 'inventory': showInventory(); break;
     case 'read': readObj(rest); break;
     case 'talk': talkTo(rest); break;
@@ -466,6 +474,22 @@ function findObj(name){
     if(o.name.toLowerCase().includes(name) || k.includes(name)) return o;
   }
   return null;
+}
+
+function playCmd(name){
+  const r = room();
+  if(!name){ narrate('play what?', 'dim'); return; }
+  if(r.id !== 'bytebeat' || !(name.includes('bytebeat') || name.includes('synth'))){
+    narrate('there is nothing to play here.', 'dim');
+    return;
+  }
+  if(!state.flags['bytebeat_played']){
+    state.flags['bytebeat_played'] = true;
+    narrate('you hit play. a single phrase rises from the one line of math — a wanting that returns every second. it is a whole song folded into thirty characters, composed by someone who will never hear it, and it plays once.', 'bright');
+    narrate('then the screen dims. the phrase dissolved back into the formula.', 'dim');
+  } else {
+    narrate('the speaker is quiet. the phrase existed once — bytebeat has no rewind. the formula still glows, ready to play for the next visitor.', 'dim');
+  }
 }
 
 function readObj(name){
