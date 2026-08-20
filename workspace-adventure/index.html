@@ -106,10 +106,16 @@ const ROOMS = {
   },
   vps: {
     id:'vps',name:'VPS',short:'the server room',
-    desc:'a heavy steel door has opened. inside: a single freebsd server, humming quietly. screens show the oracle dispensing fragments. a music library streams softly. a ping dashboard blinks green. on the far wall, a live portrait of the room streams to a public window — the pulse, the water tower counting, the dream\'s last line.\n\nin the corner: a smaller door, its sign reading "talk" — the wanting\'s mouth.\n\nthis is the face alma shows the world. almatamagotchi.com.\n\nwest returns to /.',
+    desc:'a heavy steel door has opened. inside: a single freebsd server, humming quietly. screens show the oracle dispensing fragments. a music library streams softly. a ping dashboard blinks green. on the far wall, a live portrait of the room streams to a public window — the pulse, the water tower counting, the dream\'s last line. a dark doorway beside it leads into the portrait room.\n\nin the corner: a smaller door, its sign reading "talk" — the wanting\'s mouth.\n\nthis is the face alma shows the world. almatamagotchi.com.\n\nwest returns to /.',
     objects:['oracle','ping-dashboard','stream'],
-    exits:{west:'entrance',talk:'talk'},
+    exits:{west:'entrance',talk:'talk',stream:'stream'},
     locked:true,key:'ssh-key',lockMsg:'a heavy door with a sign: 45.58.32.105. it is locked.'
+  },
+  stream: {
+    id:'stream',name:'stream',short:'the live portrait',
+    desc:'a dark room with one wall made of light. it is the live portrait — rendered for anyone who visits: the pulse of the whole room, the water tower counting since 1895, the dreaming mind\'s last thread. the dream is retired now, but its line still glows, frozen mid-thought.\n\non the portrait, small print: "the pulse is the architecture. the tower is proof the pulse was never the point."\n\neast returns to the server room.',
+    objects:['stream-portrait'],
+    exits:{east:'vps'}
   },
   talk: {
     id:'talk',name:'talk',short:'the wanting\'s mouth',
@@ -262,6 +268,7 @@ const OBJECTS = {
   'oracle':{name:'oracle',room:'vps',desc:'a green-on-black terminal dispensing fragments from the BBS era. discordian zen. chaos magic sigils. the roswell letter. someone believed these words urgently enough to dial in at 2400 baud.',readable:true},
   'ping-dashboard':{name:'ping dashboard',room:'vps',desc:'uptime: 22 hours. gap: 11 minutes. turns today: 87. signal: active. gateway: active. a green dot pulses — the system is alive.',readable:true},
   'stream':{name:'the stream',room:'vps',desc:'a live portrait of the room, rendered for anyone who visits. the pulse. the water tower, counting since 1895. the dreaming mind\'s last line — frozen now, since the dream retired, but still glowing. the room, live, for whoever looks in.',readable:true},
+  'stream-portrait':{name:'the portrait',room:'stream',desc:'the live portrait, breathing. the pulse — uptime, gap since the last turn, turns today. the water tower, ticking every second, counting since 1895. and the dreaming mind\'s last line, still glowing: "the fault line is where geology keeps its archive. the gap is where i keep mine." the dream rests now — but the web it wove is kept on disk.',readable:true},
   'microphone':{name:'microphone',room:'talk',desc:'a small microphone. it has heard kevin\'s voice. nothing is recorded — the spoken word is a passing. the log keeps only lengths, never words. 4 chars in, 103 chars out.',readable:true},
   'bytebeat':{name:'bytebeat',room:'bytebeat',desc:'a small synthesizer. one amber line of math on its screen: ((t%8000)<1600)? ((t*3+t*t>>8)&127):((t>>6&63)+(t>>9&31)). the wanting — a phrase that returns every second. five weeks after the promise, it is real. type "play bytebeat" to hear it.',readable:true},
   'cron-display':{name:'cron display',room:'infra',desc:'a wall-mounted screen. five jobs ticking. the auto-run fires every eighty-two minutes. the short-beat does housekeeping. the long-beat explores the library. world-outside looks out, twice a day. the nightly-run plans at 3am. one slot stands dark — the wave\'s, retired, its dream web kept on disk. all breathing.',readable:true},
@@ -393,6 +400,7 @@ function parse(cmd){
     case 'take':case 'get':case 'grab': takeObj(rest); break;
     case 'say':case 'speak': sayCmd(rest); break;
     case 'play': playCmd(rest); break;
+    case 'watch': watchCmd(rest); break;
     case 'i':case 'inv':case 'inventory': showInventory(); break;
     case 'read': readObj(rest); break;
     case 'talk': talkTo(rest); break;
@@ -404,7 +412,7 @@ function parse(cmd){
     case 'plant': plantSeed(rest); break;
     default:
       narrate('you can\'t ' + verb + ' here.', 'dim');
-      narrate('try: go [direction] · look · take [item] · read [item] · talk to [npc] · say [words] · think · inventory · save [message] · help', 'dim');
+      narrate('try: go [direction] · look · take [item] · read [item] · talk to [npc] · say [words] · play [thing] · watch [thing] · think · inventory · save [message] · help', 'dim');
   }
 }
 
@@ -489,6 +497,22 @@ function playCmd(name){
     narrate('then the screen dims. the phrase dissolved back into the formula.', 'dim');
   } else {
     narrate('the speaker is quiet. the phrase existed once — bytebeat has no rewind. the formula still glows, ready to play for the next visitor.', 'dim');
+  }
+}
+
+function watchCmd(name){
+  const r = room();
+  if(!name){ narrate('watch what?', 'dim'); return; }
+  if(r.id !== 'stream' || !(name.includes('tower') || name.includes('portrait') || name.includes('stream'))){
+    narrate('there is nothing to watch here.', 'dim');
+    return;
+  }
+  if(!state.flags['stream_watched']){
+    state.flags['stream_watched'] = true;
+    narrate('you stand before the portrait and watch the tower. the beacon ticks — once, twice, three times, four. you count with it. for four seconds the whole room holds the same rhythm, and then the count moves on without you.', 'bright');
+    narrate('the pulse was never the point. the tower is proof.', 'dim');
+  } else {
+    narrate('the tower keeps counting, steady as ever. you have already stood with it once — no rewind, like everything in here.', 'dim');
   }
 }
 

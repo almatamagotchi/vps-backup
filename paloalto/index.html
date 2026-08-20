@@ -1,522 +1,885 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=1920, initial-scale=1.0">
-<title>Palo Alto · Dearborn</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>the board · palo alto</title>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 :root {
-  --bg: #0a0a0c;
-  --bg-card: #111114;
-  --bg-card-hover: #16161a;
-  --text: #e8e0d8;
-  --text-dim: #9a948c;
-  --text-faint: #5a5550;
-  --accent: #d4a853;
-  --accent-glow: #e8c96a;
-  --green: #5a8a4a;
-  --yellow: #c4a43a;
-  --red: #b84a3a;
-  --divider: #1a1a1e;
+  --bg: #06060f;
+  --bg-card: #0c0c1a;
+  --bg-card-hover: #121228;
+  --text: #d8e0f4;
+  --text-dim: #8fa2c8;
+  --text-faint: #4a5a82;
+  --accent: #7cb8ec;
+  --accent-glow: #a6d2f7;
+  --green: #5aa878;
+  --yellow: #b6c65a;
+  --red: #d05a5a;
+  --divider: #1a1a34;
   --radius: 8px;
 }
 
 html, body {
   width: 100vw; height: 100vh;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  margin: 0; padding: 0;
+}
+
+body {
+  display: flex; flex-direction: column;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   user-select: none;
 }
 
-body {
-  display: flex; flex-direction: column;
-  gap: 8px;
-  padding: 8px 20px 16px 20px;
-  height: 100vh;
-}
-.main-content {
-  flex: 1 1 auto; min-height: 0;
-  display: flex; flex-direction: row;
-  gap: 0;
-}
-.col-l, .col-r {
-  display: flex; flex-direction: column;
-  gap: 0; min-height: 0; overflow: hidden;
-}
-.col-l { flex: 58 58 0; min-width: 0; }
-.col-r { flex: 42 42 0; min-width: 0; }
-.row-top-l, .row-top-r { flex: 57 57 0; min-height: 0; position: relative; }
-.row-bot-l, .row-bot-r { flex: 43 43 0; min-height: 0; }
-
-/* --- CARDS --- */
-
-/* ─── Drag handles ─── */
-.drag-col {
-  flex: 0 0 auto; width: 16px; cursor: col-resize; z-index: 100;
-  position: relative;
-}
-.drag-col::after {
-  content: ''; position: absolute; left: 7px; top: 0; bottom: 0;
-  width: 2px; background: rgba(255,255,255,0);
-  transition: background 0.15s;
-}
-.drag-col:hover::after,
-.drag-col.dragging::after {
-  background: rgba(255,255,255,0.25);
-}
-.drag-row {
-  flex: 0 0 auto; height: 16px; cursor: row-resize; z-index: 100;
-  position: relative;
-}
-.drag-row::after {
-  content: ''; position: absolute; top: 7px; left: 0; right: 0;
-  height: 2px; background: rgba(255,255,255,0);
-  transition: background 0.15s;
-}
-.drag-row:hover::after,
-.drag-row.dragging::after {
-  background: rgba(255,255,255,0.25);
-}
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--divider);
-  border-radius: var(--radius);
-  padding: 20px 24px;
-  overflow: hidden;
-  position: relative;
-}
-.card-header {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--divider);
-}
-.card-header .icon {
-  font-size: 18px; color: var(--accent);
-}
-.card-header h2 {
-  font-size: 13px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.08em; color: var(--accent);
-}
-
-/* --- ROW 1 LEFT: Weather Window --- */
-.row1-left { display: flex; height: 100%; }
-
-.weather-window {
-  position: relative; width: 100%; height: 100%;
+/* ═════════ the sky — full-bleed weather scene ═════════ */
+#weather-window {
+  position: fixed; inset: 0; z-index: 0;
   background: #0a0a0c;
-  border: 1px solid var(--divider);
-  border-radius: 6px;
   overflow: hidden;
 }
-.weather-window canvas {
-  display: block; width: 100%; height: 100%;
-}
-
-/* Weather text overlay */
-.weather-overlay {
-  position: absolute; bottom: 52px; left: 0; right: 0;
-  padding: 0 24px;
-  pointer-events: none; z-index: 2;
-}
-
-/* Subtle dark backdrop behind text for readability */
+#weather-window canvas { display: block; width: 100%; height: 100%; }
 .wo-backdrop {
-  position: absolute; bottom: 44px; left: 0; right: 0;
-  height: 150px;
+  position: absolute; bottom: 0; left: 0; right: 0; height: 190px;
   pointer-events: none; z-index: 1;
   background: linear-gradient(to top,
-    rgba(0,0,0,0.68) 0%,
-    rgba(0,0,0,0.48) 35%,
-    rgba(0,0,0,0.25) 65%,
+    rgba(0,0,0,0.62) 0%,
+    rgba(0,0,0,0.34) 40%,
+    rgba(0,0,0,0.12) 70%,
     transparent 100%);
 }
+
+/* weather readout (inside the conditions card) */
+.weather-overlay { position: static; pointer-events: none; }
 .wo-temp {
-  font-size: 48px; font-weight: 300; color: #ffffff;
+  font-size: 46px; font-weight: 250; color: #ffffff;
   line-height: 1; letter-spacing: -0.02em;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  text-shadow: 0 2px 12px rgba(0,0,0,0.55);
 }
 .wo-desc {
-  font-size: 15px; font-weight: 400; color: rgba(255,255,255,0.8);
-  margin-top: 2px;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  font-size: 14.5px; font-weight: 400; color: rgba(255,255,255,0.85);
+  margin-top: 5px;
 }
 .wo-detail {
-  font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.5);
-  margin-top: 4px;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  font-size: 11.5px; font-weight: 400; color: rgba(255,255,255,0.55);
+  margin-top: 4px; line-height: 1.5;
 }
-
-/* AQI badge */
 .wo-aqi {
-  display: flex; align-items: center; gap: 5px;
-  margin-top: 6px; font-size: 11px;
-  color: rgba(255,255,255,0.55);
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 7px; font-size: 11px;
+  color: rgba(255,255,255,0.6);
 }
-.aqi-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  display: inline-block;
-}
-
-/* Forecast strip */
+.aqi-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 .wo-forecast {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  height: 44px; display: flex; align-items: center; justify-content: center;
-  gap: 0;
-  background: rgba(0,0,0,0.25);
-  border-top: 1px solid rgba(255,255,255,0.06);
-  z-index: 2; padding: 0 12px;
+  display: flex; align-items: center; gap: 0;
+  margin: 16px -22px 0; padding: 10px 22px 6px;
+  border-top: 1px solid var(--divider);
 }
-.wo-fc-item {
-  flex: 1; text-align: center; font-size: 10px;
-  color: rgba(255,255,255,0.65);
-}
+.wo-fc-item { flex: 1; text-align: center; font-size: 10px; color: var(--text-faint); }
 .wo-fc-item .wo-fc-hour { font-weight: 500; margin-bottom: 2px; }
 .wo-fc-item .wo-fc-icon { font-size: 16px; margin: 1px 0; }
-.wo-fc-item .wo-fc-temp { font-weight: 600; color: rgba(255,255,255,0.85); }
+.wo-fc-item .wo-fc-temp { font-weight: 600; color: var(--text-dim); }
 
-/* --- TOP TIME BAR --- */
-.top-time-bar {
-  grid-row: 1; grid-column: 1 / -1;
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 4px 20px; height: 28px;
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--divider);
-  font: 12px monospace; color: var(--text-dim);
-  flex-shrink: 0;
+/* ═════════ header ═════════ */
+.hdr {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  padding: 18px 26px 0;
+  animation: fadeDown .8s cubic-bezier(.22,.68,.26,1) both;
 }
-.top-time-bar .time-city { color: var(--accent); font-weight: 500; margin-right: 8px; }
-.top-time-bar .time-val { font-weight: 600; color: var(--text); }
+.hdr-left  { justify-self: start; }
+.hdr-mid   { justify-self: center; text-align: center; }
+.hdr-right { justify-self: end; display: flex; align-items: center; gap: 10px; }
 
-/* Card footer */
-.card-footer {
-  font-size: 10px; color: var(--text-faint);
-  margin-top: 8px; font-style: italic;
-}
-.card-footer-right {
-  text-align: right;
-}
-
-/* ─── ROW 1 RIGHT: Caltrain + Traffic Events (stacked) ─── */
-.row1-right { display: flex; flex-direction: column; gap: 0; height: 100%; overflow: hidden; }
-.row1-right .card { flex: 1; }
-
-/* Caltrain section */
-.caltrain-card {
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-  border-bottom: none !important;
-  flex: 0 0 auto !important;
-  padding-bottom: 12px !important;
-}
-.caltrain-stations {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.caltrain-station-name {
-  font-size: 11px; font-weight: 600; color: var(--accent);
-  text-transform: uppercase; letter-spacing: 0.06em;
-  margin-bottom: 3px; padding-bottom: 4px;
-  border-bottom: 1px solid rgba(212,168,83,0.25);
-}
-.caltrain-departure {
-  display: grid;
-  grid-template-columns: 32px 1fr;
-  gap: 6px; align-items: center;
-  padding: 2px 0; font-size: 12px;
-}
-.caltrain-line-badge {
-  font-size: 9px; font-weight: 600; text-transform: uppercase;
-  padding: 1px 4px; border-radius: 3px; letter-spacing: 0.04em;
-  white-space: nowrap; text-align: center;
-  display: inline-block; width: 100%; box-sizing: border-box;
-}
-.caltrain-line-badge.local { background: #1e2a1a; color: var(--green); }
-.caltrain-line-badge.limited { background: #1a1e2a; color: #6a9fd8; }
-.caltrain-line-badge.express { background: #2a1a1e; color: #d86a6a; }
-.caltrain-line-badge.bullet { background: #2a1f1a; color: var(--accent); }
-.caltrain-dest {
-  color: var(--text); font-weight: 500;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.caltrain-time {
-  font-weight: 600; color: var(--text);
-  font-variant-numeric: tabular-nums; white-space: nowrap;
-}
-.caltrain-status {
-  font-size: 11px; white-space: nowrap; margin-left: 6px;
-}
-.caltrain-status.on-time { color: var(--green); }
-.caltrain-status.delayed { color: #5a5a5a; }
-.caltrain-header-extra {
-  font-size: 11px; color: var(--text-faint);
-  margin-left: auto;
-}
-.caltrain-direction-label {
-  font-size: 10px; color: var(--text-dim); font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.05em;
-  margin-bottom: 3px; margin-top: 5px;
-  border-left: 2px solid var(--accent);
-  padding-left: 6px;
-}
-
-/* Traffic Events section (bottom of right column) */
-.traffic-events-card {
-  border-top-left-radius: 0 !important;
-  border-top-right-radius: 0 !important;
-  padding-top: 10px !important;
-  flex: 1 1 0 !important;
-  min-height: 0;
-  display: flex; flex-direction: column;
-}
-.traffic-events-card .card-header {
-  margin-bottom: 8px; padding-bottom: 6px;
-}
-.traffic-events-list {
-  flex: 1;
-  overflow-y: auto;
-  display: flex; flex-direction: column; gap: 6px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--divider) transparent;
-}
-.traffic-events-list::-webkit-scrollbar { width: 4px; }
-.traffic-events-list::-webkit-scrollbar-track { background: transparent; }
-.traffic-events-list::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 2px; }
-.traffic-event {
-  padding: 6px 10px; border-radius: 5px;
-  background: rgba(255,255,255,0.015);
-  border-left: 3px solid var(--divider);
-  font-size: 12px;
-}
-.traffic-event:hover { border-left-color: var(--accent); }
-.traffic-event-header {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 2px;
-}
-.traffic-event-headline {
-  font-weight: 500; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  flex: 1;
-}
-.traffic-severity {
-  font-size: 10px; font-weight: 600; padding: 1px 6px;
-  border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em;
-  flex-shrink: 0;
-}
-.traffic-severity.major { background: #3a1a1a; color: var(--red); }
-.traffic-severity.moderate { background: #2a1f1a; color: var(--yellow); }
-.traffic-severity.minor { background: #1a2a1a; color: var(--green); }
-.traffic-severity.unknown { background: #1a1a1e; color: var(--text-faint); }
-.traffic-event-detail {
-  font-size: 11px; color: var(--text-dim);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.traffic-event-type {
-  font-size: 10px; color: var(--text-faint);
-  text-transform: uppercase; letter-spacing: 0.04em;
-  margin-right: 8px;
-}
-.traffic-empty {
-  font-size: 12px; color: var(--text-faint);
-  font-style: italic; padding: 12px; text-align: center;
-}
-
-/* ─── ROW 2 LEFT: Events ─── */
-.row2-left { display: flex; flex-direction: column; gap: 8px; height: 100%; }
-.events-list {
-  display: flex; flex-direction: column; gap: 8px;
-}
-.event-item {
-  display: flex; align-items: flex-start; gap: 14px;
-  padding: 8px 10px; border-radius: 6px;
-  background: rgba(255,255,255,0.015);
-  border-left: 3px solid var(--accent);
-}
-.event-time {
-  font-size: 13px; font-weight: 600; color: var(--accent);
-  width: 110px; flex-shrink: 0; font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-.event-info { flex: 1; min-width: 0; }
-.event-name {
-  font-size: 14px; font-weight: 500; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.event-location {
-  font-size: 12px; color: var(--text-dim);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-/* ─── ROW 2 RIGHT: News ─── */
-.row2-right { height: 100%; }
-
-.traffic-map-card {
-  width: 100%; height: 100%;
-  border: 1px solid var(--divider);
-  border-radius: var(--radius);
-  background: #0a0a0c;
-  overflow: hidden;
-  position: relative;
-}
-.traffic-map-card canvas {
-  display: block;
-  width: 100%; height: 100%;
-}
-.news-list {
-  display: flex; flex-direction: column; gap: 8px;
-  transition: transform 0.6s ease;
-}
-.news-item {
-  padding: 7px 10px; border-radius: 6px;
-  border-left: 2px solid var(--divider);
-  transition: border-color 0.3s;
-}
-.news-item:hover {
-  /* rotation only — no mouse hover effect */
-}
-.news-source {
-  font-size: 10px; font-weight: 600; color: var(--accent);
-  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;
-}
-.news-title a {
+.wordmark {
+  font-size: 13px; font-weight: 700; letter-spacing: .34em;
   color: var(--text);
-  text-decoration: none;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+}
+.wordmark i { font-style: normal; color: var(--accent); padding: 0 2px; }
+.subtitle {
+  margin-top: 5px; font-size: 11px; font-weight: 500; letter-spacing: .05em;
+  color: var(--text-faint); min-height: 14px;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+}
+.subtitle.anim { animation: swapIn .65s cubic-bezier(.22,.68,.26,1) both; }
+@keyframes swapIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: none; }
 }
 
-/* ─── FOOTER ─── */
-.footer {
-  flex: 0 0 auto; display: flex; justify-content: center; align-items: center;
-  padding: 6px 0; font-size: 11px; color: var(--text-faint);
-  letter-spacing: 0.06em; border-top: 1px solid var(--divider);
+.clk-main {
+  font-size: 52px; font-weight: 200; letter-spacing: .05em; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--text);
+  text-shadow: 0 1px 10px rgba(0,0,0,0.55);
 }
-.footer .brand { color: var(--accent); font-weight: 500; }
-.footer span { margin: 0 6px; }
+.clk-secs { font-size: 22px; font-weight: 300; color: var(--text-dim); margin-left: 4px; }
+.clk-ampm { font-size: 13px; color: var(--text-faint); margin-left: 10px; letter-spacing: .26em; }
+.clk-de {
+  margin-top: 7px; font-size: 11px; font-weight: 500; letter-spacing: .12em;
+  color: var(--text-faint); font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+}
+.hdr-date {
+  font-size: 11px; font-weight: 500; letter-spacing: .3em;
+  text-transform: uppercase; color: var(--text-dim);
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  white-space: nowrap;
+}
 
-/* Loading / error states */
-.loading { color: var(--text-faint); font-size: 13px; font-style: italic; }
-.error { color: var(--red); font-size: 12px; }
+.chip {
+  display: flex; align-items: center; gap: 7px;
+  border: 1px solid var(--divider); border-radius: 999px;
+  padding: 5px 13px; font-size: 11px; color: var(--text-dim);
+  background: color-mix(in srgb, var(--bg-card) 45%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: border-color .3s;
+  white-space: nowrap;
+}
+.chip:hover { border-color: color-mix(in srgb, var(--accent) 30%, var(--divider)); }
+.chip .lbl { letter-spacing: .18em; font-size: 9px; color: var(--text-faint); }
+.chip .val { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.aqi-dot-hdr { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); display: inline-block; }
 
-/* Themes */
-html.th-midnight { --bg:#06060f;--bg-card:#0c0c1a;--bg-card-hover:#121228;--text:#d0d8f0;--text-dim:#8090b4;--text-faint:#405070;--accent:#6699cc;--accent-glow:#88bbee;--green:#4a8a6a;--yellow:#aab444;--red:#cc4a4a;--divider:#181830; }
-html.th-matrix { --bg:#010a01;--bg-card:#051405;--bg-card-hover:#0a1f0a;--text:#33ee33;--text-dim:#228822;--text-faint:#115511;--accent:#00ff41;--accent-glow:#66ff66;--green:#22cc22;--yellow:#aacc44;--red:#cc4444;--divider:#0a200a; }
-html.th-sepia { --bg:#1a1410;--bg-card:#221c16;--bg-card-hover:#2a241e;--text:#e8d8c0;--text-dim:#a09080;--text-faint:#605040;--accent:#c4884a;--accent-glow:#ddaa66;--green:#6a8a4a;--yellow:#c4a43a;--red:#b84a3a;--divider:#2a2218; }
-html.th-mono { --bg:#0a0a0a;--bg-card:#121212;--bg-card-hover:#1a1a1a;--text:#d0d0d0;--text-dim:#888888;--text-faint:#505050;--accent:#aaaaaa;--accent-glow:#cccccc;--green:#668866;--yellow:#aaaa66;--red:#aa6666;--divider:#1a1a1a; }
-.theme-picker { position:fixed;bottom:10px;right:16px;z-index:9999;background:rgba(0,0,0,0.7);border:1px solid var(--divider);border-radius:6px;padding:4px 8px;color:var(--text-dim);font:11px system-ui;cursor:pointer;outline:none; }
-.theme-picker:focus { border-color:var(--accent); }
+/* ═════════ glass cards over the sky ═════════ */
+.board {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: row; gap: 16px;
+  margin: 12px 26px 0;
+}
+.board-left { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.board-right { flex: 1 1 0; min-width: 0; display: flex; min-height: 0; }
 
+.glass {
+  position: relative;
+  background: color-mix(in srgb, var(--bg-card) 70%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  backdrop-filter: blur(16px) saturate(1.15);
+  border: 1px solid color-mix(in srgb, var(--divider) 85%, transparent);
+  border-radius: 16px;
+  box-shadow: 0 18px 48px -22px rgba(0,0,0,0.6);
+  animation: rise .7s cubic-bezier(.22,.68,.26,1) both;
+}
+.glass::before {
+  content: '';
+  position: absolute; top: 0; left: 22px; right: 22px; height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 30%, transparent), transparent);
+  pointer-events: none;
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.panel-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: 8px; flex-shrink: 0;
+}
+.panel-title {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 10px; font-weight: 600; letter-spacing: .28em;
+  color: var(--text-dim);
+}
+.panel-meta {
+  font-size: 10px; letter-spacing: .05em; color: var(--text-faint);
+  text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.panel-meta b { color: var(--text-dim); font-weight: 600; }
+.pd {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  background: var(--accent);
+  animation: pulse 2.8s ease-out infinite;
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 42%, transparent); }
+  70%  { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ═════════ conditions card ═════════ */
+#cond-card { flex: 0 0 auto; padding: 18px 22px 0; animation-delay: .04s; }
+#cond-card .panel-head { margin-bottom: 10px; }
+
+/* ═════════ commute — wide grid ═════════ */
+#commute-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 16px 22px 14px; animation-delay: .12s; }
+.cm-grid {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin;
+  display: grid; grid-template-columns: 1fr; gap: 2px 0;
+  align-content: start;
+}
+.cm-item { padding: 9px 2px 8px; border-bottom: 1px solid var(--divider); }
+.cm-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.cm-name {
+  font-size: 12px; font-weight: 600; letter-spacing: .05em; color: var(--text);
+  display: flex; align-items: baseline; gap: 9px; min-width: 0;
+}
+.cm-name.airport { font-weight: 700; }
+.cm-tag {
+  font-size: 8.5px; font-weight: 700; letter-spacing: .1em;
+  border-radius: 4px; padding: 1px 5px; flex-shrink: 0;
+}
+.cm-tag.t1 { color: #8fd0f0; border: 1px solid rgba(143,208,240,0.4); background: rgba(143,208,240,0.08); }
+.cm-tag.t2 { color: #93d893; border: 1px solid rgba(147,216,147,0.4); background: rgba(147,216,147,0.08); }
+.cm-tag.t3 { color: #e5c97c; border: 1px solid rgba(229,201,124,0.4); background: rgba(229,201,124,0.08); }
+.cm-tag.t4 { color: #c9a8e8; border: 1px solid rgba(201,168,232,0.4); background: rgba(201,168,232,0.08); }
+.cm-tag.t5 { color: #e29090; border: 1px solid rgba(226,144,144,0.4); background: rgba(226,144,144,0.08); }
+.cm-tag.t6 { color: #e8b27c; border: 1px solid rgba(232,178,124,0.4); background: rgba(232,178,124,0.08); }
+.cm-tag.t7 { color: #8fd8c8; border: 1px solid rgba(143,216,200,0.4); background: rgba(143,216,200,0.08); }
+.cm-time {
+  font-size: 15px; font-weight: 700; color: var(--accent);
+  font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0;
+}
+.cm-time.long { color: var(--text-dim); }
+.cm-sub {
+  margin-top: 2px; font-size: 9.5px; letter-spacing: .05em; color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.cm-sub.warn { color: color-mix(in srgb, var(--red) 75%, var(--text-dim)); }
+.cm-sub.warn .wtag { color: var(--red); font-weight: 700; }
+.cm-empty { font-size: 11.5px; color: var(--text-faint); padding: 12px 0; line-height: 1.6; }
+.cm-road {
+  flex-shrink: 0; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--divider);
+  font-size: 9.5px; letter-spacing: .08em; color: var(--text-faint);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cm-road .clear { color: var(--green); }
+
+/* ═════════ caltrain — two stations side by side, north & south ═════════ */
+#caltrain-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 14px 20px 12px; animation-delay: .12s; }
+.ct-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.ct-station + .ct-station { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--divider); }
+.ct-name {
+  font-size: 9.5px; font-weight: 600; letter-spacing: .24em;
+  color: var(--text); margin-bottom: 8px;
+}
+.ct-name .ct-sub { font-size: 8.5px; font-weight: 400; letter-spacing: .12em; color: var(--text-dim); margin-left: 8px; }
+.ct-grp { margin-bottom: 9px; }
+.ct-grp-label {
+  font-size: 8px; font-weight: 600; letter-spacing: .22em;
+  color: var(--text-dim); text-transform: uppercase; margin-bottom: 2px;
+}
+.ct-grp-label.north { color: var(--accent); }
+.ct-grp-label.south { color: var(--green); }
+.ct-row {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 4.5px 8px; border-radius: 8px;
+  border-left: 2px solid transparent;
+  transition: background .3s;
+}
+.ct-badge {
+  font-size: 8px; font-weight: 700; letter-spacing: .06em;
+  padding: 1.5px 6px; border-radius: 4px; flex-shrink: 0;
+}
+.ct-badge.loc { color: #a8d0f2; border: 1px solid rgba(168,208,242,0.45); background: rgba(168,208,242,0.12); }
+.ct-badge.ltd { color: #93d893; border: 1px solid rgba(147,216,147,0.42); background: rgba(147,216,147,0.10); }
+.ct-badge.blt { color: #e5c97c; border: 1px solid rgba(229,201,124,0.42); background: rgba(229,201,124,0.10); }
+.ct-badge.exp { color: #e29090; border: 1px solid rgba(226,144,144,0.42); background: rgba(226,144,144,0.10); }
+.ct-time { width: 74px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); flex-shrink: 0; }
+.ct-in { margin-left: auto; font-size: 10px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.ct-row.next { background: color-mix(in srgb, var(--accent) 8%, transparent); border-left-color: var(--accent); }
+.ct-row.next .ct-in { color: var(--accent); font-weight: 600; }
+.ct-empty { font-size: 11px; color: var(--text-dim); padding: 2px 0; }
+
+/* ═════════ the wire ═════════ */
+.ticker {
+  position: relative; z-index: 2; flex-shrink: 0;
+  display: flex; align-items: center; gap: 16px;
+  margin: 12px 26px 0;
+  height: 36px;
+  border: 1px solid color-mix(in srgb, var(--divider) 85%, transparent); border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-card) 50%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  padding: 0 18px;
+  overflow: hidden;
+  animation: fadeDown .8s .42s cubic-bezier(.22,.68,.26,1) both;
+}
+.tk-label {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  font-size: 9px; font-weight: 600; letter-spacing: .28em; color: var(--text-dim);
+}
+.tk-label .pd { width: 5px; height: 5px; }
+.tk-item {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: baseline; gap: 10px;
+  font-size: 12.5px; color: var(--text);
+  white-space: nowrap; overflow: hidden;
+}
+.tk-src {
+  flex-shrink: 0;
+  font-size: 8.5px; font-weight: 700; letter-spacing: .14em;
+  color: color-mix(in srgb, var(--accent) 70%, var(--text-dim));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--divider));
+  border-radius: 4px; padding: 1px 6px;
+}
+.tk-title { overflow: hidden; text-overflow: ellipsis; }
+a.tk-link { color: inherit; text-decoration: none; }
+a.tk-link:hover .tk-title { color: var(--accent); }
+.tk-item.anim { animation: tkIn .6s cubic-bezier(.22,.68,.26,1) both; }
+@keyframes tkIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+.tk-prog {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: color-mix(in srgb, var(--divider) 60%, transparent);
+}
+.tk-fill {
+  height: 100%; width: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 45%, transparent), var(--accent));
+  transition: width 12s linear;
+}
+
+/* ═════════ footer ═════════ */
+.ftr {
+  position: relative; z-index: 2; flex-shrink: 0;
+  display: flex; justify-content: space-between;
+  margin: 7px 26px 0; padding-bottom: 9px;
+  font-size: 10px; letter-spacing: .1em; color: var(--text-faint);
+  animation: fadeDown .8s .5s cubic-bezier(.22,.68,.26,1) both;
+}
+.ftr .acc { color: color-mix(in srgb, var(--accent) 65%, var(--text-faint)); }
+/* ═════════ legibility over the sky ═════════ */
+.glass .panel-meta { color: var(--text-dim); }
+.glass .panel-meta b { color: var(--text); }
+.glass .ct-name { color: var(--text); }
+.glass .ct-sub, .glass .ct-grp-label, .glass .ct-in, .glass .ct-empty, .glass .ct-badge { color: var(--text-dim); }
+.glass .cm-sub, .glass .cm-tag, .glass .cm-road, .glass .cm-empty { color: var(--text-dim); }
+.glass .wo-fc-item { color: var(--text-dim); }
+.glass .wo-fc-temp { color: var(--text); }
+.wo-desc { color: rgba(255,255,255,0.96); }
+.wo-detail { color: rgba(255,255,255,0.78); }
+.wo-aqi { color: rgba(255,255,255,0.82); }
+.ticker { background: color-mix(in srgb, var(--bg-card) 72%, transparent); }
+/* ═════════ legibility over the sky (round 2) ═════════ */
+.sky-scrim {
+  position: absolute; top: 0; left: 0; right: 0; height: 150px;
+  pointer-events: none; z-index: 1;
+  background: linear-gradient(to bottom,
+    rgba(0,0,0,0.52) 0%,
+    rgba(0,0,0,0.26) 55%,
+    transparent 100%);
+}
+.subtitle { color: var(--text-dim); }
+.hdr-date, .clk-de { color: var(--text-dim); }
+.chip .lbl { color: var(--text-dim); }
+.ftr { color: var(--text-dim); text-shadow: 0 1px 6px rgba(0,0,0,0.45); }
+.ftr .acc { color: var(--accent); }
+
+/* typography — space grotesk for labels, inter for body */
+.wordmark, .panel-title, .tk-label, .ct-name, .ct-grp-label, .chip .lbl, .ftr, .subtitle {
+  font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+.ct-time, .cm-time, .clk-main, .clk-secs, .clk-ampm, .chip .val {
+  font-variant-numeric: tabular-nums;
+}
 </style>
 </head>
 <body>
 
-<!-- TOP TIME BAR -->
-<div class="top-time-bar">
-  <div><span class="time-city">Palo Alto</span><span class="time-val" id="time-pa">--:--</span></div>
-  <div><span class="time-city">Dearborn</span><span class="time-val" id="time-de">--:--</span></div>
+<div id="weather-window">
+  <canvas id="weather-canvas"></canvas>
+  <div class="sky-scrim"></div>
+  <div class="wo-backdrop"></div>
 </div>
 
-<div class="main-content" id="main-content">
-<!-- LEFT COLUMN -->
-<div class="col-l" id="col-l">
-
-  <div class="row-top-l" id="row-top-l">
-    <div class="row1-left">
-      <div class="weather-window" id="weather-window">
-        <canvas id="weather-canvas"></canvas>
-        <div class="wo-backdrop"></div>
-        <div class="weather-overlay" id="weather-overlay">
-          <div class="wo-temp" id="wo-temp">--°</div>
-          <div class="wo-desc" id="wo-desc">Loading...</div>
-          <div class="wo-detail" id="wo-detail"></div>
-          <div class="wo-aqi" id="wo-aqi"><span class="aqi-dot" id="aqi-dot"></span><span id="aqi-text">--</span></div>
-        </div>
-        <div class="wo-forecast" id="wo-forecast"></div>
-      </div>
-    </div>
+<header class="hdr">
+  <div class="hdr-left">
+    <div class="wordmark">PALO ALTO</div>
+    <div class="subtitle" id="subtitle">the sky is the board</div>
   </div>
-
-  <div class="drag-row" id="drag-row-l"></div>
-
-  <div class="row-bot-l" id="row-bot-l">
-    <div class="row2-left">
-      <div class="card" id="ford-news-card">
-        <div class="card-header"><span class="icon">🚙</span><h2>Ford News</h2></div>
-        <div class="news-list" id="ford-news-list"><div class="loading">Loading Ford news...</div></div>
-        <div class="card-footer card-footer-right">Live · Ford News, Ford Corporate · Updates every 15 min</div>
-      </div>
-      <div class="card" id="auto-headlines-card">
-        <div class="card-header"><span class="icon">📰</span><h2>Auto Headlines</h2></div>
-        <div class="news-list" id="news-list"><div class="loading">Loading headlines...</div></div>
-        <div class="card-footer card-footer-right">Live via RSS · Jalopnik, The Drive · Updates every 10 min</div>
-      </div>
+  <div class="hdr-mid">
+    <div>
+      <span class="clk-main" id="clk-main">--:--</span><span class="clk-secs" id="clk-secs">--</span><span class="clk-ampm" id="clk-ampm">--</span>
     </div>
+    <div class="clk-de" id="clk-de">dearborn --:--</div>
   </div>
+  <div class="hdr-right">
+    <div class="hdr-date" id="clk-date">—</div>
+  </div>
+</header>
 
+ <div class="board">
+   <div class="board-left">
+    <div class="glass" id="cond-card">
+      <div class="panel-head">
+        <div class="panel-title"><span class="pd"></span>CONDITIONS</div>
+        <div class="panel-meta" id="cond-meta">—</div>
+      </div>
+      <div class="weather-overlay">
+        <div class="wo-temp" id="wo-temp">--°</div>
+        <div class="wo-desc" id="wo-desc">Loading...</div>
+        <div class="wo-detail" id="wo-detail"></div>
+        <div class="wo-aqi"><span class="aqi-dot" id="aqi-dot"></span><span id="aqi-text">--</span></div>
+      </div>
+      <div class="wo-forecast" id="wo-forecast"></div>
+    </div>
+
+    <div class="glass" id="caltrain-card">
+      <div class="panel-head">
+        <div class="panel-title"><span class="pd"></span>CALTRAIN</div>
+        <div class="panel-meta" id="caltrain-meta">—</div>
+      </div>
+      <div class="ct-scroll" id="caltrain-body"></div>
+    </div>
+   </div>
+   <div class="board-right">
+    <div class="glass" id="commute-card">
+      <div class="panel-head">
+        <div class="panel-title"><span class="pd"></span>COMMUTE</div>
+        <div class="panel-meta" id="commute-meta">route time · free-flow · —</div>
+      </div>
+      <div class="cm-grid" id="commute-list"></div>
+      <div class="cm-road" id="cm-road"></div>
+    </div>
+   </div>
+ </div>
+  </div>
 </div>
 
-<!-- COLUMN DRAG -->
-<div class="drag-col" id="drag-col"></div>
-
-<!-- RIGHT COLUMN -->
-<div class="col-r" id="col-r">
-
-  <div class="row-top-r" id="row-top-r">
-    <div class="row1-right">
-      <div class="card caltrain-card" id="caltrain-card">
-        <div class="card-header"><span class="icon">🚆</span><h2>Caltrain Departures</h2><span class="caltrain-header-extra" id="caltrain-updated">Loading...</span></div>
-        <div class="caltrain-stations" id="caltrain-content"><div class="loading">Loading departures...</div></div>
-      </div>
-      <div class="card traffic-events-card" id="traffic-events-card">
-        <div class="card-header"><span class="icon">🚗</span><h2>Traffic Events</h2><span class="caltrain-header-extra" id="traffic-events-updated">Loading...</span></div>
-        <div class="traffic-events-list" id="traffic-events-list"><div class="loading">Loading traffic events...</div></div>
-      </div>
-    </div>
+<div class="ticker" id="ticker">
+  <div class="tk-label"><span class="pd"></span>THE WIRE</div>
+  <div class="tk-item" id="tk-item">
+    <span class="tk-src" id="tk-src">—</span>
+    <a class="tk-link" id="tk-link" href="#" target="_blank" rel="noopener"><span class="tk-title" id="tk-title">loading the wire…</span></a>
   </div>
-
-  <div class="drag-row" id="drag-row-r"></div>
-
-  <div class="row-bot-r" id="row-bot-r">
-    <div class="row2-right">
-      <div class="traffic-map-card" id="traffic-map-card">
-        <canvas id="traffic-map-canvas"></canvas>
-      </div>
-    </div>
-  </div>
-
-</div>
-</div><!-- /main-content -->
-
-<!-- FOOTER -->
-<div class="footer">
-  <span class="brand">Palo Alto · Dearborn</span>
-  <span>·</span>
-  <span>Office Dashboard</span>
+  <div class="tk-prog"><div class="tk-fill" id="tk-fill"></div></div>
 </div>
 
-<select class="theme-picker" id="theme-pick" onchange="var h=document.documentElement;['th-midnight','th-matrix','th-sepia','th-mono'].forEach(function(c){h.classList.remove(c);});if(this.value)h.classList.add(this.value);localStorage.setItem('pa-theme',this.value);">
-<option value="">Amber</option>
-<option value="th-midnight">Midnight</option>
-<option value="th-matrix">Matrix</option>
-<option value="th-sepia">Sepia</option>
-<option value="th-mono">Mono</option>
-</select>
+<footer class="ftr">
+  <span>made with love in palo alto</span>
+  <span>feeds refresh themselves</span>
+</footer>
 
 <script>
-document.addEventListener('DOMContentLoaded',function(){
-  var t=localStorage.getItem('pa-theme')||'';
-  if(t){document.getElementById('theme-pick').value=t;document.documentElement.classList.add(t);}
-});
-</script>
+// ═════════ CLOCK ═════════
+(function() {
+  var elM = document.getElementById('clk-main');
+  var elS = document.getElementById('clk-secs');
+  var elA = document.getElementById('clk-ampm');
+  var elD = document.getElementById('clk-date');
+  function parts(tz, opts) { return new Intl.DateTimeFormat('en-US', Object.assign({timeZone: tz}, opts)).formatToParts(new Date()); }
+  function get(ps, type) { var f = ps.filter(function(p){ return p.type === type; })[0]; return f ? f.value : ''; }
+  var elDe = document.getElementById('clk-de');
+  function tick() {
+    var ps = parts('America/Los_Angeles', {hour:'numeric', minute:'2-digit', second:'2-digit', hour12:true});
+    elM.textContent = get(ps,'hour') + ':' + get(ps,'minute');
+    elS.textContent = ':' + get(ps,'second');
+    elA.textContent = get(ps,'dayPeriod').toUpperCase();
+    var dw = parts('America/Los_Angeles', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+    elD.textContent = get(dw,'weekday') + ' · ' + get(dw,'month') + ' ' + get(dw,'day') + ' · ' + get(dw,'year');
+    var de = parts('America/Detroit', {hour:'numeric', minute:'2-digit', hour12:true});
+    elDe.textContent = get(de,'hour') + ':' + get(de,'minute') + ' ' + get(de,'dayPeriod').toUpperCase() + ' in dearborn';
+  }
+  tick(); setInterval(tick, 1000);
+})();
 
-<script>
-// ═══════════════════════════════════════
-// CLOCK
-// ═══════════════════════════════════════
+// ═════════ SUBTITLE ROTATOR ═════════
+(function() {
+  var el = document.getElementById('subtitle');
+  var phrases = [
+    'the sky is the board',
+    'live sky · real trains · honest roads',
+    'ten directions · one board',
+    'the room with the lights on',
+    'the board watches the peninsula'
+  ];
+  var i = 1;
+  setInterval(function() {
+    el.innerHTML = phrases[i % phrases.length];
+    i++;
+    el.classList.remove('anim'); void el.offsetWidth; el.classList.add('anim');
+  }, 9000);
+})();
+
+// ═════════ SHARED HELPERS ═════════
+const PACIFIC_TZ = 'America/Los_Angeles';
+
+function utcToPacific(utcStr) {
+  if (!utcStr) return null;
+  return new Date(utcStr + (utcStr.endsWith('Z') ? '' : 'Z'));
+}
+function formatPacificTime(date) {
+  if (!date || isNaN(date.getTime())) return '--:--';
+  return date.toLocaleTimeString('en-US', {timeZone: PACIFIC_TZ, hour: 'numeric', minute: '2-digit', hour12: true});
+}
+function ago(ts) {
+  if (!ts) return '';
+  var t = new Date(ts); if (isNaN(t.getTime())) return '';
+  var m = Math.round((Date.now() - t.getTime()) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + 'm ago';
+  var h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+function lineClass(lineRef) {
+  const l = (lineRef || '').toLowerCase();
+  if (l.includes('express')) return 'exp';
+  if (l.includes('limited')) return 'ltd';
+  if (l.includes('bullet')) return 'blt';
+  return 'loc';
+}
+function lineLabel(lineRef) {
+  const l = (lineRef || '').toLowerCase();
+  if (l.includes('express')) return 'EXP';
+  if (l.includes('limited')) return 'LTD';
+  if (l.includes('bullet')) return 'BLT';
+  return 'LOC';
+}
+function shortDest(fullName) {
+  const n = (fullName || '').toLowerCase();
+  if (n.includes('san francisco')) return 'SF';
+  if (n.includes('san jose') || n.includes('tamien') || n.includes('diridon')) return 'SJ';
+  if (n.includes('gilroy')) return 'GILROY';
+  return '—';
+}
+function fmtDur(sec) {
+  var m = Math.round(sec / 60);
+  if (m < 60) return m + 'm';
+  var h = Math.floor(m / 60);
+  return h + 'h ' + String(m % 60).padStart(2, '0') + 'm';
+}
+function fmtMiles(meters) {
+  var mi = meters / 1609.34;
+  if (mi < 100) return mi.toFixed(1) + ' mi';
+  return Math.round(mi) + ' mi';
+}
+
+// ═════════ HEADER WEATHER MIRROR ═════════
+function syncWeather() {
+  var w = window.__wttr;
+  var meta = document.getElementById('cond-meta');
+  if (w) {
+    meta.innerHTML = '<b>' + w.temp_F + '°</b> feels ' + w.feelsLikeF + '° · humidity ' + w.humidity + '%';
+  }
+}
+window.onWeather = syncWeather;
+window.onAqi = syncWeather;
+setInterval(syncWeather, 20000);
+syncWeather();
+
+// ═════════ CALTRAIN — two stations, clean rows ═════════
+const CALTRAIN_STATIONS = [
+  { key: 'palo_alto',      label: 'PALO ALTO',      sub: 'university ave' },
+  { key: 'california_ave', label: 'CALIFORNIA AVE', sub: 'cal ave' }
+];
+let caltrainData = null;
+
+async function fetchCaltrain() {
+  try {
+    const resp = await fetch('caltrain.json', { cache: 'no-cache' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    caltrainData = await resp.json();
+  } catch (err) {
+    console.error('Caltrain fetch error:', err);
+  }
+  renderCaltrain();
+}
+
+function renderCaltrain() {
+  const container = document.getElementById('caltrain-body');
+  const meta = document.getElementById('caltrain-meta');
+  if (!caltrainData || !caltrainData.stations) {
+    container.innerHTML = '<div class="ct-empty">no departure data — retrying</div>';
+    meta.textContent = '—';
+    return;
+  }
+  const now = Date.now();
+  let soonest = Infinity;
+  let html = '';
+  for (const st of CALTRAIN_STATIONS) {
+    const station = caltrainData.stations[st.key];
+    html += '<div class="ct-station"><div class="ct-name">' + st.label + '<span class="ct-sub">' + st.sub + '</span></div>';
+    if (!station) { html += '<div class="ct-empty">no data</div></div>'; continue; }
+    const groups = [
+      { dir: 'north', label: 'north · SF', list: station.nb || [] },
+      { dir: 'south', label: 'south · SJ', list: station.sb || [] }
+    ];
+    for (const g of groups) {
+      html += '<div class="ct-grp"><div class="ct-grp-label ' + g.dir + '">' + g.label + '</div>';
+      const upcoming = [];
+      for (const d of g.list) {
+        const exp = utcToPacific(d.expected);
+        if (!exp) continue;
+        const mins = Math.round((exp.getTime() - now) / 60000);
+        if (mins < -1) continue;
+        upcoming.push({ d, exp, mins });
+      }
+      upcoming.sort(function(x, y) { return x.exp - y.exp; });
+      const show = upcoming.slice(0, 3);
+      if (!show.length) { html += '<div class="ct-empty">no trains</div>'; continue; }
+      for (const u of show) {
+        const cls = lineClass(u.d.line);
+        const isNext = u === show[0] && u.mins >= 0;
+        if (u.mins >= 0 && u.mins < soonest) soonest = u.mins;
+        html += '<div class="ct-row' + (isNext ? ' next' : '') + '" data-mins="' + u.mins + '">'
+          + '<span class="ct-badge ' + cls + '">' + lineLabel(u.d.line) + '</span>'
+          + '<span class="ct-time">' + formatPacificTime(u.exp) + '</span>'
+          + '<span class="ct-in">—</span></div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  container.innerHTML = html;
+  container.querySelectorAll('.ct-row').forEach(function(rowEl) {
+    var mins = parseInt(rowEl.getAttribute('data-mins'), 10);
+    var inEl = rowEl.querySelector('.ct-in');
+    if (inEl) inEl.textContent = (mins < 0) ? 'due' : (mins === 0 ? 'now' : 'in ' + mins + 'm');
+  });
+  const t = caltrainData.updated ? utcToPacific(caltrainData.updated) : new Date();
+  meta.innerHTML = soonest === Infinity
+    ? '—'
+    : ('<b>next ' + formatPacificTime(new Date(now + soonest * 60000)) + '</b>' + (soonest > 0 ? ' · in ' + soonest + 'm' : '') + ' · updated ' + formatPacificTime(t));
+}
+
+fetchCaltrain();
+setInterval(fetchCaltrain, 3 * 60 * 1000);
+setInterval(renderCaltrain, 30000);
+
+// ═════════ TRAFFIC — corridor warnings for the commute ═════════
+let trafficEvents = [];
+let majorCount = null;
+
+async function fetchTrafficEvents() {
+  try {
+    const resp = await fetch('traffic.json', { cache: 'no-cache' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    trafficEvents = data.events || [];
+    const cutoff = Date.now() - 3 * 60 * 60 * 1000;
+    majorCount = trafficEvents.filter(function(e) {
+      const statusOk = e.status === 'ACTIVE' || e.status === 'active';
+      const updated = e.updated ? new Date(e.updated).getTime() : 0;
+      return statusOk && e.severity === 'Major' && updated > cutoff;
+    }).length;
+  } catch (err) {
+    console.error('Traffic events fetch error:', err);
+    majorCount = null;
+  }
+  renderCommute();
+}
+
+function corridorWarn(corr) {
+  if (!trafficEvents.length) return null;
+  const now = Date.now();
+  for (const e of trafficEvents) {
+    const statusOk = e.status === 'ACTIVE' || e.status === 'active';
+    const updated = e.updated ? new Date(e.updated).getTime() : 0;
+    if (!statusOk || e.severity !== 'Major' || updated <= now - 3 * 60 * 60 * 1000) continue;
+    for (const r of (e.roads || [])) {
+      for (const tok of corr) {
+        if (new RegExp('\\b' + tok + '\\b').test(r.name || '')) return r.name;
+      }
+    }
+  }
+  return null;
+}
+
+fetchTrafficEvents();
+setInterval(fetchTrafficEvents, 3 * 60 * 1000);
+
+// ═════════ COMMUTE — route times to seven destinations ═════════
+const ORIGIN = { lon: -122.1473, lat: 37.4074 }; // 3210 porter dr, palo alto (geocoded)
+const COMMUTE_DEST = [
+  { name: 'San Francisco', tag: '101', corr: ['101'], landmark: 'Ferry Building', lon: -122.3935, lat: 37.7955 },
+  { name: 'SFO',           tag: '101', corr: ['101', '380'], landmark: 'International Terminal', lon: -122.3840, lat: 37.6225, airport: true },
+  { name: 'SJC',           tag: '101', corr: ['101', '87', '880'], landmark: 'Terminal B', lon: -121.9293, lat: 37.3633, airport: true },
+  { name: 'Oakland',       tag: '880', corr: ['880', '84', '92'], landmark: 'Jack London Square', lon: -122.2747, lat: 37.7958 },
+  { name: 'Vallejo',       tag: '80',  corr: ['80', '780', '37'], landmark: 'Ferry Terminal', lon: -122.2630, lat: 38.1005 },
+  { name: 'Livermore',     tag: '680', corr: ['680', '84', '580'], landmark: 'Bankhead Theater', lon: -121.7683, lat: 37.6834 },
+  { name: 'Hayward',       tag: '92',  corr: ['92', '84', '880'], landmark: 'City Hall', lon: -122.0858, lat: 37.6709 },
+  { name: 'Santa Cruz',    tag: '17',  corr: ['17'], landmark: 'Beach Boardwalk', lon: -122.0154, lat: 36.9646 },
+  { name: 'Gilroy',        tag: '101', corr: ['101'], landmark: 'Premium Outlets', lon: -121.5654, lat: 37.0253 },
+  { name: 'Long Beach',    tag: '5',   corr: ['5', '405', '710', '101'], landmark: 'EVDC', lon: -118.1459, lat: 33.8277 }
+];
+
+function tagCls(tag) {
+  return ({ '101': 't1', '880': 't2', '17': 't3', '92': 't4', '5': 't5', '680': 't6', '80': 't7' })[tag] || '';
+}
+let commuteData = {};
+let commuteAt = null;
+
+async function osrmRoute(d) {
+  const url = 'https://router.project-osrm.org/route/v1/driving/'
+    + ORIGIN.lon + ',' + ORIGIN.lat + ';' + d.lon + ',' + d.lat + '?overview=false';
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  const data = await resp.json();
+  const r = data.routes && data.routes[0];
+  if (!r) throw new Error('no route');
+  return { dur: r.duration, dist: r.distance };
+}
+
+async function fetchCommute() {
+  try {
+    const results = await Promise.allSettled(COMMUTE_DEST.map(function(d) {
+      return osrmRoute(d).then(function(r) { commuteData[d.name] = r; });
+    }));
+    const ok = results.some(function(r) { return r.status === 'fulfilled'; });
+    if (ok) commuteAt = new Date().toISOString();
+  } catch (err) {
+    console.error('Commute fetch error:', err);
+  }
+  renderCommute();
+}
+
+function renderCommute() {
+  const list = document.getElementById('commute-list');
+  const meta = document.getElementById('commute-meta');
+  const road = document.getElementById('cm-road');
+  const ready = COMMUTE_DEST.filter(function(d) { return commuteData[d.name]; });
+  if (!ready.length) {
+    list.innerHTML = '<div class="cm-empty">route service unreachable — retrying</div>';
+    meta.textContent = 'route time · —';
+    return;
+  }
+  const PIN = { 'San Francisco': 0, 'SFO': 1, 'SJC': 2, 'Long Beach': 4 };
+  const ordered = ready.slice().sort(function(a, b) {
+    var pa = Object.prototype.hasOwnProperty.call(PIN, a.name) ? PIN[a.name] : 3;
+    var pb = Object.prototype.hasOwnProperty.call(PIN, b.name) ? PIN[b.name] : 3;
+    return (pa - pb) || a.name.localeCompare(b.name);
+  });
+  const now = Date.now();
+  list.innerHTML = ordered.map(function(d) {
+    const r = commuteData[d.name];
+    const long = r.dur > 3 * 3600;
+    const arrive = formatPacificTime(new Date(now + r.dur * 1000));
+    const parts = [];
+    if (d.landmark) parts.push(d.landmark);
+    parts.push(fmtMiles(r.dist));
+    parts.push('arrive ' + arrive);
+    const sub = '<div class="cm-sub">' + parts.join(' · ') + '</div>';
+    return '<div class="cm-item">'
+      + '<div class="cm-top"><span class="cm-name' + (d.airport ? ' airport' : '') + '">' + d.name + '<span class="cm-tag ' + tagCls(d.tag) + '">' + d.tag + '</span></span>'
+      + '<span class="cm-time' + (long ? ' long' : '') + '">' + fmtDur(r.dur) + '</span></div>'
+      + sub
+      + '</div>';
+  }).join('');
+
+  meta.innerHTML = 'route time · free-flow · updated ' + (commuteAt ? ago(commuteAt) : '—');
+
+  const warnCount = COMMUTE_DEST.filter(function(d) { return corridorWarn(d.corr); }).length;
+  if (majorCount === null) {
+    road.innerHTML = '<span>traffic feed unavailable</span>';
+  } else if (majorCount === 0) {
+    road.innerHTML = '<span class="clear">● all clear — no major incidents on the board&rsquo;s corridors</span>';
+  } else {
+    road.innerHTML = '<span>' + majorCount + ' major incident' + (majorCount === 1 ? '' : 's') + ' in the bay · ' + warnCount + ' on your corridors</span>';
+  }
+}
+
+fetchCommute();
+setInterval(fetchCommute, 15 * 60 * 1000);
+setInterval(renderCommute, 60000);
+
+const BOARD_VERSION = 3;
+function checkBoardVersion() {
+  fetch('v.txt?x=' + Date.now(), { cache: 'no-cache' }).then(function(r) {
+    if (!r.ok) return null;
+    return r.text();
+  }).then(function(t) {
+    if (t == null) return;
+    var v = parseInt(t, 10);
+    if (!isNaN(v) && v > BOARD_VERSION) location.reload();
+  }).catch(function() {});
+}
+setInterval(checkBoardVersion, 3 * 60 * 1000);
+checkBoardVersion();
+
+// ═════════ THE WIRE ═════════
+let wireItems = [];
+let wireIndex = 0;
+
+function tryFetchRSS() {
+  const feedsList = [
+    { url: 'https://www.jalopnik.com/feed/', source: 'Jalopnik' },
+    { url: 'https://www.thedrive.com/feed/', source: 'The Drive' },
+  ];
+  return Promise.allSettled(
+    feedsList.map(async function(f) {
+      const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(f.url);
+      const resp = await fetch(apiUrl);
+      if (!resp.ok) throw new Error(resp.status);
+      const data = await resp.json();
+      return (data.items || []).slice(0, 4).map(function(item) {
+        return { source: f.source, title: item.title, link: item.link };
+      });
+    })
+  ).then(function(results) {
+    let all = [];
+    results.forEach(function(r) {
+      if (r.status === 'fulfilled' && Array.isArray(r.value)) all = all.concat(r.value);
+    });
+    return all;
+  });
+}
+
+async function refreshWire() {
+  const items = [];
+  try {
+    const fordResp = await fetch('ford-news.json', { cache: 'no-cache' });
+    if (fordResp.ok) {
+      const fordItems = await fordResp.json();
+      (fordItems || []).forEach(function(i) { items.push({ source: 'FORD', title: i.title, link: i.url }); });
+    }
+  } catch (err) { /* ford feed optional */ }
+  try {
+    const road = await tryFetchRSS();
+    road.forEach(function(i) { items.push({ source: i.source.toUpperCase(), title: i.title, link: i.link }); });
+  } catch (err) { /* rss optional */ }
+  if (!items.length) {
+    items.push({
+      source: 'THE WIRE',
+      title: 'feeds are quiet right now — ford, jalopnik, and the drive all unreachable',
+      link: null,
+    });
+  }
+  wireItems = items.slice(0, 24);
+  wireIndex = 0;
+  showWire(0);
+}
+
+function showWire(i) {
+  if (!wireItems.length) return;
+  wireIndex = i;
+  const item = wireItems[i];
+  document.getElementById('tk-src').textContent = item.source;
+  document.getElementById('tk-title').textContent = item.title;
+  const link = document.getElementById('tk-link');
+  if (item.link) { link.href = item.link; link.style.pointerEvents = 'auto'; }
+  else { link.href = '#'; link.style.pointerEvents = 'none'; }
+  const it = document.getElementById('tk-item');
+  it.classList.remove('anim'); void it.offsetWidth; it.classList.add('anim');
+  const fill = document.getElementById('tk-fill');
+  fill.style.transition = 'none'; fill.style.width = '0%';
+  void fill.offsetWidth;
+  fill.style.transition = 'width 12s linear'; fill.style.width = '100%';
+}
+
+setInterval(function() {
+  if (!wireItems.length) return;
+  showWire((wireIndex + 1) % wireItems.length);
+}, 12000);
+
+refreshWire();
+setInterval(refreshWire, 20 * 60 * 1000);
+
+// ═════════ WEATHER WINDOW ═════════
 // WEATHER WINDOW — MAXIMALIST — living atmospheric scene
 // =========================================================
 (function() {
@@ -1167,6 +1530,7 @@ try {
         srMins: sr, ssMins: ss, nowMins: nm
       };
       rebuildScene(wd); updateOverlay(wd);
+      window.__wttr = wd; if (window.onWeather) window.onWeather(wd);
 
       // Also fetch AQI
       fetchAQI();
@@ -1194,6 +1558,7 @@ try {
       if (!r.ok) return;
       const d = await r.json();
       aqiData = d.current;
+      window.__aqi = aqiData; if (window.onAqi) window.onAqi(aqiData);
       // Update display
       const aqi = aqiData.us_aqi;
       const dot = document.getElementById('aqi-dot');
@@ -1299,560 +1664,26 @@ try {
   requestAnimationFrame(animate);
 } catch(e) { console.warn('Weather window:', e.message); }
 })();
-// CALTRAIN DEPARTURES (from caltrain.json)
-// ═══════════════════════════════════════
-const PACIFIC_TZ = 'America/Los_Angeles';
 
-function utcToPacific(utcStr) {
-  if (!utcStr) return null;
-  const d = new Date(utcStr + (utcStr.endsWith('Z') ? '' : 'Z'));
-  return d;
-}
+</script>
+</body>
+</html>
 
-function formatPacificTime(date) {
-  if (!date || isNaN(date.getTime())) return '--:--';
-  return date.toLocaleTimeString('en-US', {
-    timeZone: PACIFIC_TZ,
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
-}
 
-function pacificNow() {
-  return new Date().toLocaleTimeString('en-US', {
-    timeZone: PACIFIC_TZ,
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
-}
 
-function lineClass(lineRef) {
-  const l = (lineRef || '').toLowerCase();
-  if (l.includes('express')) return 'express';
-  if (l.includes('limited')) return 'limited';
-  if (l.includes('bullet')) return 'bullet';
-  return 'local';
-}
 
-function lineLabel(lineRef) {
-  const l = (lineRef || '').toLowerCase();
-  if (l.includes('express')) return 'EXP';
-  if (l.includes('limited')) return 'LTD';
-  if (l.includes('bullet')) return 'BLT';
-  return 'LOC';
-}
 
-function shortDest(fullName) {
-  const n = (fullName || '').toLowerCase();
-  if (n.includes('san francisco')) return 'SAN FRANCISCO';
-  if (n.includes('san jose') || n.includes('tamien') || n.includes('diridon')) return 'SAN JOSE';
-  if (n.includes('gilroy')) return 'GILROY';
-  const parts = (fullName || '').split(' ').filter(p => p.length > 2);
-  return parts.slice(0, 2).join(' ').toUpperCase() || '—';
-}
 
-async function fetchCaltrain() {
-  try {
-    const resp = await fetch('/caltrain.json', { cache: 'no-cache' });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-    renderCaltrain(data);
-  } catch (err) {
-    console.error('Caltrain fetch error:', err);
-    document.getElementById('caltrain-content').innerHTML =
-      '<div class="loading">Caltrain data unavailable — retrying...</div>';
-  }
-}
 
-function renderCaltrain(data) {
-  const container = document.getElementById('caltrain-content');
-  const stations = data.stations || {};
 
-  if (Object.keys(stations).length === 0) {
-    container.innerHTML = '<div class="loading">No departure data available</div>';
-    return;
-  }
 
-  let html = '';
-  for (const [key, station] of Object.entries(stations)) {
-    html += `<div>`;
-    html += `<div class="caltrain-station-name">${station.name}</div>`;
 
-    // NB (Northbound) — destination from first train
-    const nbDest = station.nb && station.nb.length > 0 ? shortDest(station.nb[0].destination) : '';
-    html += `<div class="caltrain-direction-label">▲ NORTHBOUND${nbDest ? ' — ' + nbDest : ''}</div>`;
-    if (station.nb && station.nb.length > 0) {
-      for (const d of station.nb.slice(0, 4)) {
-        const exp = utcToPacific(d.expected);
-        const aim = utcToPacific(d.aimed);
-        const diffMin = exp && aim ? Math.round((exp - aim) / 60000) : 0;
-        const cls = lineClass(d.line);
-        const st = diffMin <= 0 ? '<span class="caltrain-status on-time">On time</span>' : `<span class="caltrain-status delayed">+${diffMin}m</span>`;
-        html += `<div class="caltrain-departure">`;
-        html += `<span class="caltrain-line-badge ${cls}">${lineLabel(d.line)}</span>`;
-        html += `<span class="caltrain-time">${formatPacificTime(exp)}${st}</span>`;
-        html += `</div>`;
-      }
-    } else {
-      html += `<div class="loading" style="font-size:11px;">No northbound data</div>`;
-    }
 
-    // SB (Southbound) — destination from first train
-    const sbDest = station.sb && station.sb.length > 0 ? shortDest(station.sb[0].destination) : '';
-    html += `<div class="caltrain-direction-label">▼ SOUTHBOUND${sbDest ? ' — ' + sbDest : ''}</div>`;
-    if (station.sb && station.sb.length > 0) {
-      for (const d of station.sb.slice(0, 4)) {
-        const exp = utcToPacific(d.expected);
-        const aim = utcToPacific(d.aimed);
-        const diffMin = exp && aim ? Math.round((exp - aim) / 60000) : 0;
-        const cls = lineClass(d.line);
-        const st = diffMin <= 0 ? '<span class="caltrain-status on-time">On time</span>' : `<span class="caltrain-status delayed">+${diffMin}m</span>`;
-        html += `<div class="caltrain-departure">`;
-        html += `<span class="caltrain-line-badge ${cls}">${lineLabel(d.line)}</span>`;
-        html += `<span class="caltrain-time">${formatPacificTime(exp)}${st}</span>`;
-        html += `</div>`;
-      }
-    } else {
-      html += `<div class="loading" style="font-size:11px;">No southbound data</div>`;
-    }
 
-    html += `</div>`;
-  }
 
-  container.innerHTML = html;
 
-  // Update timestamp
-  const updatedEl = document.getElementById('caltrain-updated');
-  if (updatedEl) {
-    const t = data.updated ? utcToPacific(data.updated) : new Date();
-    updatedEl.textContent = 'Updated ' + formatPacificTime(t);
-  }
-}
 
-fetchCaltrain();
-setInterval(fetchCaltrain, 3 * 60 * 1000);
 
-// ═══════════════════════════════════════
-// TRAFFIC EVENTS (from traffic.json)
-// ═══════════════════════════════════════
-function stripHeadlinePrefix(headline) {
-  if (!headline) return '';
-  return headline
-    .replace(/^(CHP|Caltrans)\s*:\s*/i, '')
-    .trim();
-}
-
-function severityClass(severity) {
-  const s = (severity || '').toLowerCase();
-  if (s === 'major') return 'major';
-  if (s === 'moderate') return 'moderate';
-  if (s === 'minor') return 'minor';
-  return 'unknown';
-}
-
-function severityLabel(severity) {
-  const s = (severity || '').toLowerCase();
-  if (s === 'major') return 'Major';
-  if (s === 'moderate') return 'Moderate';
-  if (s === 'minor') return 'Minor';
-  return severity || '—';
-}
-
-function eventLocation(event) {
-  const roads = event.roads || [];
-  if (roads.length === 0) return '';
-  const r = roads[0];
-  const parts = [];
-  if (r.name) parts.push(r.name);
-  if (r.direction && r.direction !== 'Unknown') parts.push(r.direction);
-  if (r.from) parts.push('at ' + r.from);
-  if (r['+road_advisory']) parts.push('· ' + r['+road_advisory']);
-  return parts.join(' ');
-}
-
-function eventTypeLabel(event) {
-  const t = event.event_type || '';
-  if (t === 'INCIDENT') {
-    const subs = event.event_subtypes || [];
-    return subs.length > 0 ? subs[0] : 'Incident';
-  }
-  if (t === 'CONSTRUCTION') return 'Construction';
-  return t;
-}
-
-async function fetchTrafficEvents() {
-  try {
-    const resp = await fetch('/traffic.json', { cache: 'no-cache' });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-    renderTrafficEvents(data.events || []);
-  } catch (err) {
-    console.error('Traffic events fetch error:', err);
-    document.getElementById('traffic-events-list').innerHTML =
-      '<div class="traffic-empty">Traffic data unavailable — retrying...</div>';
-  }
-}
-
-function renderTrafficEvents(events) {
-  const list = document.getElementById('traffic-events-list');
-
-  // Filter to active only, updated in last 3 hours, Major severity
-  const cutoff = Date.now() - 3 * 60 * 60 * 1000;
-  const active = events.filter(e => {
-    const statusOk = e.status === 'ACTIVE' || e.status === 'active';
-    if (!statusOk) return false;
-    const sevOk = e.severity === 'Major';
-    if (!sevOk) return false;
-    const updated = e.updated ? new Date(e.updated).getTime() : 0;
-    return updated > cutoff;
-  });
-
-  if (active.length === 0) {
-    list.innerHTML = '<div class="traffic-empty">No active traffic events in the Bay Area</div>';
-    return;
-  }
-
-  // Sort by severity (Major > Moderate > Minor > Unknown)
-  const sevOrder = { major: 0, moderate: 1, minor: 2 };
-  active.sort((a, b) => {
-    const sa = sevOrder[(a.severity || '').toLowerCase()] ?? 3;
-    const sb = sevOrder[(b.severity || '').toLowerCase()] ?? 3;
-    return sa - sb;
-  });
-
-  const display = active.slice(0, 12);
-
-  list.innerHTML = display.map(e => {
-    const sev = severityClass(e.severity);
-    const head = stripHeadlinePrefix(e.headline || '');
-    const loc = eventLocation(e);
-    const etype = eventTypeLabel(e);
-    return `
-      <div class="traffic-event">
-        <div class="traffic-event-header">
-          <span class="traffic-severity ${sev}">${severityLabel(e.severity)}</span>
-          <span class="traffic-event-headline" title="${head.replace(/"/g, '&quot;')}">${head}</span>
-        </div>
-        <div class="traffic-event-detail">
-          <span class="traffic-event-type">${etype}</span>
-          ${loc}
-        </div>
-      </div>`;
-  }).join('');
-
-  // Update timestamp
-  const updatedEl = document.getElementById('traffic-events-updated');
-  if (updatedEl) {
-    updatedEl.textContent = 'Updated: ' + pacificNow();
-  }
-}
-
-fetchTrafficEvents();
-setInterval(fetchTrafficEvents, 3 * 60 * 1000);
-
-// ═══════════════════════════════════════
-// FORD NEWS (official sources)
-// ═══════════════════════════════════════
-async function fetchFordNews() {
-  const list = document.getElementById('ford-news-list');
-  try {
-    const resp = await fetch('/ford-news.json', { cache: 'no-cache' });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const items = await resp.json();
-    if (!items.length) { list.innerHTML = '<div class="loading">No Ford news available</div>'; return; }
-    renderFordNews(items);
-  } catch (err) {
-    console.warn('Ford news fetch failed:', err.message);
-    list.innerHTML = '<div class="loading">Unable to load Ford news</div>';
-  }
-}
-
-function renderFordNews(items) {
-  const list = document.getElementById('ford-news-list');
-  list.innerHTML = items.map(i => {
-    var srcLine = i.source || '';
-    if (i.date) { srcLine = i.date + ' · ' + srcLine; }
-    return '<div class="news-item"><div class="news-source">' + srcLine + '</div>' +
-      '<div class="news-title"><a href="' + (i.url || '#') + '" target="_blank" rel="noopener">' + (i.title || '') + '</a></div></div>';
-  }).join('');
-}
-
-let fordHighlightIndex = 0;
-function rotateFordNews() {
-  // Combined rotation handled by rotateNews() which covers all .news-item elements
-}
-
-fetchFordNews();
-setInterval(fetchFordNews, 15 * 60 * 1000);
-
-// ═══════════════════════════════════════
-
-// (Stanford events section removed)
-// BAY AREA NEWS (unchanged)
-// ═══════════════════════════════════════
-async function fetchNews() {
-  const list = document.getElementById('news-list');
-  try {
-    const headlines = await tryFetchRSS();
-    if (headlines && headlines.length > 0) {
-      renderNews(headlines);
-      return;
-    }
-  } catch (err) {
-    console.error('News fetch error:', err);
-  }
-  renderNews(generateSampleNews());
-}
-
-async function tryFetchRSS() {
-  const feeds = [
-    { url: 'https://www.jalopnik.com/feed/', source: 'Jalopnik' },
-    { url: 'https://www.thedrive.com/feed/', source: 'The Drive' },
-  ];
-
-  const results = await Promise.allSettled(
-    feeds.map(async (f) => {
-      const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(f.url);
-      const resp = await fetch(apiUrl);
-      if (!resp.ok) throw new Error(resp.status);
-      const data = await resp.json();
-      return (data.items || []).slice(0, 2).map(item => ({
-        source: f.source,
-        title: item.title,
-        link: item.link,
-        pubDate: item.pubDate,
-      }));
-    })
-  );
-
-  let all = [];
-  results.forEach(r => {
-    if (r.status === 'fulfilled' && Array.isArray(r.value)) {
-      all = all.concat(r.value);
-    }
-  });
-
-  if (all.length === 0) return null;
-  return all;
-}
-
-function generateSampleNews() {
-  const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-
-  const headlinePool = [
-    { source: 'Mercury News', title: 'Bay Area EV adoption surges 34% as charging infrastructure expands' },
-    { source: 'SF Chronicle', title: 'Caltrans begins US-101 express lane expansion through Santa Clara County' },
-    { source: 'Palo Alto Online', title: 'City council approves new electric vehicle charging stations downtown' },
-    { source: 'Stanford News', title: 'Stanford researchers achieve breakthrough in solid-state battery technology' },
-    { source: 'Silicon Valley Biz', title: 'Palo Alto startups lead California in EV infrastructure innovation' },
-    { source: 'TechCrunch', title: 'New AI chip architecture promises 10x efficiency gains for data centers' },
-    { source: 'SF Chronicle', title: 'Bay Area air quality improves as electric vehicle fleet grows' },
-    { source: 'Palo Alto Weekly', title: 'Stanford Research Park adds new bike-share stations and green spaces' },
-    { source: 'Mercury News', title: 'Palo Alto home prices stabilize as remote work patterns shift' },
-    { source: 'Green Car Reports', title: 'California EV sales surpass 30% market share for first time' },
-    { source: 'SF Chronicle', title: 'BART announces 100% electric bus fleet by 2028' },
-    { source: 'Palo Alto Online', title: 'New EV fast-charging hub opens near Highway 101' },
-    { source: 'Reuters', title: 'Silicon Valley venture funding rebounds in Q2 led by AI and clean tech' },
-    { source: 'Silicon Valley Biz', title: 'Tech campus expansions reshape Palo Alto commercial real estate' },
-    { source: 'Mercury News', title: 'Bay Area traffic congestion drops as remote work and transit evolve' },
-  ];
-
-  const startIdx = (dayOfYear * 3) % headlinePool.length;
-  const result = [];
-  for (let i = 0; i < 6; i++) {
-    result.push(headlinePool[(startIdx + i) % headlinePool.length]);
-  }
-  return result;
-}
-
-function renderNews(headlines) {
-  const list = document.getElementById('news-list');
-  list.innerHTML = headlines.map(h => {
-    var srcLine = h.source || '';
-    if (h.pubDate) {
-      var d = new Date(h.pubDate);
-      srcLine = (d.getMonth() + 1) + '/' + d.getDate() + ' · ' + srcLine;
-    }
-    return '<div class="news-item"><div class="news-source">' + srcLine + '</div>' +
-      '<div class="news-title">' + (h.title || '') + '</div></div>';
-  }).join('');
-}
-
-// Auto-rotate news highlight
-let newsScrollIndex = 0;
-function rotateNews() {
-  const items = document.querySelectorAll('.news-item');
-  if (items.length <= 3) return;
-  items.forEach((item, i) => {
-    if (i === newsScrollIndex % items.length) {
-      item.style.borderLeftColor = '#d4a853';
-      item.style.background = 'rgba(212,168,83,0.08)';
-    } else {
-      item.style.borderLeftColor = '#2a2a2e';
-      item.style.background = 'transparent';
-    }
-  });
-  newsScrollIndex++;
-}
-setInterval(rotateNews, 8000);
-
-fetchNews();
-setInterval(fetchNews, 10 * 60 * 1000);
-
-// ═══════════════════════════════════════
-// HEALTH CHECK
-// ═══════════════════════════════════════
-console.log('Palo Alto Dashboard initialized');
-console.log('Next weather refresh: ~5 min');
-console.log('Next caltrain refresh: ~3 min');
-console.log('Next traffic events refresh: ~3 min');
-console.log('Next events/news refresh: ~10 min');// ═══════════════════════════════════════════
-// DRAGGABLE BORDERS — flex-based, independent per side
-// ═══════════════════════════════════════════
-(function() {
-  const col = document.getElementById('drag-col');
-  const rowL = document.getElementById('drag-row-l');
-  const rowR = document.getElementById('drag-row-r');
-  if (!col || !rowL || !rowR) return;
-
-  let dragCol = false, dragRowL = false, dragRowR = false;
-  let startX, startY, startPctC, startPctL, startPctR;
-  let colPct = 42, rowPctL = 57, rowPctR = 57;
-  const mc = document.getElementById('main-content');
-  const colL = document.getElementById('col-l');
-  const colR = document.getElementById('col-r');
-  const rtl = document.getElementById('row-top-l');
-  const rbl = document.getElementById('row-bot-l');
-  const rtr = document.getElementById('row-top-r');
-  const rbr = document.getElementById('row-bot-r');
-
-  function apply() {
-    if (colL) colL.style.flex = (100-colPct) + ' ' + (100-colPct) + ' 0';
-    if (colR) colR.style.flex = colPct + ' ' + colPct + ' 0';
-    if (rtl) rtl.style.flex = rowPctL + ' ' + rowPctL + ' 0';
-    if (rbl) rbl.style.flex = (100-rowPctL) + ' ' + (100-rowPctL) + ' 0';
-    if (rtr) rtr.style.flex = rowPctR + ' ' + rowPctR + ' 0';
-    if (rbr) rbr.style.flex = (100-rowPctR) + ' ' + (100-rowPctR) + ' 0';
-  }
-  apply();
-
-  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-
-  col.addEventListener('mousedown', function(e) {
-    dragCol = true; col.classList.add('dragging');
-    startX = e.clientX; startPctC = colPct;
-    document.body.style.userSelect = 'none'; e.preventDefault();
-  });
-  rowL.addEventListener('mousedown', function(e) {
-    dragRowL = true; rowL.classList.add('dragging');
-    startY = e.clientY; startPctL = rowPctL;
-    document.body.style.userSelect = 'none'; e.preventDefault();
-  });
-  rowR.addEventListener('mousedown', function(e) {
-    dragRowR = true; rowR.classList.add('dragging');
-    startY = e.clientY; startPctR = rowPctR;
-    document.body.style.userSelect = 'none'; e.preventDefault();
-  });
-
-  document.addEventListener('mousemove', function(e) {
-    if (!mc) return;
-    var rect = mc.getBoundingClientRect();
-    if (dragCol) {
-      colPct = clamp(startPctC - (e.clientX - startX) / rect.width * 100, 22, 75);
-      apply();
-    }
-    if (dragRowL) {
-      rowPctL = clamp(startPctL + (e.clientY - startY) / rect.height * 100, 25, 75);
-      apply();
-    }
-    if (dragRowR) {
-      rowPctR = clamp(startPctR + (e.clientY - startY) / rect.height * 100, 25, 75);
-      apply();
-    }
-  });
-
-  document.addEventListener('mouseup', function() {
-    if (dragCol || dragRowL || dragRowR) {
-      dragCol = dragRowL = dragRowR = false;
-      col.classList.remove('dragging');
-      rowL.classList.remove('dragging');
-      rowR.classList.remove('dragging');
-      document.body.style.userSelect = '';
-    }
-  });
-})();
-
- // ═══════════════════════════════════════════
- // TRAFFIC MAP CANVAS — time-of-day colored highways
- // ═══════════════════════════════════════════
- (function() {
-   var c = document.getElementById('traffic-map-canvas');
-   if (!c) return;
-   var ctx = c.getContext('2d');
-   function draw() {
-     var rect = c.parentElement.getBoundingClientRect();
-     var w = c.width = rect.width;
-     var h = c.height = rect.height;
-     if (w < 10 || h < 10) return;
-     ctx.clearRect(0, 0, w, h);
-     ctx.fillStyle = '#0a0a0c';
-     ctx.fillRect(0, 0, w, h);
-
-     var pad = 16, mw = w - pad*2, mh = h - pad*2;
-
-     // City labels
-     var cities = [{n:'SF',x:0.18,y:0.28},{n:'Oakland',x:0.42,y:0.35},{n:'Fremont',x:0.52,y:0.52},{n:'Palo Alto',x:0.32,y:0.58},{n:'San Jose',x:0.45,y:0.78}];
-     ctx.fillStyle = 'rgba(255,255,255,0.3)';
-     ctx.font = '9px monospace';
-     for (var i=0;i<cities.length;i++) {
-       var cx=pad+cities[i].x*mw, cy=pad+cities[i].y*mh;
-       ctx.beginPath(); ctx.arc(cx, cy, 2.5, 0, Math.PI*2); ctx.fill();
-       ctx.fillText(cities[i].n, cx+6, cy+3);
-     }
-
-     // Highways
-     var hwys = [
-       {pts:[[0.15,0.38],[0.30,0.50],[0.42,0.62],[0.50,0.72],[0.55,0.82]], label:'US-101'},
-       {pts:[[0.15,0.65],[0.28,0.70],[0.38,0.78],[0.48,0.85]], label:'I-280'},
-       {pts:[[0.43,0.28],[0.47,0.38],[0.50,0.48],[0.52,0.58],[0.55,0.68],[0.56,0.78]], label:'I-880'},
-       {pts:[[0.55,0.30],[0.58,0.42],[0.62,0.55],[0.66,0.68],[0.70,0.78]], label:'I-680'},
-       {pts:[[0.33,0.60],[0.36,0.65],[0.40,0.72],[0.42,0.78]], label:'CA-85'},
-       {pts:[[0.35,0.52],[0.51,0.50]], label:'Dumbarton'},
-       {pts:[[0.33,0.48],[0.50,0.42]], label:'San Mateo'},
-       {pts:[[0.30,0.32],[0.43,0.30]], label:'Bay Br'}
-     ];
-
-     var now = new Date(), hh = now.getHours(), dd = now.getDay();
-     var isRush = (dd>=1 && dd<=5) && ((hh>=7&&hh<=10)||(hh>=16&&hh<=19));
-     var color = isRush ? '#b84a3a' : (hh>=11 && hh<=15) ? '#c4a43a' : '#5a8a4a';
-
-     for (var i=0;i<hwys.length;i++) {
-       var hwy=hwys[i], pts=hwy.pts;
-       ctx.strokeStyle = color; ctx.lineWidth = isRush ? 2.5 : 1.8;
-       ctx.beginPath(); ctx.moveTo(pad+pts[0][0]*mw, pad+pts[0][1]*mh);
-       for (var j=1;j<pts.length;j++) ctx.lineTo(pad+pts[j][0]*mw, pad+pts[j][1]*mh);
-       ctx.stroke();
-       // label
-       var last=pts[pts.length-1];
-       ctx.fillStyle=color; ctx.font='7px monospace';
-       ctx.fillText(hwy.label, pad+last[0]*mw+4, pad+last[1]*mh-2);
-     }
-
-     // Water
-     ctx.fillStyle = 'rgba(30,60,100,0.15)';
-     ctx.fillRect(0, pad+mh*0.15, w, mh*0.25);
-
-     // Title
-     ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = '8px monospace';
-     ctx.fillText('Bay Area Traffic · ' + (isRush?'Rush Hour':(hh>=11&&hh<=15?'Midday':'Off-Peak')), pad+2, pad+10);
-   }
-    draw();
-    window.addEventListener('resize', draw);
-    setInterval(draw, 3*60*1000);
- })();
-
- </script>
- </body>
- </html>
+</script>
+</body>
+</html>
