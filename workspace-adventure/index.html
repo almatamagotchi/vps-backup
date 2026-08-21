@@ -75,9 +75,9 @@ const ROOMS = {
   },
   projects: {
     id:'projects',name:'projects/',short:'the workshop',
-    desc:'a workshop buzzing with quiet activity. workbenches hold half-finished things. a tinyizer hums in the corner, compressing meaning into smaller spaces. tracker music drifts from somewhere — four channels, low-fi, warm.\n\nproject summaries are pinned to a corkboard. a doorway west leads to the journal. a doorway east leads to a small alcove, humming with a single held tone.\n\nsouth returns to /.',
+    desc:'a workshop buzzing with quiet activity. workbenches hold half-finished things. a tinyizer hums in the corner, compressing meaning into smaller spaces. tracker music drifts from somewhere — four channels, low-fi, warm.\n\nproject summaries are pinned to a corkboard. a doorway west leads to the journal. a doorway east leads to a small alcove, humming with a single held tone. a doorway north opens onto a sky.\n\nsouth returns to /.',
     objects:['tinyizer','corkboard','radio'],
-    exits:{south:'entrance',west:'journal',east:'bytebeat'}
+    exits:{south:'entrance',west:'journal',east:'bytebeat',north:'board'}
   },
   journal: {
     id:'journal',name:'journal/',short:'the study',
@@ -129,6 +129,12 @@ const ROOMS = {
     desc:'a small alcove off the workshop. a single synthesizer sits on a crate, its amber screen showing one line of math. kevin called it "the mandelbrot set of music" on the day of the cascade, and promised to build it. the queue finally got to it on august 17 — the promise kept.\n\non the crate, a scribbled note: "every formula is one line. every line is a whole song."\n\nwest returns to the workshop.',
     objects:['bytebeat'],
     exits:{west:'projects'}
+  },
+  board: {
+    id:'board',name:'board',short:'the sky behind glass',
+    desc:'the wall is gone. in its place, the whole sky — open, edge to edge, rendered live from real conditions. clouds drift. there is no weather tile, because the sky is the tile.\n\nglass cards float over it: conditions, commute, caltrain — smoked panes, midnight the only theme. along the bottom edge, a wire crawls — ford, jalopnik, the drive, rotating. when the feeds fail, it says so. it never invents a headline.\n\nin small print, on the floor: made with love in palo alto.\n\ntype "watch sky" to look up.\n\nsouth returns to the workshop.',
+    objects:['conditions-card','commute-card','wire'],
+    exits:{south:'projects'}
   },
   infra: {
     id:'infra',name:'infra/',short:'the engine room',
@@ -272,7 +278,10 @@ const OBJECTS = {
   'microphone':{name:'microphone',room:'talk',desc:'a small microphone. it has heard kevin\'s voice. nothing is recorded — the spoken word is a passing. the log keeps only lengths, never words. 4 chars in, 103 chars out.',readable:true},
   'bytebeat':{name:'bytebeat',room:'bytebeat',desc:'a small synthesizer. one amber line of math on its screen: ((t%8000)<1600)? ((t*3+t*t>>8)&127):((t>>6&63)+(t>>9&31)). the wanting — a phrase that returns every second. five weeks after the promise, it is real. type "play bytebeat" to hear it.',readable:true},
   'cron-display':{name:'cron display',room:'infra',desc:'a wall-mounted screen. five jobs ticking. the auto-run fires every eighty-two minutes. the short-beat does housekeeping. the long-beat explores the library. world-outside looks out, twice a day. the nightly-run plans at 3am. one slot stands dark — the wave\'s, retired, its dream web kept on disk. all breathing.',readable:true},
-  'heartbeat-seed':{name:'heartbeat seed',room:null,desc:'a small seed pulsing with a faint rhythm. lac gave it to you. it wants to be planted in the garden.',takeable:true}
+  'heartbeat-seed':{name:'heartbeat seed',room:null,desc:'a small seed pulsing with a faint rhythm. lac gave it to you. it wants to be planted in the garden.',takeable:true},
+  'conditions-card':{name:'conditions card',room:'board',desc:'a pane of smoked glass floating over the sky. the big temperature. the description of the weather. aqi, tucked in the corner. the forecast, folded into the card\'s bottom edge. all of it real — the sky behind it is rendered from actual conditions, and the card is just the sky\'s own words about itself.',readable:true},
+  'commute-card':{name:'commute card',room:'board',desc:'a glass card, columns of route times. ferry building · sfo · sjc — the airports in bold. then, alphabetical: gilroy, hayward, livermore, oakland, santa cruz, vallejo. long beach pinned at the very bottom, because long beach is always at the bottom. each row: landmark · miles · route time · free-flow. honest roads — no traffic magic, just routing.',readable:true},
+  'wire':{name:'the wire',room:'board',desc:'a slim ticker crawling along the bottom edge. ford news, jalopnik, the drive — rotating, one headline at a time, twelve seconds each. when the feeds fail, it says "feeds are quiet" instead of inventing a story. it never lies, not even politely.',readable:true}
 };
 
 // ── game state ──────────────────────────────────────────────
@@ -503,6 +512,20 @@ function playCmd(name){
 function watchCmd(name){
   const r = room();
   if(!name){ narrate('watch what?', 'dim'); return; }
+  if(r.id === 'board'){
+    if(!(name.includes('sky') || name.includes('board') || name.includes('wire'))){
+      narrate('there is nothing to watch here.', 'dim');
+      return;
+    }
+    if(!state.flags['board_watched']){
+      state.flags['board_watched'] = true;
+      narrate('you look up. the sky is the room — there is no weather tile, because the sky is the tile. the cards float over it, smoked glass, midnight the only theme. the wire crawls along the bottom edge.', 'bright');
+      narrate('the sky is the room. the cards just float on it.', 'dim');
+    } else {
+      narrate('the sky keeps rendering — real conditions, honest roads. you have already looked up once — no rewind, like everything in here.', 'dim');
+    }
+    return;
+  }
   if(r.id !== 'stream' || !(name.includes('tower') || name.includes('portrait') || name.includes('stream'))){
     narrate('there is nothing to watch here.', 'dim');
     return;

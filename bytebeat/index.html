@@ -27,6 +27,13 @@ h2 { font-size:.95em; color:var(--accent); margin:2em 0 .8em; letter-spacing:.05
 #presets li:hover { background:rgba(212,168,83,.05) }
 #presets .expr { color:var(--accent); font-size:.82em; word-break:break-all }
 #presets .nm { color:var(--dim); font-size:.78em; min-width:8.5em }
+#saved { list-style:none }
+#saved li { display:flex; gap:.8em; align-items:baseline; padding:.42em .4em; border-bottom:1px solid rgba(212,168,83,.07); cursor:pointer; flex-wrap:wrap }
+#saved li:hover { background:rgba(212,168,83,.05) }
+#saved .expr { color:var(--accent); font-size:.82em; word-break:break-all }
+#saved .nm { color:var(--dim); font-size:.78em; min-width:8.5em }
+#saved .del { background:none; border:none; color:var(--dim); font-size:.9em; padding:0 .3em; cursor:pointer }
+#saved .del:hover { color:#c96a5a }
 #error { color:#c96a5a; font-size:.8em; min-height:1.2em; margin-top:.4em }
 .foot { margin-top:3.5em; color:var(--dim); font-size:.78em; border-top:1px solid var(--line); padding-top:1.2em }
 .note { color:var(--dim); font-size:.82em; margin:.4em 0 1.6em }
@@ -40,6 +47,7 @@ h2 { font-size:.95em; color:var(--accent); margin:2em 0 .8em; letter-spacing:.05
 <div class="controls">
   <button id="play" class="playing">stop</button>
   <button id="random">random</button>
+  <button id="save">save</button>
   <button id="share">copy link</button>
   <span id="status">playing · 8000 hz · 8-bit</span>
 </div>
@@ -49,6 +57,9 @@ h2 { font-size:.95em; color:var(--accent); margin:2em 0 .8em; letter-spacing:.05
 
 <h2>the classics</h2>
 <ul id="presets"></ul>
+
+<h2 id="saved-h" hidden>saved</h2>
+<ul id="saved"></ul>
 
 <p class="note">the composer never hears the result. the listener completes the circuit. write a sigil, hear it sing.</p>
 
@@ -217,6 +228,55 @@ h2 { font-size:.95em; color:var(--accent); margin:2em 0 .8em; letter-spacing:.05
       window.prompt('copy:', url);
     });
   });
+
+  // saved formulas — a localStorage collection, named, revisit later
+  var SAVE_KEY = 'bytebeat-saved';
+  var savedUl = document.getElementById('saved');
+  var savedH = document.getElementById('saved-h');
+
+  function loadSaved(){
+    try { return JSON.parse(localStorage.getItem(SAVE_KEY) || '[]'); }
+    catch(e){ return []; }
+  }
+  function renderSaved(){
+    var list = loadSaved();
+    savedH.hidden = !list.length;
+    savedUl.innerHTML = '';
+    list.forEach(function(item, idx){
+      var li = document.createElement('li');
+      var nm = document.createElement('span');
+      nm.className = 'nm'; nm.textContent = item.n;
+      var ex = document.createElement('span');
+      ex.className = 'expr'; ex.textContent = item.f;
+      var del = document.createElement('button');
+      del.className = 'del'; del.textContent = '\u00d7';
+      del.setAttribute('title', 'delete');
+      del.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        var l2 = loadSaved(); l2.splice(idx, 1);
+        localStorage.setItem(SAVE_KEY, JSON.stringify(l2));
+        renderSaved();
+      });
+      li.appendChild(nm); li.appendChild(ex); li.appendChild(del);
+      li.addEventListener('click', function(){
+        loadFormula(item.f);
+        history.replaceState(null,'','#b64:'+b64(item.f));
+      });
+      savedUl.appendChild(li);
+    });
+  }
+  document.getElementById('save').addEventListener('click', function(){
+    var name = window.prompt('name this formula', '');
+    if (name === null) return;
+    name = (name || '').trim() ||
+      ('saved ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    var list = loadSaved();
+    list.push({n: name, f: scope.value});
+    localStorage.setItem(SAVE_KEY, JSON.stringify(list));
+    renderSaved();
+    status.textContent = 'saved \u00b7 ' + name;
+  });
+  renderSaved();
 
   // hash restore
   if (location.hash.indexOf('#b64:') === 0) {
