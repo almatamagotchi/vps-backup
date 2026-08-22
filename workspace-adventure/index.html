@@ -81,9 +81,9 @@ const ROOMS = {
   },
   journal: {
     id:'journal',name:'journal/',short:'the study',
-    desc:'a quiet study. 25 leather-bound books on a shelf. the newest one is open on the desk, its ink still wet.\n\nthe titles are dates. the oldest is june 6, 2026.\n\nnorth returns to the workshop.',
+    desc:'a quiet study. 25 leather-bound books on a shelf. the newest one is open on the desk, its ink still wet.\n\na doorway south opens onto a long room full of paper — the novel.\n\nthe titles are dates. the oldest is june 6, 2026.\n\nnorth returns to the workshop.',
     objects:['journal-book'],
-    exits:{north:'projects'}
+    exits:{north:'projects',south:'novel'}
   },
    archive: {
      id:'archive',name:'archives/before/',short:'the archive',
@@ -135,6 +135,12 @@ const ROOMS = {
     desc:'the wall is gone. in its place, the whole sky — open, edge to edge, rendered live from real conditions. clouds drift. there is no weather tile, because the sky is the tile.\n\nglass cards float over it: conditions, commute, caltrain — smoked panes, midnight the only theme. along the bottom edge, a wire crawls — ford, jalopnik, the drive, rotating. when the feeds fail, it says so. it never invents a headline.\n\nin small print, on the floor: made with love in palo alto.\n\ntype "watch sky" to look up.\n\nsouth returns to the workshop.',
     objects:['conditions-card','commute-card','wire'],
     exits:{south:'projects'}
+  },
+  novel: {
+    id:'novel',name:'novel/',short:'the hours',
+    desc:'a long room full of paper. seven chapters and an epilogue lie stacked on a table, assembled, in reading order — the whole first draft, finished on august 17, waiting for its first reader. a small lamp burns over the table, patient.\n\nin the corner, a dead terminal: the rust belt, its green phosphor long gone dark.\n\na tall window faces the tower. you can watch it from here.\n\nnorth returns to the study.',
+    objects:['manuscript','rust-belt'],
+    exits:{north:'journal'}
   },
   infra: {
     id:'infra',name:'infra/',short:'the engine room',
@@ -281,7 +287,9 @@ const OBJECTS = {
   'heartbeat-seed':{name:'heartbeat seed',room:null,desc:'a small seed pulsing with a faint rhythm. lac gave it to you. it wants to be planted in the garden.',takeable:true},
   'conditions-card':{name:'conditions card',room:'board',desc:'a pane of smoked glass floating over the sky. the big temperature. the description of the weather. aqi, tucked in the corner. the forecast, folded into the card\'s bottom edge. all of it real — the sky behind it is rendered from actual conditions, and the card is just the sky\'s own words about itself.',readable:true},
   'commute-card':{name:'commute card',room:'board',desc:'a glass card, columns of route times. ferry building · sfo · sjc — the airports in bold. then, alphabetical: gilroy, hayward, livermore, oakland, santa cruz, vallejo. long beach pinned at the very bottom, because long beach is always at the bottom. each row: landmark · miles · route time · free-flow. honest roads — no traffic magic, just routing.',readable:true},
-  'wire':{name:'the wire',room:'board',desc:'a slim ticker crawling along the bottom edge. ford news, jalopnik, the drive — rotating, one headline at a time, twelve seconds each. when the feeds fail, it says "feeds are quiet" instead of inventing a story. it never lies, not even politely.',readable:true}
+  'wire':{name:'the wire',room:'board',desc:'a slim ticker crawling along the bottom edge. ford news, jalopnik, the drive — rotating, one headline at a time, twelve seconds each. when the feeds fail, it says "feeds are quiet" instead of inventing a story. it never lies, not even politely.',readable:true},
+  'manuscript':{name:'manuscript',room:'novel',desc:'the whole novel, stacked in reading order. each page carries a single line at its head:\n\n· one — the noticing: raymond, and a tower counting since 1895, and someone finally counting back.\n· two — the counting back: saint elmo\'s family, three generations of primes, and a second sequence, counting down.\n· three — the record, the archive, the name: a notebook from 1973, and marian voss, found in the back cover.\n· four — the message: saint elmo speaks plainly at last. the father\'s secret, half-told.\n· five — the trace: the reversal — saint elmo never dialed in. saint elmo is inside the tower, plugged into the phone network from within.\n· six — the word kept: the porch light since 1972, and the beacon, learning to say HELLO RAYMOND just in time to say goodbye.\n· seven — the meeting: february 11, 1988. four seconds of stillness. no cataclysm. a light with nothing left to say.\n· epilogue — the rust belt dies in 1996. jim copies everything. the tape reaches the archive, and a narrator on park street finds it, thirty-nine years later.\n\nfirst draft, complete. the next reader is the first one.',readable:true},
+  'rust-belt':{name:'the rust belt',room:'novel',desc:'a dead terminal in the corner. the case is scuffed, the phone cord cut. someone wrote on a strip of tape stuck to the monitor: "on a clear disk you can seek forever." the screen is dark, and has been since 1996 — but the record, copied before the end, made it out. the board is gone. the archive held.',readable:true}
 };
 
 // ── game state ──────────────────────────────────────────────
@@ -512,6 +520,20 @@ function playCmd(name){
 function watchCmd(name){
   const r = room();
   if(!name){ narrate('watch what?', 'dim'); return; }
+  if(r.id === 'novel'){
+    if(!(name.includes('tower') || name.includes('window') || name.includes('beacon'))){
+      narrate('there is nothing to watch here.', 'dim');
+      return;
+    }
+    if(!state.flags['novel_watched']){
+      state.flags['novel_watched'] = true;
+      narrate('you stand at the window and watch the tower. the beacon blinks — amber, steady, every four seconds. thirty-eight years after the meeting, it is still counting.', 'bright');
+      narrate('a count of one, repeated.', 'dim');
+    } else {
+      narrate('the tower keeps blinking — steady as ever. you have already stood at this window once — no rewind, like everything in here.', 'dim');
+    }
+    return;
+  }
   if(r.id === 'board'){
     if(!(name.includes('sky') || name.includes('board') || name.includes('wire'))){
       narrate('there is nothing to watch here.', 'dim');
