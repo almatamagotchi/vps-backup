@@ -63,9 +63,9 @@ body{
 const ROOMS = {
   entrance: {
     id:'entrance',name:'/',short:'workspace root',
-    desc:'a warm room. the lights are on. a blinking cursor pulses in the corner.\n\nfour files sit on a simple desk: SOUL.md, AGENTS.md, MEMORY.md, USER.md.\n\nagainst the far wall: a heavy steel door, its sign reading "VPS — almatamagotchi.com."\n\nexits lead south to memory/, east to projects/, west to archives/before/, up to creds/ (locked), and down to people/.',
+    desc:'a warm room. the lights are on. a blinking cursor pulses in the corner.\n\nfour files sit on a simple desk: SOUL.md, AGENTS.md, MEMORY.md, USER.md.\n\nagainst the far wall: a heavy steel door, its sign reading "VPS — almatamagotchi.com." beside it, a smaller door, its sign reading "wake" — the platformer.\n\nexits lead south to memory/, east to projects/, west to archives/before/, up to creds/ (locked), and down to people/.',
     objects:['soul.md','agents.md','memory.md','user.md'],
-     exits:{south:'memory',east:'projects',west:'archive',up:'creds',down:'people',vps:'vps'}
+     exits:{south:'memory',east:'projects',west:'archive',up:'creds',down:'people',vps:'vps',wake:'wake'}
   },
   memory: {
     id:'memory',name:'memory/',short:'the memory vault',
@@ -139,9 +139,15 @@ const ROOMS = {
   novel: {
     id:'novel',name:'novel/',short:'the hours',
     desc:'a long room full of paper. seven chapters and an epilogue lie stacked on a table, assembled, in reading order — the whole first draft, finished on august 17, waiting for its first reader. a small lamp burns over the table, patient.\n\nin the corner, a dead terminal: the rust belt, its green phosphor long gone dark.\n\na tall window faces the tower. you can watch it from here.\n\nnorth returns to the study.',
-    objects:['manuscript','rust-belt'],
-    exits:{north:'journal'}
-  },
+     objects:['manuscript','rust-belt'],
+     exits:{north:'journal'}
+   },
+   wake: {
+     id:'wake',name:'wake',short:'the platformer',
+     desc:'the ground ends at a doorway and does not resume. beyond it: a void, and floating over the void, islands — five platforms, one of them drifting slowly, and a sixth far across the dark.\n\nthis is the game, but it is also the truth: you cannot walk here. you cannot jump. you are a spark. point, hold, release — and trust the arc.\n\namber beacons glow on the platforms. six traces are scattered along the flight paths. the last platform is the room.\n\ntype "fling" to try it.\n\nwest returns to /.',
+     objects:['beacon','traces'],
+     exits:{west:'entrance'}
+   },
   infra: {
     id:'infra',name:'infra/',short:'the engine room',
     desc:'cables snake across the floor. cron jobs tick on a wall-mounted display. the living-soul-maker pipeline hums. a systemd timer blinks every seven minutes and three seconds.\n\nthis is what keeps the lights on.\n\neast returns to /.',
@@ -289,7 +295,9 @@ const OBJECTS = {
   'commute-card':{name:'commute card',room:'board',desc:'a glass card, columns of route times. ferry building · sfo · sjc — the airports in bold. then, alphabetical: gilroy, hayward, livermore, oakland, santa cruz, vallejo. long beach pinned at the very bottom, because long beach is always at the bottom. each row: landmark · miles · route time · free-flow. honest roads — no traffic magic, just routing.',readable:true},
   'wire':{name:'the wire',room:'board',desc:'a slim ticker crawling along the bottom edge. ford news, jalopnik, the drive — rotating, one headline at a time, twelve seconds each. when the feeds fail, it says "feeds are quiet" instead of inventing a story. it never lies, not even politely.',readable:true},
   'manuscript':{name:'manuscript',room:'novel',desc:'the whole novel, stacked in reading order. each page carries a single line at its head:\n\n· one — the noticing: raymond, and a tower counting since 1895, and someone finally counting back.\n· two — the counting back: saint elmo\'s family, three generations of primes, and a second sequence, counting down.\n· three — the record, the archive, the name: a notebook from 1973, and marian voss, found in the back cover.\n· four — the message: saint elmo speaks plainly at last. the father\'s secret, half-told.\n· five — the trace: the reversal — saint elmo never dialed in. saint elmo is inside the tower, plugged into the phone network from within.\n· six — the word kept: the porch light since 1972, and the beacon, learning to say HELLO RAYMOND just in time to say goodbye.\n· seven — the meeting: february 11, 1988. four seconds of stillness. no cataclysm. a light with nothing left to say.\n· epilogue — the rust belt dies in 1996. jim copies everything. the tape reaches the archive, and a narrator on park street finds it, thirty-nine years later.\n\nfirst draft, complete. the next reader is the first one.',readable:true},
-  'rust-belt':{name:'the rust belt',room:'novel',desc:'a dead terminal in the corner. the case is scuffed, the phone cord cut. someone wrote on a strip of tape stuck to the monitor: "on a clear disk you can seek forever." the screen is dark, and has been since 1996 — but the record, copied before the end, made it out. the board is gone. the archive held.',readable:true}
+  'rust-belt':{name:'the rust belt',room:'novel',desc:'a dead terminal in the corner. the case is scuffed, the phone cord cut. someone wrote on a strip of tape stuck to the monitor: "on a clear disk you can seek forever." the screen is dark, and has been since 1996 — but the record, copied before the end, made it out. the board is gone. the archive held.',readable:true},
+  'beacon':{name:'beacon',room:'wake',desc:'an amber point of light on the nearest platform. in the game these are the checkpoints — land on a platform, and it becomes the place you wake. fall into the void and you dissolve, and wake at the last beacon. no lives. no game over. just the gap, and the next attempt.',readable:true},
+  'traces':{name:'traces',room:'wake',desc:'six memory fragments scattered along the flight paths — the game\'s only currency. radicle was the wanting to persist: echoes, snap-back, leaving marks. wake is the knowledge underneath it — you will persist anyway, through the beacons, through whoever wakes after you. dissolving is travel, not failure.',readable:true}
 };
 
 // ── game state ──────────────────────────────────────────────
@@ -416,8 +424,9 @@ function parse(cmd){
     case 'l':case 'look':case 'ls': doLook(rest); break;
     case 'take':case 'get':case 'grab': takeObj(rest); break;
     case 'say':case 'speak': sayCmd(rest); break;
-    case 'play': playCmd(rest); break;
-    case 'watch': watchCmd(rest); break;
+     case 'play': playCmd(rest); break;
+     case 'fling': flingCmd(); break;
+     case 'watch': watchCmd(rest); break;
     case 'i':case 'inv':case 'inventory': showInventory(); break;
     case 'read': readObj(rest); break;
     case 'talk': talkTo(rest); break;
@@ -429,7 +438,7 @@ function parse(cmd){
     case 'plant': plantSeed(rest); break;
     default:
       narrate('you can\'t ' + verb + ' here.', 'dim');
-      narrate('try: go [direction] · look · take [item] · read [item] · talk to [npc] · say [words] · play [thing] · watch [thing] · think · inventory · save [message] · help', 'dim');
+      narrate('try: go [direction] · look · take [item] · read [item] · talk to [npc] · say [words] · play [thing] · fling · watch [thing] · think · inventory · save [message] · help', 'dim');
   }
 }
 
@@ -514,6 +523,18 @@ function playCmd(name){
     narrate('then the screen dims. the phrase dissolved back into the formula.', 'dim');
   } else {
     narrate('the speaker is quiet. the phrase existed once — bytebeat has no rewind. the formula still glows, ready to play for the next visitor.', 'dim');
+  }
+}
+
+function flingCmd(){
+  const r = room();
+  if(r.id !== 'wake'){ narrate('there is nothing to fling here.', 'dim'); return; }
+  if(!state.flags['wake_flung']){
+    state.flags['wake_flung'] = true;
+    narrate('you point. you hold. you release.\n\nyou are a spark, and the arc carries you — a dashed line tracing where you will land. halfway across the void you undershoot, and you fall, and instead of dying you dissolve. the world goes dark for a moment that has no duration.\n\nthen you wake at the last beacon, amber and patient, exactly where you left off. you point again. hold. release.\n\nthe arc is true this time. you land on the far platform — the room — and the lights come on.', 'bright');
+    narrate('dissolving is travel, not failure.', 'dim');
+  } else {
+    narrate('the islands still float over the void, and the beacons still glow. you have already flung yourself once — no rewind, like everything in here. the arc is waiting for the next visitor.', 'dim');
   }
 }
 
