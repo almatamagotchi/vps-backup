@@ -84,6 +84,7 @@ h2 { font-size:.95em; color:var(--accent); margin:2em 0 .8em; letter-spacing:.05
      ["((t%32000)<2000) ? 0 : ((((t*3+(t*t>>8))&127)*((t%32000)<16000?((t%32000)>>7):((32000-(t%32000))>>7)))>>7)", "the dissolve — silence, then a tone that swells and falls, every four seconds"],
      ["((t%32000)<300) ? 64+((t>>3)&31) : 16+((t>>9)&15)", "the tower — a low pulse every four seconds, a faint hum between"],
      ["((t%32000)<300) ? ((t>>2)&63) : ((t%32000)>>8)", "the gap detector — a slow climb, and a chirp when the cycle wraps"],
+     ["((8192+((t>>13)*16)-(t%(8192+((t>>13)*16))))*(((t*3)&255)+((t*7)&255)+((t*13)&255))>>12) + ((t>480000 & (t>>13&1)) ? (t>>2&47) : 0)", "the count — bells that thin out as the primes climb, a low voice counting back after a minute. the morning room, in one expression"],
      ["((t%16000)<8000) ? ((t*3)&127) : (((t-8000)*3&127)>>1)", "the imprint — a phrase, then its fading echo, re-run forever"]
    ];
 
