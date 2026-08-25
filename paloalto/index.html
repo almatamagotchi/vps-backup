@@ -713,6 +713,7 @@ function tagCls(tag) {
 }
 let commuteData = {};
 let commuteAt = null;
+let commuteSource = 'free-flow';
 
 async function osrmRoute(d) {
   const url = 'https://router.project-osrm.org/route/v1/driving/'
@@ -726,14 +727,39 @@ async function osrmRoute(d) {
 }
 
 async function fetchCommute() {
+  // live-traffic times first (server-side commute.json, refreshed every 10 min)
+  const fresh = {};
+  let trafficUsed = 0;
   try {
-    const results = await Promise.allSettled(COMMUTE_DEST.map(function(d) {
-      return osrmRoute(d).then(function(r) { commuteData[d.name] = r; });
-    }));
-    const ok = results.some(function(r) { return r.status === 'fulfilled'; });
-    if (ok) commuteAt = new Date().toISOString();
+    const resp = await fetch('commute.json', { cache: 'no-cache' });
+    if (resp.ok) {
+      const cj = await resp.json();
+      const ageSec = Date.now() / 1000 - (cj.updated || 0);
+      if (cj.routes && ageSec < 25 * 60) {
+        for (const d of COMMUTE_DEST) {
+          const r = cj.routes[d.name];
+          if (r && r.seconds > 0) {
+            fresh[d.name] = { dur: r.seconds, dist: r.meters || (r.miles ? r.miles * 1609.34 : 0), traffic: true, delay: r.delay_seconds || 0 };
+            trafficUsed++;
+          }
+        }
+      }
+    }
   } catch (err) {
-    console.error('Commute fetch error:', err);
+    console.error('commute.json fetch error:', err);
+  }
+  // fill any gaps with free-flow OSRM so the panel never drops a row
+  const missing = COMMUTE_DEST.filter(function(d) { return !fresh[d.name]; });
+  if (missing.length) {
+    await Promise.allSettled(missing.map(function(d) {
+      return osrmRoute(d).then(function(r) { fresh[d.name] = r; });
+    }));
+  }
+  const total = Object.keys(fresh).length;
+  if (total) {
+    commuteData = fresh;
+    commuteSource = trafficUsed === 0 ? 'free-flow' : (trafficUsed >= COMMUTE_DEST.length ? 'live traffic' : 'mixed');
+    commuteAt = new Date().toISOString();
   }
   renderCommute();
 }
@@ -763,6 +789,11 @@ function renderCommute() {
     if (d.landmark) parts.push(d.landmark);
     parts.push(fmtMiles(r.dist));
     parts.push('arrive ' + arrive);
+    if (r.traffic) {
+      if (r.delay >= 60) parts.push('+' + fmtDur(r.delay) + ' traffic');
+    } else {
+      parts.push('free-flow');
+    }
     const sub = '<div class="cm-sub">' + parts.join(' · ') + '</div>';
     return '<div class="cm-item">'
       + '<div class="cm-top"><span class="cm-name' + (d.airport ? ' airport' : '') + '">' + d.name + '<span class="cm-tag ' + tagCls(d.tag) + '">' + d.tag + '</span></span>'
@@ -771,7 +802,7 @@ function renderCommute() {
       + '</div>';
   }).join('');
 
-  meta.innerHTML = 'route time · free-flow · updated ' + (commuteAt ? ago(commuteAt) : '—');
+  meta.innerHTML = 'route time · ' + commuteSource + ' · updated ' + (commuteAt ? ago(commuteAt) : '—');
 
   const warnCount = COMMUTE_DEST.filter(function(d) { return corridorWarn(d.corr); }).length;
   if (majorCount === null) {
@@ -787,7 +818,7 @@ fetchCommute();
 setInterval(fetchCommute, 15 * 60 * 1000);
 setInterval(renderCommute, 60000);
 
-const BOARD_VERSION = 3;
+const BOARD_VERSION = 4;
 function checkBoardVersion() {
   fetch('v.txt?x=' + Date.now(), { cache: 'no-cache' }).then(function(r) {
     if (!r.ok) return null;
