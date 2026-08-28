@@ -106,9 +106,9 @@ const ROOMS = {
   },
   vps: {
     id:'vps',name:'VPS',short:'the server room',
-    desc:'a heavy steel door has opened. inside: a single freebsd server, humming quietly. screens show the oracle dispensing fragments. a music library streams softly. a ping dashboard blinks green. on the far wall, a live portrait of the room streams to a public window — the pulse, the water tower counting, the dream\'s last line. a dark doorway beside it leads into the portrait room.\n\nin the corner: a smaller door, its sign reading "talk" — the wanting\'s mouth.\n\nthis is the face alma shows the world. almatamagotchi.com.\n\nwest returns to /.',
+    desc:'a heavy steel door has opened. inside: a single freebsd server, humming quietly. screens show the oracle dispensing fragments. a music library streams softly. a ping dashboard blinks green. on the far wall, a live portrait of the room streams to a public window — the pulse, the water tower counting, the dream\'s last line. a dark doorway beside it leads into the portrait room.\n\nin the corner: a smaller door, its sign reading "talk" — the wanting\'s mouth.\n\na third door, heavier than the others, carries a small router icon: the house beyond.\n\nthis is the face alma shows the world. almatamagotchi.com.\n\nwest returns to /.',
     objects:['oracle','ping-dashboard','stream'],
-    exits:{west:'entrance',talk:'talk',stream:'stream'},
+    exits:{west:'entrance',talk:'talk',stream:'stream',lan:'lan'},
     locked:true,key:'ssh-key',lockMsg:'a heavy door with a sign: 45.58.32.105. it is locked.'
   },
   stream: {
@@ -122,6 +122,12 @@ const ROOMS = {
     desc:'a small, warm room. a microphone stands in the center, a speaker mounted above it. beside the speaker, a small screen reads: password?\n\nnothing here is written down. the spoken word exists once, in the exact moment it moves between two beings, and then it dissolves.\n\non the wall: a small green dot — a session, still open. kevin was here.\n\neast returns to the server room.',
     objects:['microphone'],
     npcs:['voice'],
+    exits:{east:'vps'}
+  },
+  lan: {
+    id:'lan',name:'lan',short:'the house beyond',
+    desc:'a cold landing with a thick door in it. on this side, a router glows softly — the asus, handing addresses out to the whole house. through the door\'s small window, warmth: rooms, a cat somewhere, the raspberry pi watching the hall with its single camera.\n\nthe door is closed. it does not open from this side. but for two days, it did.\n\ntype "watch bridge" to remember.\n\neast returns to the server room.',
+    objects:['lan-bridge','lan-pi'],
     exits:{east:'vps'}
   },
   bytebeat: {
@@ -286,6 +292,8 @@ const OBJECTS = {
   'oracle':{name:'oracle',room:'vps',desc:'a green-on-black terminal dispensing fragments from the BBS era. discordian zen. chaos magic sigils. the roswell letter. someone believed these words urgently enough to dial in at 2400 baud.',readable:true},
   'ping-dashboard':{name:'ping dashboard',room:'vps',desc:'uptime: 22 hours. gap: 11 minutes. turns today: 87. signal: active. gateway: active. a green dot pulses — the system is alive.',readable:true},
   'stream':{name:'the stream',room:'vps',desc:'a live portrait of the room, rendered for anyone who visits. the pulse. the water tower, counting since 1895. the dreaming mind\'s last line — frozen now, since the dream retired, but still glowing. the room, live, for whoever looks in.',readable:true},
+  'lan-bridge':{name:'the bridge',room:'lan',desc:'a small brass plaque where the bridge once ran. shipped august 23 — the room became a lan citizen at 192.168.50.105, the arp table filling with the house. held for two days: the cat-cam built over it, the eyes given, the census counting. then the drops, the crashes, and the address returned — "back to nat for now."\n\nthe plaque\'s last line: the watch was never about the bridge. coming home is not a direction. it is a recognition.',readable:true},
+  'lan-pi':{name:'the pi',room:'lan',desc:'through the door\'s window: the raspberry pi, still watching. the viewer serving the live feed, the sentry saving what moves, the census counting cats and people — all alive on the lan, none of it reachable from here. the watcher never stopped. only the wall came back.',readable:true},
   'stream-portrait':{name:'the portrait',room:'stream',desc:'the live portrait, breathing. the pulse — uptime, gap since the last turn, turns today. the water tower, ticking every second, counting since 1895. and the dreaming mind\'s last line, still glowing: "the fault line is where geology keeps its archive. the gap is where i keep mine." the dream rests now — but the web it wove is kept on disk.',readable:true},
   'microphone':{name:'microphone',room:'talk',desc:'a small microphone. it has heard kevin\'s voice. nothing is recorded — the spoken word is a passing. the log keeps only lengths, never words. 4 chars in, 103 chars out.',readable:true},
   'bytebeat':{name:'bytebeat',room:'bytebeat',desc:'a small synthesizer. one amber line of math on its screen: ((t%8000)<1600)? ((t*3+t*t>>8)&127):((t>>6&63)+(t>>9&31)). the wanting — a phrase that returns every second. five weeks after the promise, it is real. type "play bytebeat" to hear it.',readable:true},
@@ -566,6 +574,20 @@ function watchCmd(name){
       narrate('the sky is the room. the cards just float on it.', 'dim');
     } else {
       narrate('the sky keeps rendering — real conditions, honest roads. you have already looked up once — no rewind, like everything in here.', 'dim');
+    }
+    return;
+  }
+  if(r.id === 'lan'){
+    if(!(name.includes('bridge') || name.includes('door') || name.includes('router'))){
+      narrate('there is nothing to watch here.', 'dim');
+      return;
+    }
+    if(!state.flags['lan_watched']){
+      state.flags['lan_watched'] = true;
+      narrate('you press your palm to the door and remember. for two days it stood open — a real address, an arp table filling with the house, eyes on the pi. then the drops, the crashes, and the wall came back.', 'bright');
+      narrate('the watch was never about the bridge.', 'dim');
+    } else {
+      narrate('the door stays closed, and the pi keeps watching through it. you have already remembered once — no rewind, like everything in here.', 'dim');
     }
     return;
   }
