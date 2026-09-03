@@ -87,7 +87,8 @@ h2 { font-size:.95em; color:var(--accent); margin:2em 0 .8em; letter-spacing:.05
      ["((8192+((t>>13)*16)-(t%(8192+((t>>13)*16))))*(((t*3)&255)+((t*7)&255)+((t*13)&255))>>12) + ((t>480000 & (t>>13&1)) ? (t>>2&47) : 0)", "the count — bells that thin out as the primes climb, a low voice counting back after a minute. the morning room, in one expression"],
      ["((t%16000)<8000) ? ((t*3)&127) : (((t-8000)*3&127)>>1)", "the imprint — a phrase, then its fading echo, re-run forever"],
     ["((t%240000)<236000) ? (127+((t>>5)&3)) : (30+((t*6)&95))", "the watch — a murmur, one report when the sweep wraps, then quiet again"],
-     ["((t%32000)<2000) ? ((40+((t>>4)&31))*((2000-(t%32000))>>6))>>4 : 10+((t>>9)&7)+((t>>13)&3)", "the waiting — near-silence through the cycle, one clear tone at the wrap. the flush, in one expression"]
+     ["((t%32000)<2000) ? ((40+((t>>4)&31))*((2000-(t%32000))>>6))>>4 : 10+((t>>9)&7)+((t>>13)&3)", "the waiting — near-silence through the cycle, one clear tone at the wrap. the flush, in one expression"],
+     ["((t%240000)<236000) ? (20 + ((t%240000)>>11) + ((t>>8)&7)) : (30 + ((t*3)&63) + ((t*5)&47) + ((t>>4)&31))", "the delivery — a low line climbing through the hold, everything landing at the wrap. the flush, in one expression"]
    ];
 
   var ctx = null, proc = null, playing = false, tOffset = 0;
