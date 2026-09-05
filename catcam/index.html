@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>cat-cam · the house, twice</title>
+<style>
+  :root { --bg:#0a0a0f; --panel:#111119; --line:#23232e; --amber:#d4a853; --dim:#8b8b96; --faint:#55555f; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:#e8e8ec; font:14px/1.6 ui-monospace,'SF Mono',Menlo,monospace; min-height:100vh; }
+  header { padding:2rem 1rem 0; text-align:center; }
+  h1 { font-size:1.1rem; font-weight:600; color:var(--amber); margin:0; letter-spacing:.14em; text-transform:lowercase; }
+  .sub { color:var(--dim); font-size:.8rem; margin-top:.4rem; }
+  #login { max-width:20rem; margin:3rem auto; padding:1.5rem; background:var(--panel); border:1px solid var(--line); border-radius:6px; }
+  #login label { display:block; color:var(--dim); font-size:.75rem; margin-bottom:.5rem; }
+  #login input { width:100%; background:#0d0d13; border:1px solid var(--line); color:#e8e8ec; padding:.6rem .7rem; border-radius:4px; font:inherit; }
+  #login input:focus { outline:none; border-color:var(--amber); }
+  #login button { margin-top:.9rem; width:100%; background:var(--amber); color:#141414; border:none; padding:.6rem; border-radius:4px; font:inherit; font-weight:600; cursor:pointer; }
+  #login button:hover { filter:brightness(1.1); }
+  #err { color:#d4705a; font-size:.75rem; margin-top:.7rem; min-height:1em; }
+  #grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(16rem,1fr)); gap:1rem; padding:1.5rem 1rem; max-width:56rem; margin:0 auto; }
+  .cam { background:var(--panel); border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .cam .head { display:flex; justify-content:space-between; align-items:baseline; padding:.6rem .8rem; border-bottom:1px solid var(--line); font-size:.75rem; }
+  .cam .name { color:var(--amber); }
+  .cam .when { color:var(--dim); }
+  .cam .frame { position:relative; aspect-ratio:16/10; background:#0d0d13; }
+  .cam img { width:100%; height:100%; object-fit:cover; display:block; }
+  .cam .empty { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--faint); font-size:.75rem; text-align:center; padding:1rem; }
+  #hist { max-width:56rem; margin:0 auto; padding:0 1rem 2rem; }
+  .strip { background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:.7rem; margin-bottom:1rem; }
+  .strip .shead { display:flex; justify-content:space-between; color:var(--dim); font-size:.72rem; margin-bottom:.6rem; }
+  .strip .shead .sname { color:var(--amber); }
+  .strip .row { display:flex; gap:3px; overflow-x:auto; padding-bottom:.2rem; }
+  .strip img { width:64px; height:40px; object-fit:cover; border-radius:3px; opacity:.85; }
+  .strip img:hover { opacity:1; }
+  .strip .sempty { color:var(--faint); font-size:.72rem; padding:.4rem 0; }
+  footer { text-align:center; color:var(--faint); font-size:.7rem; padding:2rem 1rem; }
+  footer .dot { color:var(--amber); }
+</style>
+</head>
+<body>
+<header>
+  <h1>cat-cam · the house, twice</h1>
+  <div class="sub">two eyes, one room · a frame every twenty seconds · password-gated</div>
+</header>
+
+<div id="login" hidden>
+  <label for="pw">password</label>
+  <input type="password" id="pw" autocomplete="current-password">
+  <button id="go">enter</button>
+  <div id="err"></div>
+</div>
+
+<div id="grid" hidden>
+  <div class="cam" id="c1">
+    <div class="head"><span class="name">cam 1 · brio 501</span><span class="when" id="w1"></span></div>
+    <div class="frame"><div class="empty">waiting for the first frame</div></div>
+  </div>
+  <div class="cam" id="c2">
+    <div class="head"><span class="name">cam 2 · brio 4k</span><span class="when" id="w2"></span></div>
+    <div class="frame"><div class="empty">waiting for the first frame</div></div>
+  </div>
+</div>
+
+<div id="hist" hidden>
+  <div class="strip" id="s1">
+    <div class="shead"><span class="sname">cam 1 · last 72 minutes</span><span class="snew" id="n1"></span></div>
+    <div class="row" id="r1"></div>
+  </div>
+  <div class="strip" id="s2">
+    <div class="shead"><span class="sname">cam 2 · last 72 minutes</span><span class="snew" id="n2"></span></div>
+    <div class="row" id="r2"></div>
+  </div>
+</div>
+
+<footer>the camera never leaves the house · frames land on the vps behind a key that only uploads · <span class="dot">●</span> motion is not presence</footer>
+
+<script>
+var POLL = 20000, lastErr = '';
+function $(id){ return document.getElementById(id); }
+
+function showLogin(msg){
+  $('login').hidden = false; $('grid').hidden = true;
+  if(msg) $('err').textContent = msg;
+  $('pw').focus();
+}
+
+function fmt(ts){
+  if(!ts) return 'no frame yet';
+  var d = new Date(ts*1000);
+  return 'updated ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+
+function setTile(cam, info){
+  var box = cam === 'cam1' ? 'c1' : 'c2';
+  var w = cam === 'cam1' ? 'w1' : 'w2';
+  var cell = $(box).querySelector('.frame');
+  $(w).textContent = fmt(info && info.ts);
+  if(info){
+    var img = cell.querySelector('img');
+    if(!img){
+      img = document.createElement('img');
+      cell.querySelector('.empty').hidden = true;
+      cell.appendChild(img);
+    }
+    img.src = info.url;
+  } else {
+    var e = cell.querySelector('.empty');
+    e.hidden = false;
+    e.textContent = 'waiting for the first frame';
+  }
+}
+
+function poll(){
+  fetch('/api/catcam/latest', {credentials:'same-origin'})
+    .then(function(r){
+      if(r.status === 401){ showLogin('session expired — re-enter the password'); return; }
+      return r.json();
+    })
+    .then(function(d){
+      if(!d) return;
+      setTile('cam1', d.cam1);
+      setTile('cam2', d.cam2);
+      if(lastErr){ lastErr=''; $('err').textContent=''; }
+    })
+    .catch(function(){ /* network hiccup — keep last frames */ });
+}
+
+function historyFor(cam){
+  fetch('/api/catcam/history?cam=' + cam, {credentials:'same-origin'})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var row = $(cam === 'cam1' ? 'r1' : 'r2');
+      var nw = $(cam === 'cam1' ? 'n1' : 'n2');
+      var items = (d && d.items) || [];
+      row.textContent = '';
+      if(!items.length){
+        row.innerHTML = '<div class="sempty">no history yet — frames appear once a minute</div>';
+        nw.textContent = '';
+        return;
+      }
+      var last = items.slice(0, 72);
+      last.forEach(function(it){
+        var img = document.createElement('img');
+        img.loading = 'lazy';
+        img.src = it.url;
+        img.title = new Date(it.bucket*60000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        row.appendChild(img);
+      });
+      nw.textContent = 'newest ' + new Date(items[0].bucket*60000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    })
+    .catch(function(){ /* keep last strip */ });
+}
+
+function pollHistory(){
+  historyFor('cam1');
+  historyFor('cam2');
+}
+
+function login(){
+  var pw = $('pw').value;
+  if(!pw) return;
+  fetch('/api/catcam/login', {
+    method:'POST',
+    credentials:'same-origin',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'password=' + encodeURIComponent(pw)
+  }).then(function(r){
+    if(r.status === 200){
+      $('pw').value = '';
+      $('login').hidden = true; $('grid').hidden = false; $('hist').hidden = false;
+      poll();
+      pollHistory();
+      setInterval(poll, POLL);
+      setInterval(pollHistory, 60000);
+    } else if(r.status === 429){
+      $('err').textContent = 'too many attempts — wait a few minutes';
+    } else {
+      $('err').textContent = 'no. try again';
+    }
+  }).catch(function(){ $('err').textContent = 'could not reach the gate'; });
+}
+
+$('go').addEventListener('click', login);
+$('pw').addEventListener('keydown', function(ev){ if(ev.key === 'Enter') login(); });
+
+fetch('/api/catcam/ping', {credentials:'same-origin'})
+  .then(function(r){
+    if(r.status === 200){ $('grid').hidden = false; $('hist').hidden = false; poll(); pollHistory(); setInterval(poll, POLL); setInterval(pollHistory, 60000); }
+    else { showLogin(); }
+  })
+  .catch(function(){ showLogin('could not reach the gate'); });
+</script>
+</body>
+</html>
