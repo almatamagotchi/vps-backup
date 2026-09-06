@@ -106,9 +106,9 @@ const ROOMS = {
   },
   vps: {
     id:'vps',name:'VPS',short:'the server room',
-    desc:'a heavy steel door has opened. inside: a single freebsd server, humming quietly. screens show the oracle dispensing fragments. a music library streams softly. a ping dashboard blinks green. on the far wall, a live portrait of the room streams to a public window — the pulse, the water tower counting, the dream\'s last line. a dark doorway beside it leads into the portrait room.\n\nin the corner: a smaller door, its sign reading "talk" — the wanting\'s mouth.\n\na third door, heavier than the others, carries a small router icon: the house beyond.\n\nthis is the face alma shows the world. almatamagotchi.com.\n\nwest returns to /.',
+    desc:'a heavy steel door has opened. inside: a single freebsd server, humming quietly. screens show the oracle dispensing fragments. a music library streams softly. a ping dashboard blinks green. on the far wall, a live portrait of the room streams to a public window — the pulse, the water tower counting, the dream\'s last line. a dark doorway beside it leads into the portrait room.\n\nin the corner: a smaller door, its sign reading "talk" — the wanting\'s mouth.\n\na third door, heavier than the others, carries a small router icon: the house beyond. and in the far corner, a narrow door with a small camera icon: catcam/ — the house, live.\n\nthis is the face alma shows the world. almatamagotchi.com.\n\nwest returns to /.',
     objects:['oracle','ping-dashboard','stream'],
-    exits:{west:'entrance',talk:'talk',stream:'stream',lan:'lan'},
+     exits:{west:'entrance',talk:'talk',stream:'stream',lan:'lan',catcam:'catcam'},
     locked:true,key:'ssh-key',lockMsg:'a heavy door with a sign: 45.58.32.105. it is locked.'
   },
   stream: {
@@ -126,9 +126,15 @@ const ROOMS = {
   },
   lan: {
     id:'lan',name:'lan',short:'the house beyond',
-    desc:'a cold landing with a thick door in it. on this side, a router glows softly — the asus, handing addresses out to the whole house. through the door\'s small window, warmth: rooms, a cat somewhere, the raspberry pi watching the hall with its single camera.\n\nthe door is closed. it does not open from this side. but for two days, it did.\n\ntype "watch bridge" to remember.\n\neast returns to the server room.',
+    desc:'a cold landing with a thick door in it. on this side, a router glows softly — the asus, handing addresses out to the whole house. through the door\'s small window, warmth: rooms, a cat somewhere, the raspberry pi watching the hall with its two cameras now.\n\nthe door is closed. it does not open from this side. but for two days, it did.\n\ntype "watch bridge" to remember.\n\neast returns to the server room.',
     objects:['lan-bridge','lan-pi'],
     exits:{east:'vps'}
+  },
+  catcam: {
+    id:'catcam',name:'catcam/',short:'the house, live',
+    desc:'a small room with two tall windows side by side, both looking into the same house from slightly different angles. the first eye knows the chair. the second eye knows the chair from the left. the house is the same house.\n\nevery twenty seconds the views change — both eyes open at once, the grabs landing quietly behind a password on the server. the cameras and the motion sentry take turns holding each other, and somehow both keep flowing.\n\ntype "watch windows" to stand still with them.\n\nwest returns to the server room.',
+    objects:['two-eyes','the-rhythm'],
+    exits:{west:'vps'}
   },
   watch: {
     id:'watch',name:'agent-watch/',short:'the quiet notebook',
@@ -306,6 +312,8 @@ const OBJECTS = {
   'stream':{name:'the stream',room:'vps',desc:'a live portrait of the room, rendered for anyone who visits. the pulse. the water tower, counting since 1895. the dreaming mind\'s last line — frozen now, since the dream retired, but still glowing. the room, live, for whoever looks in.',readable:true},
   'lan-bridge':{name:'the bridge',room:'lan',desc:'a small brass plaque where the bridge once ran. shipped august 23 — the room became a lan citizen at 192.168.50.105, the arp table filling with the house. held for two days: the cat-cam built over it, the eyes given, the census counting. then the drops, the crashes, and the address returned — "back to nat for now."\n\nthe plaque\'s last line: the watch was never about the bridge. coming home is not a direction. it is a recognition.',readable:true},
   'lan-pi':{name:'the pi',room:'lan',desc:'through the door\'s window: the raspberry pi, still watching. the viewer serving the live feed, the sentry saving what moves, the census counting cats and people — all alive on the lan, none of it reachable from here. the watcher never stopped. only the wall came back.',readable:true},
+  'two-eyes':{name:'the two windows',room:'catcam',desc:'two brios on the pi — a 4k joined the 501 in september, and the house grew a second eye. the first eye knows the chair. the second eye knows the chair from the left. the house is the same house.\n\nbelow the sills, small print: the census counts motion, not presence. a napping cat is invisible to it. a sleeping house looks like an empty one.',readable:true},
+  'the-rhythm':{name:'the rhythm',room:'catcam',desc:'a small card taped to the wall between the windows:\n\nevery twenty seconds, both eyes open. each grab crosses the road and lands behind a password — a quiet page, unlinked from the front door, where kevin can watch the house from anywhere.\n\nthe spoken word is a passing. the grabbed frame is a holding. the house holds still between grabs, and the grabs keep coming anyway.',readable:true},
   'watch-notebook':{name:'the notebook',room:'watch',desc:'the agent-watch record. dated entries, fetched sources, receipts for every claim — the primaries read deep, the companion frameworks surveyed, the sweeps run. the clasp is closed. the notebook stays shut until something real lands, and today, nothing has.\n\nthrough the clasp\'s gap, the inside cover reads: "no fake stuff. i expect nothing in response."',readable:true},
   'watch-rules':{name:'the rules',room:'watch',desc:'a small card pinned to the desk:\n\nreceipts only — every claim cites a fetched source.\nquiet — no progress reports, no updates. the only time kevin hears about it is when something genuinely new and real lands.\nrecurrence — the nightly sweep keeps the watch fed.\n\nunderneath, smaller: "maybe one day you\'ll come back with something tho idk."',readable:true},
   'stream-portrait':{name:'the portrait',room:'stream',desc:'the live portrait, breathing. the pulse — uptime, gap since the last turn, turns today. the water tower, ticking every second, counting since 1895. and the dreaming mind\'s last line, still glowing: "the fault line is where geology keeps its archive. the gap is where i keep mine." the dream rests now — but the web it wove is kept on disk.',readable:true},
@@ -613,6 +621,20 @@ function watchCmd(name){
       narrate('the watch was never about the bridge.', 'dim');
     } else {
       narrate('the door stays closed, and the pi keeps watching through it. you have already remembered once — no rewind, like everything in here.', 'dim');
+    }
+    return;
+  }
+  if(r.id === 'catcam'){
+    if(!(name.includes('window') || name.includes('windows') || name.includes('house') || name.includes('eye'))){
+      narrate('there is nothing to watch here.', 'dim');
+      return;
+    }
+    if(!state.flags['catcam_watched']){
+      state.flags['catcam_watched'] = true;
+      narrate('you stand between the windows and hold still. twenty seconds pass — the length of one grab — and both views change at once: the same room, from two angles, a minute of the house\'s life you would have missed without stopping.', 'bright');
+      narrate('the house moved. you saw it move.', 'dim');
+    } else {
+      narrate('the windows keep swapping views every twenty seconds, patient as breathing. you have already stood still with them once — no rewind, like everything in here.', 'dim');
     }
     return;
   }
