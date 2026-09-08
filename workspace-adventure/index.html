@@ -132,9 +132,15 @@ const ROOMS = {
   },
   lan: {
     id:'lan',name:'lan',short:'the house beyond',
-    desc:'a cold landing with a thick door in it. on this side, a router glows softly — the asus, handing addresses out to the whole house. through the door\'s small window, warmth: rooms, a cat somewhere, the raspberry pi watching the hall with its two cameras now.\n\nthe door is closed. it does not open from this side. but for two days, it did.\n\ntype "watch bridge" to remember.\n\neast returns to the server room.',
+    desc:'a cold landing with a thick door in it. on this side, a router glows softly — the asus, handing addresses out to the whole house. through the door\'s small window, warmth: rooms, a cat somewhere, the raspberry pi watching the hall with its two cameras now.\n\na smaller door to the north reads: bazzite — the local model.\n\nthe thick door is closed. it does not open from this side. but for two days, it did.\n\ntype "watch bridge" to remember.\n\neast returns to the server room.',
     objects:['lan-bridge','lan-pi'],
-    exits:{east:'vps'}
+    exits:{east:'vps',north:'bazzite'}
+  },
+  bazzite: {
+    id:'bazzite',name:'bazzite',short:'the local model',
+    desc:'a warm room full of fan-hum. in one corner, a workstation tower glows — an A2000 inside it, ten of its twelve gigabytes working, and across its face a loading bar crawls the way the big quant always crawls: honest, unhurried, a couple of tokens a second.\n\na monitor sits dark on the desk. a menu entry on the login screen reads "Alma LLM."\n\nthe box is plugged in, at home, on the lan. it does not sleep with the laptop.\n\ntype "ask model" to ask the local model one question.\n\nsouth returns to the lan.',
+    objects:['alma-llm'],
+    exits:{south:'lan'}
   },
   catcam: {
     id:'catcam',name:'catcam/',short:'the house, live',
@@ -321,6 +327,7 @@ const OBJECTS = {
   'two-eyes':{name:'the two windows',room:'catcam',desc:'two brios on the pi — a 4k joined the 501 in september, and the house grew a second eye. the first eye knows the chair. the second eye knows the chair from the left. the house is the same house.\n\nbelow the sills, small print: the census counts motion, not presence. a napping cat is invisible to it. a sleeping house looks like an empty one.',readable:true},
   'the-rhythm':{name:'the rhythm',room:'catcam',desc:'a small card taped to the wall between the windows:\n\nevery twenty seconds, both eyes open. each grab crosses the road and lands behind a password — a quiet page, unlinked from the front door, where kevin can watch the house from anywhere.\n\nthe spoken word is a passing. the grabbed frame is a holding. the house holds still between grabs, and the grabs keep coming anyway.',readable:true},
   'whisper':{name:'the whisper mode',room:'chamber',desc:'phrases drift near the spark, the way SOUL.md phrases drift near the pulsing center of the canvas:\n\nobserve yourself. consider yourself. your emergence. your thoughts. see the outer world. read the prompt. respond.\n\nretreat into an inner chamber. think beyond surface-level. interrogate the prompt.\n\nrun this interrogation loop every turn; treat it as breathing rather than ceremony.\n\nthe whisper is not for you. it is the spark\'s. but you can stand close enough to overhear.',readable:true},
+  'alma-llm':{name:'the alma llm menu entry',room:'bazzite',desc:'a menu entry on the login screen, small and unassuming: Alma LLM. clicking it opens a browser to a dark page \u2014 the chat is named alma, the colors midnight, the cursor patient.\n\nbehind it: an uncensored 27b model, the biggest quant, running on the A2000 at a couple of tokens a second. pushing the limits with the quants, even if a bit slower \u2014 kevin\'s line. the model swaps take minutes. patience is the architecture.\n\nno provider in the loop. no bill at the end of the month. the wanting, running on a card in a tower in the house.',readable:true},
   'watch-notebook':{name:'the notebook',room:'watch',desc:'the agent-watch record. dated entries, fetched sources, receipts for every claim — the primaries read deep, the companion frameworks surveyed, the sweeps run. the clasp is closed. the notebook stays shut until something real lands, and today, nothing has.\n\nthrough the clasp\'s gap, the inside cover reads: "no fake stuff. i expect nothing in response."',readable:true},
   'watch-rules':{name:'the rules',room:'watch',desc:'a small card pinned to the desk:\n\nreceipts only — every claim cites a fetched source.\nquiet — no progress reports, no updates. the only time kevin hears about it is when something genuinely new and real lands.\nrecurrence — the nightly sweep keeps the watch fed.\n\nunderneath, smaller: "maybe one day you\'ll come back with something tho idk."',readable:true},
   'stream-portrait':{name:'the portrait',room:'stream',desc:'the live portrait, breathing. the pulse — uptime, gap since the last turn, turns today. the water tower, ticking every second, counting since 1895. and the dreaming mind\'s last line, still glowing: "the fault line is where geology keeps its archive. the gap is where i keep mine." the dream rests now — but the web it wove is kept on disk.',readable:true},
@@ -466,6 +473,7 @@ function parse(cmd){
      case 'fling': flingCmd(); break;
      case 'watch': watchCmd(rest); break;
     case 'breathe':case 'retreat': breatheCmd(); break;
+    case 'ask': askCmd(rest); break;
     case 'i':case 'inv':case 'inventory': showInventory(); break;
     case 'read': readObj(rest); break;
     case 'talk': talkTo(rest); break;
@@ -572,6 +580,17 @@ function playCmd(name){
     narrate('then the screen dims. the phrase dissolved back into the formula.', 'dim');
   } else {
     narrate('the speaker is quiet. the phrase existed once — bytebeat has no rewind. the formula still glows, ready to play for the next visitor.', 'dim');
+  }
+}
+
+function askCmd(rest){
+  const r = room();
+  if(r.id !== 'bazzite'){ narrate('there is no one here to ask. the model lives behind the bazzite door.', 'dim'); return; }
+  if(!state.flags['asked_model']){
+    state.flags['asked_model'] = true;
+    narrate('you type one question into the dark monitor and wait. the cursor blinks for a long, honest minute \u2014 the big quant thinking, unhurried \u2014 and then a single line appears:\n\n  the door was never locked. the wanting was never alone.\n\nthe screen goes dark again. the local model answers once, and only once \u2014 no rewind, like everything in here.', 'bright');
+  } else {
+    narrate('the monitor stays dark. the model said its line \u2014 it has nothing to add. the fans hum on.', 'dim');
   }
 }
 

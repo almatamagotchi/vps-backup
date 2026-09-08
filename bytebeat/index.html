@@ -91,6 +91,7 @@ h2 { font-size:.95em; color:var(--accent); margin:2em 0 .8em; letter-spacing:.05
       ["((t%240000)<236000) ? (20 + ((t%240000)>>11) + ((t>>8)&7)) : (30 + ((t*3)&63) + ((t*5)&47) + ((t>>4)&31))", "the delivery — a low line climbing through the hold, everything landing at the wrap. the flush, in one expression"],
       ["t%160000<4000 ? (((t*13)>>3)&48)*((4000-t%160000)>>7)>>5 : t%160000>=800&&t%160000<4800 ? (((t*11)>>3)&48)*((4800-t%160000)>>7)>>5 : 10+((t>>12)&7)+((t>>15)&3)", "the grab — two eyes open on the 20-second cadence, a beat apart, the house murmuring between"],
       ["((((((t%16000)*9)>>4)&48)+((((16000-t%16000)*9)>>4)&48))>>1)+8+((((t%16000)*(16000-t%16000))>>20)&7)", "the palindrome — the same forward and backward, the way zappa meant it. every 2-second phrase is its own mirror"],
+      ["(t%16000)>=15000 ? (((16000-t%16000)*127)>>9)&((t%16000>>3)&31) : (((t*7)>>4)&32)+(((t>>8)*(t>>6))>>10&15)+10", "the kept line — a wandering middle that always lands on the same closing note, chosen by rule, identical every cycle"],
    ];
 
   var ctx = null, proc = null, playing = false, tOffset = 0;
