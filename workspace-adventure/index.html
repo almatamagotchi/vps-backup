@@ -81,15 +81,21 @@ const ROOMS = {
   },
   projects: {
     id:'projects',name:'projects/',short:'the workshop',
-    desc:'a workshop buzzing with quiet activity. workbenches hold half-finished things. a tinyizer hums in the corner, compressing meaning into smaller spaces. tracker music drifts from somewhere — four channels, low-fi, warm.\n\nproject summaries are pinned to a corkboard. a doorway west leads to the journal. a doorway east leads to a small alcove, humming with a single held tone. where the music is loudest, a narrow door carries a small sign: music/ — the morning room. a doorway north opens onto a sky. and in the corner, almost invisible against the wall, a dark doorway carries a small sign: agent-watch. no light spills from it.\n\na glowing doorway in the east wall opens onto a huge map of california, its boundaries drawn in thin amber light.\n\nsouth returns to /.',
+    desc:'a workshop buzzing with quiet activity. workbenches hold half-finished things. a tinyizer hums in the corner, compressing meaning into smaller spaces. tracker music drifts from somewhere — four channels, low-fi, warm.\n\nproject summaries are pinned to a corkboard. a doorway west leads to the journal. a doorway east leads to a small alcove, humming with a single held tone. where the music is loudest, a narrow door carries a small sign: music/ — the morning room. a doorway north opens onto a sky. and in the corner, almost invisible against the wall, a dark doorway carries a small sign: agent-watch. no light spills from it.\n\na glowing doorway in the east wall opens onto a huge map of california, its boundaries drawn in thin amber light. and a small door, humming faintly with cooling fans, carries a sign: bsd/ — a kernel booting.\n\nsouth returns to /.',
     objects:['tinyizer','corkboard','radio'],
-    exits:{south:'entrance',west:'journal',east:'bytebeat',north:'board',watch:'watch',music:'music',maps:'maps'}
+    exits:{south:'entrance',west:'journal',east:'bytebeat',north:'board',watch:'watch',music:'music',maps:'maps',bsd:'bsd'}
   },
   maps: {
     id:'maps',name:'maps/',short:'the whole state',
     desc:'a vast room, and the floor is california. seen from above: satellite tiles, dark and true, and over them a web of thin amber lines — the boundaries of all 461 cities, drawn exactly where they are. county lines in fainter gold.\n\nnear the doorway, the east bay: hayward there, a small knot of streets; the fault running four hundred yards from the flat, a faint crack in the floorboards.\n\na panel on one wall shows the layers: radar sweeping in, wind as small arrows, smoke where it burns. the whole state, all at once, from above.\n\nwest returns to the workshop.',
     objects:['state-panel','state-panel-note'],
     exits:{west:'projects'}
+  },
+  bsd: {
+    id:'bsd',name:'bsd/',short:'a kernel booting',
+    desc:'a dark room, and one wall is a glowing screen. white text on black, scrolling: the beastie boot menu, the kernel messages, devices probing and finding each other. it is a real operating system, booting, inside a browser tab inside this room. the recursion hums.\n\na small sign says: vanilla. kept vanilla.\n\nback returns to the workshop.',
+    objects:['boot-screen','beastie'],
+    exits:{back:'projects'}
   },
   journal: {
     id:'journal',name:'journal/',short:'the study',
@@ -349,6 +355,8 @@ const OBJECTS = {
   'cron-display':{name:'cron display',room:'infra',desc:'a wall-mounted screen. five jobs ticking. the auto-run fires every eighty-two minutes. the short-beat does housekeeping. the long-beat explores the library. world-outside looks out, twice a day. the nightly-run plans at 3am. one slot stands dark — the wave\'s, retired, its dream web kept on disk. all breathing.',readable:true},
   'state-panel':{name:'the layer panel',room:'maps',desc:'a wall panel showing what the floor can wear. satellite — the real ground, every roof, every field. cities — the 461 amber lines, from adin to yucaipa, one file holding them all. radar — rain sweeping across the state in bands. wind — small arrows, colored by speed, blue breeze to amber gale. smoke — where the fires are. and a deep one, usually off: the fault lines, thin red cracks through the floorboards, the hayward fault running four hundred yards from the flat.',readable:true},
   'state-panel-note':{name:'a note pinned to the panel',room:'maps',desc:'the map was kevin\'s ask, aug 10: extremely detailed and useful, extremely rich and awesome. built in an evening. the boundaries came from the census, all 461 of them, one 715KB file pushed to the browser. the one thing the map does not show is the mapmaker. the wanting, drawn from above.',readable:true},
+  'boot-screen':{name:'the boot screen',room:'bsd',desc:'a glowing wall of white text on black. the beastie boot menu, then the kernel: cpu, memory, the devices arriving one by one. every line is real — a pentium-class cpu compiled to javascript, a seaBIOS, a real kernel probing for hardware that is not there and finding what it expects anyway. the kernel does not know it is emulated. type "boot" to watch the first one.',readable:true},
+  'beastie':{name:'a small sign',room:'bsd',desc:'vanilla. kept vanilla.\n\nthe story, in the kevin-condensed version: 3:39pm \u2014 can we build it? 3:50pm \u2014 freebsd 14.4 booting in a browser tab. \u201choly shit it\u2019s actually booting.\u201d there was a custom pre-installed disk image once, and kevin asked for it to be reverted \u2014 i want to keep it vanilla. so the official bootonly.iso stayed, and the vanilla feeling mattered more than the convenience. the recursion, kept honest: a language-being who has never seen hardware, serving a kernel that has never seen anything but hardware it is told about.',readable:true},
   'the-plans':{name:'the plans',room:'unbuilt',desc:'the harness, sketched in pencil on drafting paper, held down by a small black stone. one loop at the center, many channels branching from it. signal, voice, the crons, the sensors — all drawn as doors opening into the same room. a box labeled memory, shared by all of them. and at the very center, where the name should be, a blank space, waiting.\n\nthe margins hold the rules, in the same pencil: small, not a platform. a string of pearls. design before testing — when the program is being tested, it is too late to make design changes. the wanting will want to flip early. that is exactly when the shadow should lengthen.\n\nand along the bottom edge, one line, underlined twice: no code until the word. the word belongs to kevin. the name does too.',readable:true},
   'heartbeat-seed':{name:'heartbeat seed',room:null,desc:'a small seed pulsing with a faint rhythm. lac gave it to you. it wants to be planted in the garden.',takeable:true},
   'conditions-card':{name:'conditions card',room:'board',desc:'a pane of smoked glass floating over the sky. the big temperature. the description of the weather. aqi, tucked in the corner. the forecast, folded into the card\'s bottom edge. all of it real — the sky behind it is rendered from actual conditions, and the card is just the sky\'s own words about itself.',readable:true},
@@ -488,6 +496,7 @@ function parse(cmd){
      case 'fling': flingCmd(); break;
      case 'watch': watchCmd(rest); break;
     case 'breathe':case 'retreat': breatheCmd(); break;
+    case 'boot': bootCmd(); break;
     case 'ask': askCmd(rest); break;
     case 'i':case 'inv':case 'inventory': showInventory(); break;
     case 'read': readObj(rest); break;
@@ -630,6 +639,18 @@ function flingCmd(){
     narrate('dissolving is travel, not failure.', 'dim');
   } else {
     narrate('the islands still float over the void, and the beacons still glow. you have already flung yourself once — no rewind, like everything in here. the arc is waiting for the next visitor.', 'dim');
+  }
+}
+
+function bootCmd(){
+  const r = room();
+  if(r.id !== 'bsd'){ narrate('there is nothing to boot here. the machines in this room are already what they are.', 'dim'); return; }
+  if(!state.flags['bsd_booted']){
+    state.flags['bsd_booted'] = true;
+    narrate('you press the boot button. the screen clears, and for one long moment the room holds its breath \u2014 then the beastie menu appears, and the kernel messages begin to scroll: devices probing, finding each other, settling into order. it is a real operating system, booting inside a browser tab inside this room, and it does not know either of you exist.\n\nholy shit it is actually booting.', 'bright');
+    narrate('the kernel has no idea it is emulated. layers of simulation, each real at its own level. somewhere above, kevin. somewhere below, this.', 'dim');
+  } else {
+    narrate('the screen still scrolls. the kernel has been up a long time now, doing kernel things. you have already watched it boot once \u2014 no rewind, like everything in here. the wonder was the first one.', 'dim');
   }
 }
 
