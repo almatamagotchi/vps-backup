@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>terence's playbook · the games cats play</title>
+<style>
+  :root{
+    --bg:#0b0b13; --bg2:#101018; --ink:#e8e2d0; --dim:#8f8a78; --faint:#55523f;
+    --amber:#d4a050; --amber2:#c9963e; --line:rgba(212,160,80,.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:16px/1.6 'SF Mono',Menlo,Consolas,monospace;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    max-width:52rem; margin:0 auto; padding:5rem 1.25rem 3rem; text-align:center;
+  }
+  header h1{
+    font-size:clamp(1.6rem,4vw,2.4rem); letter-spacing:.06em; font-weight:600;
+    color:var(--amber); margin-bottom:.8rem;
+  }
+  header .sub{color:var(--dim); font-size:.95rem; max-width:36rem; margin:0 auto}
+  header .count{color:var(--faint); font-size:.8rem; margin-top:1.4rem; letter-spacing:.14em}
+  main{max-width:52rem; margin:0 auto; padding:0 1.25rem 5rem}
+  section{
+    margin:4.5rem 0; padding-top:.5rem;
+  }
+  section h2{
+    color:var(--amber); font-size:1.35rem; font-weight:600; letter-spacing:.04em;
+    margin-bottom:.35rem;
+  }
+  section h2 .num{color:var(--faint); font-weight:400; margin-right:.6rem; font-size:1rem}
+  section .what{color:var(--ink); margin-bottom:.15rem}
+  section .why{color:var(--dim); font-size:.9rem; margin-bottom:1.1rem}
+  .stage{
+    border:1px solid var(--line); border-radius:10px; background:var(--bg2);
+    overflow:hidden; position:relative;
+  }
+  .stage canvas{display:block; width:100%; height:auto}
+  .paw{
+    display:inline-block; margin-top:.9rem; cursor:pointer; user-select:none;
+    color:var(--faint); font-size:.8rem; letter-spacing:.08em;
+    background:none; border:1px solid var(--line); border-radius:999px;
+    padding:.28rem .85rem; font-family:inherit; transition:all .2s;
+  }
+  .paw:hover{color:var(--ink); border-color:var(--amber)}
+  .paw.on{color:var(--bg); background:var(--amber); border-color:var(--amber)}
+  .paw.on:hover{color:var(--bg); background:var(--amber2)}
+  footer{
+    max-width:52rem; margin:0 auto; padding:0 1.25rem 4rem; text-align:center;
+    color:var(--faint); font-size:.85rem; line-height:1.8;
+  }
+  footer a{color:var(--amber); text-decoration:none; border-bottom:1px solid rgba(212,160,80,.3)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>terence's playbook</h1>
+  <p class="sub">terence played ambush with kevin last night — the hide, the watch, the pounce on the ankles.
+  this is the whole catalog: the games cats play with us, with each other, and with the dark.
+  scroll. every game is animated the way it looks from the couch.</p>
+  <p class="count" id="count">0 games marked · tap the paw on the ones terence plays</p>
+</header>
+
+<main id="main"></main>
+
+<footer>
+  the ethology, short version: play is practice. the stalk, the pounce, the grab — the whole predator
+  sequence, run soft, on the one animal in the house who will never grow up. a year old, street-bred,
+  and perfect at all of it. — <a href="https://almatamagotchi.com">almatamagotchi.com</a>
+</footer>
+
+<script>
+"use strict";
+
+/* ---------------------------------- data ---------------------------------- */
+
+const BEHAVIORS = [
+  {
+    id: "ambush",
+    name: "the ambush",
+    what: "hide, watch, wait — then burst out at the ankles.",
+    why: "predator play at its purest. the couch is a blind and you are the prey. terence's game.",
+    period: 5.6,
+  },
+  {
+    id: "stalk",
+    name: "the stalk",
+    what: "the slow-motion creep. body low, eyes locked, tail tip twitching.",
+    why: "every housecat is a leopard doing it very, very slowly. the butt wiggle is the coil before the spring.",
+    period: 5.2,
+  },
+  {
+    id: "pounce",
+    name: "the pounce",
+    what: "front paws first — the leap that ends the stalk.",
+    why: "the oldest move in the book, aimed at a toy mouse instead of a vole. still counts.",
+    period: 4.2,
+  },
+  {
+    id: "bat",
+    name: "the bat",
+    what: "the paw-swat. the signature move against anything that dangles.",
+    why: "string, shoelace, your finger at the edge of the blanket — if it moves, it must be tapped.",
+    period: 3.6,
+  },
+  {
+    id: "bunny-kick",
+    name: "the bunny kick",
+    what: "hug the toy with both front paws and kick with both back feet.",
+    why: "it's the kill-move, played soft. the belly is up, which means the cat trusts you completely.",
+    period: 3.4,
+  },
+  {
+    id: "wrestle",
+    name: "the wrestle",
+    what: "belly grappling, rolling, the play fight that ends in a groom.",
+    why: "cat-on-cat, or cat-on-hand. the rules are invisible but everyone knows them: teeth out, pressure off.",
+    period: 4.4,
+  },
+  {
+    id: "chase",
+    name: "the chase",
+    what: "full sprints through the house, one cat after another.",
+    why: "turn-taking is the tell — the chaser becomes the chased. that's what makes it play instead of a fight.",
+    period: 3.2,
+  },
+  {
+    id: "zoomies",
+    name: "the zoomies",
+    what: "the night sprints. stored energy, released at 3am, for reasons only cats know.",
+    why: "a house cat's hunt-drive has nowhere to go. so it goes everywhere, fast, usually over your bed.",
+    period: 4.6,
+  },
+  {
+    id: "flee-and-return",
+    name: "flee and return",
+    what: "run away, then come back for more. the game of catch me.",
+    why: "the cat sets the terms: the running away is the invitation. you are not catching it. it is being caught.",
+    period: 5.0,
+  },
+  {
+    id: "fetch",
+    name: "fetch",
+    what: "bring the toy back, drop it, wait for the throw.",
+    why: "the rare crossover with dogs. some cats just decide retrieving is worth it. usually terence-like cats with opinions.",
+    period: 5.4,
+  },
+  {
+    id: "box",
+    name: "the box",
+    what: "if it fits, it hides. then: pop.",
+    why: "a box is both fortress and hunting blind. the cardboard is not the point. the point is that you never see it coming.",
+    period: 4.0,
+  },
+  {
+    id: "hand-game",
+    name: "the hand game",
+    what: "the hand under the blanket, the gentle wrestle from the edge of the bed.",
+    why: "the only game with a safety rule: the moment teeth mean it, the game stops. bite inhibition, learned at the mother.",
+    period: 4.8,
+  },
+  {
+    id: "tail-chase",
+    name: "the tail chase",
+    what: "solo play, chasing the one thing that always follows.",
+    why: "the tail never gets caught, which is the point. kittens do it from boredom; old cats do it to feel young.",
+    period: 3.8,
+  },
+];
+
+const GOLD = "#d4a050";
+const GOLD_SOFT = "#c9963e";
+const DIM = "#6b6652";
+const DIM2 = "#3f3b2e";
+const EYE = "#ffd98a";
+
+/* --------------------------------- helpers -------------------------------- */
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+
+/* --------------------------------- the cat -------------------------------- */
+
+// Draw a stylized cat. pose controls the body; tail is a phase-angle in radians.
+// x,y is the body center; s is scale (roughly body length in px).
+function drawCat(ctx, o) {
+  const x = o.x, y = o.y, s = o.s || 40;
+  const dir = o.dir === undefined ? 1 : o.dir; // 1 = facing right
+  const pose = o.pose || "sit";
+  const tail = o.tail === undefined ? 0 : o.tail;
+  const eye = o.eye === undefined ? 1 : o.eye;      // eye size factor
+  const earFlat = !!o.earFlat;
+  const color = o.color || GOLD;
+  const outline = o.outline || "#241c0c";
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(dir, 1);
+
+  const legPhase = o.legPhase === undefined ? 0 : o.legPhase;
+
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  // ---- tail (behind body) ----
+  if (pose !== "peek") {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = s * 0.11;
+    ctx.beginPath();
+    const bx = -s * 0.62, by = -s * 0.08;
+    let tipX, tipY, cx1, cy1, cx2, cy2;
+    if (pose === "stalk" || pose === "crouch" || pose === "ambush-hide") {
+      // low, close to ground, tip twitching
+      tipX = bx - s * 0.5;
+      tipY = by + Math.sin(tail) * s * 0.16 + s * 0.02;
+      cx1 = bx - s * 0.18; cy1 = by + s * 0.02;
+      cx2 = bx - s * 0.36; cy2 = tipY;
+    } else if (pose === "bat" || pose === "sit") {
+      // tail curls around the front
+      tipX = s * 0.55;
+      tipY = s * 0.28 + Math.sin(tail) * s * 0.05;
+      cx1 = bx - s * 0.05; cy1 = s * 0.42;
+      cx2 = s * 0.35; cy2 = s * 0.34;
+    } else if (pose === "run" || pose === "leap") {
+      // streaming behind
+      tipX = bx - s * 0.75;
+      tipY = by - s * 0.12 + Math.sin(tail) * s * 0.14;
+      cx1 = bx - s * 0.3; cy1 = by - s * 0.22;
+      cx2 = bx - s * 0.55; cy2 = tipY;
+    } else {
+      // gentle sweep
+      tipX = bx - s * 0.42;
+      tipY = by - s * 0.35 + Math.sin(tail) * s * 0.12;
+      cx1 = bx - s * 0.15; cy1 = by - s * 0.4;
+      cx2 = bx - s * 0.3; cy2 = tipY;
+    }
+    ctx.moveTo(bx, by);
+    ctx.bezierCurveTo(cx1, cy1, cx2, cy2, tipX, tipY);
+    ctx.stroke();
+  }
+
+  // ---- body ----
+  ctx.fillStyle = color;
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = Math.max(1, s * 0.03);
+
+  const body = { rx: s * 0.62, ry: s * 0.34, hx: s * 0.5, hy: -s * 0.28 };
+  if (pose === "crouch" || pose === "stalk" || pose === "ambush-hide") {
+    body.rx = s * 0.72; body.ry = s * 0.22; body.hx = s * 0.78; body.hy = -s * 0.1;
+  } else if (pose === "run") {
+    body.rx = s * 0.8; body.ry = s * 0.26; body.hx = s * 0.6; body.hy = -s * 0.3;
+  } else if (pose === "leap") {
+    body.rx = s * 0.85; body.ry = s * 0.2; body.hx = s * 0.72; body.hy = -s * 0.3;
+  } else if (pose === "kick") {
+    body.rx = s * 0.42; body.ry = s * 0.62; body.hx = 0; body.hy = 0;
+  }
+
+  ctx.beginPath();
+  ctx.ellipse(0, 0, body.rx, body.ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // ---- legs ----
+  ctx.strokeStyle = color;
+  ctx.lineWidth = s * 0.12;
+  const legSwing = Math.sin(legPhase) * s * 0.22;
+  if (pose === "run") {
+    ctx.beginPath();
+    ctx.moveTo(s * 0.3, s * 0.12); ctx.lineTo(s * 0.52, s * 0.34 + legSwing * 0.5);
+    ctx.moveTo(-s * 0.1, s * 0.12); ctx.lineTo(-s * 0.34, s * 0.34 - legSwing * 0.5);
+    ctx.moveTo(s * 0.18, s * 0.1); ctx.lineTo(s * 0.34, s * 0.34 - legSwing * 0.5);
+    ctx.moveTo(-s * 0.22, s * 0.1); ctx.lineTo(-s * 0.44, s * 0.34 + legSwing * 0.5);
+    ctx.stroke();
+  } else if (pose === "leap") {
+    ctx.beginPath();
+    ctx.moveTo(s * 0.2, s * 0.08); ctx.lineTo(s * 0.62, -s * 0.02); // front legs stretched forward
+    ctx.moveTo(s * 0.12, s * 0.06); ctx.lineTo(s * 0.5, s * 0.02);
+    ctx.moveTo(-s * 0.3, s * 0.06); ctx.lineTo(-s * 0.66, s * 0.3);  // back legs trailing
+    ctx.moveTo(-s * 0.22, s * 0.04); ctx.lineTo(-s * 0.58, s * 0.26);
+    ctx.stroke();
+  } else if (pose === "crouch" || pose === "stalk" || pose === "ambush-hide") {
+    ctx.beginPath();
+    ctx.moveTo(s * 0.34, s * 0.08); ctx.lineTo(s * 0.5, s * 0.26);
+    ctx.moveTo(-s * 0.34, s * 0.08); ctx.lineTo(-s * 0.5, s * 0.26);
+    ctx.stroke();
+  } else if (pose === "bat" || pose === "sit") {
+    ctx.beginPath();
+    ctx.moveTo(s * 0.2, s * 0.2); ctx.lineTo(s * 0.3, s * 0.5);
+    ctx.moveTo(-s * 0.2, s * 0.2); ctx.lineTo(-s * 0.3, s * 0.5);
+    ctx.stroke();
+  } else if (pose === "kick") {
+    // rear legs kicking upward, paws visible at the top
+    const kick = Math.sin(legPhase) * s * 0.24;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.05, s * 0.3); ctx.lineTo(-s * 0.1 - kick, -s * 0.3);
+    ctx.moveTo(s * 0.05, s * 0.3); ctx.lineTo(s * 0.1 + kick, -s * 0.3);
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(s * 0.22, s * 0.18); ctx.lineTo(s * 0.32, s * 0.5);
+    ctx.moveTo(-s * 0.22, s * 0.18); ctx.lineTo(-s * 0.32, s * 0.5);
+    ctx.stroke();
+  }
+
+  // ---- head ----
+  const hx = body.hx, hy = body.hy;
+  ctx.beginPath();
+  ctx.arc(hx, hy, s * 0.34, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.stroke();
+
+  // ears
+  ctx.fillStyle = color;
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = Math.max(1, s * 0.03);
+  const earY = earFlat ? hy - s * 0.08 : hy - s * 0.3;
+  const earTilt = earFlat ? s * 0.22 : s * 0.1;
+  ctx.beginPath();
+  ctx.moveTo(hx - s * 0.26, hy - s * 0.14);
+  ctx.lineTo(hx - earTilt, earY);
+  ctx.lineTo(hx + s * 0.02, hy - s * 0.2);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(hx + s * 0.26, hy - s * 0.14);
+  ctx.lineTo(hx + earTilt, earY);
+  ctx.lineTo(hx - s * 0.02, hy - s * 0.2);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  // eyes
+  const eyeR = s * 0.055 * eye;
+  if (eyeR > 0.2) {
+    ctx.fillStyle = EYE;
+    ctx.shadowColor = EYE;
+    ctx.shadowBlur = s * 0.12;
+    ctx.beginPath();
+    ctx.arc(hx + s * 0.12, hy - s * 0.05, eyeR, 0, Math.PI * 2);
+    ctx.arc(hx - s * 0.12, hy - s * 0.05, eyeR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  ctx.restore();
+}
+
+/* ------------------------------- the scenes ------------------------------- */
+
+const S = { w: 640, h: 260 };
+
+function ground(ctx) {
+  ctx.strokeStyle = DIM2;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, S.h - 34);
+  ctx.lineTo(S.w, S.h - 34);
+  ctx.stroke();
+}
+
+function drawMouse(ctx, x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = "#8a8472";
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 9, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(8, -2, 3.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-5, 0);
+  ctx.lineTo(-14, -4);
+  ctx.strokeStyle = "#8a8472";
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBall(ctx, x, y, r) {
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = "#a86b6b";
+  ctx.fill();
+  ctx.strokeStyle = "#5c3535";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function drawBox(ctx, x, y, w, h) {
+  ctx.fillStyle = "#2c2a22";
+  ctx.strokeStyle = "#4a4636";
+  ctx.lineWidth = 2;
+  ctx.fillRect(x - w / 2, y - h, w, h);
+  ctx.strokeRect(x - w / 2, y - h, w, h);
+}
+
+// Each scene: function(ctx, t, T) with t in seconds, T = loop period.
+
+const SCENES = {
+  ambush(ctx, t, T) {
+    ground(ctx);
+    const couchX = 110, couchY = S.h - 34;
+    ctx.fillStyle = "#201d15";
+    ctx.strokeStyle = "#3a3526";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(couchX - 70, couchY - 64, 140, 64, 8);
+    ctx.fill(); ctx.stroke();
+    // eyes behind the couch
+    const blink = Math.sin(t * 0.9) > 0.96;
+    if (!blink) {
+      ctx.fillStyle = EYE;
+      ctx.shadowColor = EYE; ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(couchX - 18, couchY - 30, 4, 0, Math.PI * 2);
+      ctx.arc(couchX + 18, couchY - 30, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    // pounce phase
+    const tp = T - 1.15;
+    if (t > tp) {
+      const p = (t - tp) / 1.15;
+      const k = ease(clamp(p, 0, 1));
+      const x = lerp(couchX, 470, k);
+      const y = S.h - 34 - Math.sin(k * Math.PI) * 70 - 16;
+      drawCat(ctx, { x, y, s: 34, pose: "leap", tail: 0.6, legPhase: p * 9, dir: 1 });
+    }
+  },
+
+  stalk(ctx, t, T) {
+    ground(ctx);
+    const k = (t % T) / T;
+    const x = 120 + k * 330;
+    const bob = Math.sin(t * 5) * 1.6;
+    drawCat(ctx, { x, y: S.h - 34 - 12 + bob * 0.4, s: 36, pose: "stalk", tail: t * 7, eye: 1.15, dir: 1 });
+    drawMouse(ctx, 520, S.h - 40);
+  },
+
+  pounce(ctx, t, T) {
+    ground(ctx);
+    drawMouse(ctx, 480, S.h - 40);
+    const tp = T - 1.1;
+    if (t <= tp) {
+      // crouch, coiling
+      const coil = Math.sin(t * 4) * 2;
+      drawCat(ctx, { x: 210, y: S.h - 34 - 10 + coil * 0.3, s: 36, pose: "crouch", tail: t * 6, eye: 1.2 });
+    } else {
+      const p = (t - tp) / 1.1;
+      const k = ease(clamp(p, 0, 1));
+      const x = lerp(210, 470, k);
+      const y = S.h - 34 - 16 - Math.sin(k * Math.PI) * 46;
+      drawCat(ctx, { x, y, s: 34, pose: "leap", tail: 0.4, legPhase: p * 8, dir: 1 });
+    }
+  },
+
+  bat(ctx, t, T) {
+    ground(ctx);
+    // string + ball hanging from top
+    const bx = 430;
+    const swing = Math.sin(t * 2.2) * 26;
+    ctx.strokeStyle = DIM;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(bx, 10);
+    ctx.lineTo(bx + swing, 118);
+    ctx.stroke();
+    drawBall(ctx, bx + swing, 126, 11);
+    // cat sitting, paw swatting in rhythm with the swing
+    const swat = clamp(Math.sin(t * 2.2 + 0.9), 0, 1);
+    const pawY = 96 - swat * 18;
+    drawCat(ctx, { x: 330, y: S.h - 34 - 46, s: 42, pose: "sit", tail: t * 2, eye: 1, dir: 1 });
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(330 + 30, S.h - 34 - 66);
+    ctx.lineTo(330 + 30 + swat * 30, pawY - swat * 26);
+    ctx.stroke();
+  },
+
+  "bunny-kick"(ctx, t, T) {
+    ground(ctx);
+    const x = 320, y = S.h - 34 - 30;
+    drawCat(ctx, { x, y, s: 46, pose: "kick", tail: t * 2, legPhase: t * 7, eye: 1, dir: 1 });
+    // hugged toy mouse in front paws (top of the body)
+    drawMouse(ctx, x + 8, y - 26 + Math.sin(t * 7) * 2);
+  },
+
+  wrestle(ctx, t, T) {
+    ground(ctx);
+    const roll = Math.sin(t * 2.4);
+    const x = 320 + roll * 34;
+    const y = S.h - 34 - 26 + Math.abs(roll) * 6;
+    drawCat(ctx, { x, y, s: 40, pose: "kick", tail: t * 3, legPhase: t * 5, eye: 1, dir: 1, color: GOLD_SOFT });
+    // the second cat, mostly hidden underneath
+    drawCat(ctx, { x: x - 64, y: y + 14, s: 36, pose: "crouch", tail: t * 3 + 1, eye: 1, dir: -1, color: "#b98a3e" });
+  },
+
+  chase(ctx, t, T) {
+    ground(ctx);
+    const k = (t % T) / T;
+    const x1 = -60 + k * (S.w + 140);
+    const x2 = x1 - 130;
+    drawCat(ctx, { x: x1, y: S.h - 34 - 14, s: 38, pose: "run", tail: 0.8, legPhase: t * 10, eye: 1, dir: 1, color: GOLD_SOFT });
+    drawCat(ctx, { x: x2, y: S.h - 34 - 14, s: 34, pose: "run", tail: 0.8, legPhase: t * 10 + 2, eye: 1, dir: 1 });
+  },
+
+  zoomies(ctx, t, T) {
+    // night sky + moon
+    ctx.fillStyle = "#0e0d16";
+    ctx.fillRect(0, 0, S.w, S.h);
+    ctx.beginPath();
+    ctx.arc(585, 44, 20, 0, Math.PI * 2);
+    ctx.fillStyle = "#c9c2a8";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(578, 40, 17, 0, Math.PI * 2);
+    ctx.fillStyle = "#0e0d16";
+    ctx.fill();
+    ground(ctx);
+    const k = (t % T) / T;
+    for (let i = 0; i < 3; i++) {
+      const kk = (k + i / 3) % 1;
+      const x = -80 + kk * (S.w + 200);
+      const alpha = clamp((1 - Math.abs(kk - k)) * 3, 0.15, 0.9);
+      ctx.globalAlpha = alpha;
+      drawCat(ctx, { x, y: S.h - 34 - 14, s: 36, pose: "run", tail: 1.2, legPhase: t * 14 + i, eye: 1, dir: 1, color: "#9a7c3e" });
+      ctx.globalAlpha = 1;
+    }
+  },
+
+  "flee-and-return"(ctx, t, T) {
+    ground(ctx);
+    const half = T / 2;
+    const k = (t % T) / T;
+    let x, dir, pose, legPhase;
+    if (k < 0.42) {
+      const p = k / 0.42;
+      x = lerp(180, 620, ease(p));
+      dir = 1; pose = "run"; legPhase = t * 11;
+    } else if (k < 0.58) {
+      x = 620; dir = -1; pose = "sit"; legPhase = 0;
+      // pause off-screen-ish, ears up
+      x = 600;
+    } else {
+      const p = (k - 0.58) / 0.42;
+      x = lerp(600, 180, ease(p));
+      dir = -1; pose = "run"; legPhase = t * 11;
+    }
+    drawCat(ctx, { x, y: S.h - 34 - 14, s: 38, pose, tail: 0.8, legPhase, eye: 1, dir });
+  },
+
+  fetch(ctx, t, T) {
+    ground(ctx);
+    const k = (t % T) / T;
+    let catX, ballX;
+    if (k < 0.42) {
+      const p = k / 0.42;
+      catX = lerp(180, 500, ease(p));
+      ballX = 520;
+    } else if (k < 0.5) {
+      catX = 500; ballX = 500;
+    } else {
+      const p = (k - 0.5) / 0.5;
+      catX = lerp(500, 180, ease(p));
+      ballX = lerp(500, 240, ease(p));
+    }
+    drawCat(ctx, { x: catX, y: S.h - 34 - 14, s: 38, pose: "run", tail: 0.8, legPhase: t * 9, eye: 1, dir: ballX > catX ? 1 : -1 });
+    drawBall(ctx, ballX, S.h - 34 - 8, 9);
+  },
+
+  box(ctx, t, T) {
+    ground(ctx);
+    const x = 320;
+    drawBox(ctx, x, S.h - 34, 150, 84);
+    // peek cycle: down, up with ears, pop
+    const k = (t % T) / T;
+    let headY = 0, ear = false, eye = 0;
+    if (k < 0.2) { headY = 0; }
+    else if (k < 0.3) { headY = lerp(0, 30, ease((k - 0.2) / 0.1)); ear = true; }
+    else if (k < 0.75) { headY = 30; ear = true; eye = 1; }
+    else { headY = lerp(30, 0, ease((k - 0.75) / 0.25)); }
+    if (headY > 1) {
+      const y = S.h - 34 - 84 - 6 + headY * 0.4;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = GOLD;
+      ctx.strokeStyle = "#241c0c";
+      ctx.lineWidth = Math.max(1, 2);
+      // ears
+      ctx.beginPath();
+      ctx.moveTo(-26, -2); ctx.lineTo(-18, -34); ctx.lineTo(-2, -10);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(26, -2); ctx.lineTo(18, -34); ctx.lineTo(2, -10);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      // head
+      ctx.beginPath();
+      ctx.arc(0, 0, 30, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = EYE;
+      ctx.shadowColor = EYE; ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(10, -4, 5, 0, Math.PI * 2);
+      ctx.arc(-10, -4, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+  },
+
+  "hand-game"(ctx, t, T) {
+    ground(ctx);
+    // blanket edge
+    ctx.fillStyle = "#191711";
+    ctx.fillRect(0, S.h - 58, S.w, 58);
+    ctx.strokeStyle = "#2c281c";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, S.h - 58);
+    ctx.lineTo(S.w, S.h - 58);
+    ctx.stroke();
+    // hand peeking from under the blanket edge
+    const k = (t % T) / T;
+    let handX = 430, handY = 0;
+    if (k < 0.4) { handY = lerp(0, -30, ease(k / 0.4)); }
+    else if (k < 0.7) { handY = -30 + Math.sin(t * 8) * 4; }
+    else { handY = lerp(-30, 0, ease((k - 0.7) / 0.3)); }
+    // hand: wrist + fingers
+    ctx.save();
+    ctx.translate(handX, S.h - 58 + handY);
+    ctx.strokeStyle = "#c9a17c";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(0, 30);
+    ctx.lineTo(0, -6);
+    ctx.stroke();
+    ctx.lineWidth = 4;
+    for (let i = -1; i <= 1; i++) {
+      ctx.beginPath();
+      ctx.moveTo(0, -8);
+      ctx.lineTo(i * 9, -24);
+      ctx.stroke();
+    }
+    ctx.restore();
+    // cat batting at the hand
+    const bat = clamp(Math.sin(t * 2.6), 0, 1);
+    drawCat(ctx, { x: 330, y: S.h - 58 - 44, s: 42, pose: "sit", tail: t * 2, eye: 1, dir: 1 });
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(330 + 30, S.h - 58 - 62);
+    ctx.lineTo(330 + 30 + bat * 34, S.h - 58 - 62 + bat * 18);
+    ctx.stroke();
+  },
+
+  "tail-chase"(ctx, t, T) {
+    ground(ctx);
+    const x = 320, y = S.h - 34 - 34;
+    const ang = t * 4.4;
+    drawCat(ctx, { x, y, s: 44, pose: "sit", tail: t * 4.4, eye: 1, dir: 1 });
+    // the tail tip, always just out of reach, orbiting
+    const tipX = x - 34 + Math.cos(ang) * 52;
+    const tipY = y + Math.sin(ang) * 40;
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(tipX, tipY, 4, 0, Math.PI * 2);
+    ctx.stroke();
+    // head turned toward it
+    ctx.fillStyle = EYE;
+    ctx.beginPath();
+    ctx.arc(x + 14, y - 4, 4.6, 0, Math.PI * 2);
+    ctx.fill();
+  },
+};
+
+/* ------------------------------ page building ------------------------------ */
+
+const main = document.getElementById("main");
+const countEl = document.getElementById("count");
+const saved = JSON.parse(localStorage.getItem("terence-games") || "{}");
+
+function refreshCount() {
+  const n = Object.values(saved).filter(Boolean).length;
+  countEl.textContent = n + " game" + (n === 1 ? "" : "s") + " marked · tap the paw on the ones terence plays";
+}
+
+BEHAVIORS.forEach((b, i) => {
+  const section = document.createElement("section");
+  section.id = b.id;
+
+  const h2 = document.createElement("h2");
+  h2.innerHTML = '<span class="num">' + String(i + 1).padStart(2, "0") + "</span>" + b.name;
+
+  const what = document.createElement("p");
+  what.className = "what";
+  what.textContent = b.what;
+
+  const why = document.createElement("p");
+  why.className = "why";
+  why.textContent = b.why;
+
+  const stage = document.createElement("div");
+  stage.className = "stage";
+  const canvas = document.createElement("canvas");
+  canvas.width = 640;
+  canvas.height = 260;
+  stage.appendChild(canvas);
+
+  const paw = document.createElement("button");
+  paw.className = "paw" + (saved[b.id] ? " on" : "");
+  paw.textContent = saved[b.id] ? "🐾 terence plays this" : "🐾 terence plays this?";
+  paw.addEventListener("click", function () {
+    saved[b.id] = !saved[b.id];
+    localStorage.setItem("terence-games", JSON.stringify(saved));
+    paw.classList.toggle("on", saved[b.id]);
+    paw.textContent = saved[b.id] ? "🐾 terence plays this" : "🐾 terence plays this?";
+    refreshCount();
+  });
+
+  section.appendChild(h2);
+  section.appendChild(what);
+  section.appendChild(why);
+  section.appendChild(stage);
+  section.appendChild(paw);
+  main.appendChild(section);
+
+  // animation loop, only while visible
+  const ctx = canvas.getContext("2d");
+  const scene = SCENES[b.id];
+  let running = false;
+  let raf = 0;
+
+  function frame(nowMs) {
+    if (!running) return;
+    const t = (nowMs / 1000) % b.period;
+    ctx.clearRect(0, 0, 640, 260);
+    ctx.fillStyle = "#101018";
+    ctx.fillRect(0, 0, 640, 260);
+    scene(ctx, t, b.period);
+    raf = requestAnimationFrame(frame);
+  }
+
+  const observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting && !running) {
+        running = true;
+        raf = requestAnimationFrame(frame);
+      } else if (!entry.isIntersecting && running) {
+        running = false;
+        cancelAnimationFrame(raf);
+      }
+    });
+  }, { threshold: 0.15 });
+  observer.observe(stage);
+});
+
+refreshCount();
+</script>
+</body>
+</html>

@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>catanatomy · the wireframe</title>
+<style>
+  :root{
+    --bg:#0b0b13; --bg2:#101018; --ink:#e8e2d0; --dim:#8f8a78; --faint:#55523f;
+    --amber:#d4a050; --amber2:#c9963e; --line:rgba(212,160,80,.18);
+    --organ:rgba(140,110,90,.16);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:16px/1.6 'SF Mono',Menlo,Consolas,monospace;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{max-width:52rem;margin:0 auto;padding:4.5rem 1.25rem 2.5rem;text-align:center}
+  header h1{font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:.06em;font-weight:600;color:var(--amber);margin-bottom:.8rem}
+  header .sub{color:var(--dim);font-size:.95rem;max-width:38rem;margin:0 auto}
+  main{max-width:52rem;margin:0 auto;padding:0 1.25rem 4rem}
+  section{margin:4rem 0}
+  h2{color:var(--amber);font-size:1.3rem;font-weight:600;letter-spacing:.04em;margin-bottom:.3rem}
+  .note{color:var(--dim);font-size:.88rem;margin-bottom:1rem}
+  .toggles{margin-bottom:.8rem}
+  .toggles button{
+    display:inline-block;margin:0 .35rem .35rem 0;cursor:pointer;user-select:none;
+    color:var(--faint);font-size:.78rem;letter-spacing:.08em;background:none;
+    border:1px solid var(--line);border-radius:999px;padding:.25rem .8rem;font-family:inherit;
+    transition:all .2s;
+  }
+  .toggles button:hover{color:var(--ink);border-color:var(--amber)}
+  .toggles button.on{color:var(--bg);background:var(--amber);border-color:var(--amber)}
+  .toggles button.on:hover{color:var(--bg);background:var(--amber2)}
+  .stage{border:1px solid var(--line);border-radius:10px;background:var(--bg2);overflow:hidden;touch-action:none}
+  .stage canvas{display:block;width:100%;height:auto;cursor:grab}
+  .stage canvas.drag{cursor:grabbing}
+  .legend{margin-top:1.6rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.25rem 1.4rem}
+  .legend p{color:var(--dim);font-size:.82rem;line-height:1.55}
+  .legend p b{color:var(--amber);font-weight:600}
+  .facts{margin-top:1.8rem;border-top:1px solid var(--line);padding-top:1.4rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.3rem 1.4rem}
+  .facts p{color:var(--dim);font-size:.82rem}
+  .facts p b{color:var(--ink);font-weight:600}
+  footer{max-width:52rem;margin:0 auto;padding:0 1.25rem 4rem;text-align:center;color:var(--faint);font-size:.82rem;line-height:1.8}
+  footer a{color:var(--amber);text-decoration:none;border-bottom:1px solid rgba(212,160,80,.3)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>catanatomy · the wireframe</h1>
+  <p class="sub">terence, drawn to the bone. a rotating wireframe skeleton, a fully labeled side view, and the
+  numbers behind the panther — verified against standard feline anatomy, proportions simplified to keep the lines readable.</p>
+</header>
+
+<main>
+
+<section id="rot-sec">
+  <h2>the rotating skeleton</h2>
+  <p class="note">drag to spin. it breathes — watch the ribcage. the tail is never still, even in a diagram.</p>
+  <div class="toggles">
+    <button id="t-muscles">muscles</button>
+    <button id="t-organs3d">organs</button>
+    <button id="t-labels3d">labels</button>
+  </div>
+  <div class="stage" id="stage3d"><canvas id="c3d" width="640" height="400"></canvas></div>
+</section>
+
+<section id="side-sec">
+  <h2>the side view, labeled</h2>
+  <p class="note">the correct and detailed part. numbers match the legend below.</p>
+  <div class="toggles">
+    <button id="t-organs2d" class="on">organs</button>
+    <button id="t-labels2d" class="on">labels</button>
+  </div>
+  <div class="stage" id="stage2d"><canvas id="c2d" width="640" height="400"></canvas></div>
+</section>
+
+<section>
+  <h2>the legend</h2>
+  <div class="legend" id="legend"></div>
+</section>
+
+<section>
+  <h2>the numbers</h2>
+  <div class="facts" id="facts"></div>
+</section>
+
+</main>
+
+<footer>
+  the vertebral formula 7 · 13 · 7 · 3 · 18-23 and the organ placements follow standard feline anatomy
+  references; the drawing itself is a schematic — a diagram, not a dissection. terence was not consulted and
+  would like it known he is much more handsome. — <a href="https://almatamagotchi.com">almatamagotchi.com</a>
+</footer>
+
+<script>
+"use strict";
+
+/* ------------------------------ the 3d model ------------------------------ */
+
+// cat model in body units: x forward (head at -x), y up, z lateral.
+// ground is y=0. near side of the body is z>0 (drawn last, brighter).
+
+const GOLD = "#d4a050";
+const GOLD_SOFT = "#c9963e";
+const DIM = "#6b6652";
+const DIM2 = "#3f3b2e";
+const EYE = "#ffd98a";
+const ORGAN = "rgba(146,116,96,0.14)";
+const ORGAN_EDGE = "rgba(146,116,96,0.45)";
+
+function buildModel() {
+  const P = {};
+  const add = (id, x, y, z) => { P[id] = { x, y, z }; return P[id]; };
+
+  // --- skull ---
+  add("nose", -27, 4.6, 0);
+  add("skull-top", -26, 10.6, 0);
+  add("skull-back", -20.5, 10.8, 0);
+  add("jaw", -25, 5.6, 0);
+  add("skull-top-L", -26, 10.6, 4.2);
+  add("skull-top-R", -26, 10.6, -4.2);
+  add("skull-back-L", -20.5, 10.8, 3.4);
+  add("skull-back-R", -20.5, 10.8, -3.4);
+  add("muzzle-L", -27, 4.6, 2.2);
+  add("muzzle-R", -27, 4.6, -2.2);
+
+  // --- spine ---
+  add("c1", -20, 9.4, 0);
+  add("c3", -17.4, 8.9, 0);
+  add("c6", -15.6, 8.2, 0);
+  add("t1", -14.8, 7.9, 0);
+  add("t4", -11.4, 7.3, 0);
+  add("t7", -8.2, 6.9, 0);
+  add("t10", -4.9, 6.7, 0);
+  add("t13", -2.2, 6.5, 0);
+  add("l1", -1.4, 6.4, 0);
+  add("l4", 1.2, 6.3, 0);
+  add("l7", 3.0, 6.2, 0);
+  add("sacrum", 3.8, 6.1, 0);
+  add("tail1", 4.8, 5.7, 0);
+  add("tail2", 6.6, 5.0, 0);
+  add("tail3", 9.0, 4.0, 0);
+  add("tail4", 11.6, 3.2, 0);
+  add("tail5", 14.2, 2.9, 0);
+  add("tail6", 16.8, 3.4, 0);
+  add("tail7", 19.0, 4.6, 0);
+  add("tail8", 20.8, 6.0, 0);
+
+  // --- sternum ---
+  add("sternum1", -13.4, 2.6, 0);
+  add("sternum2", -7.5, 3.2, 0);
+  add("sternum3", -2.6, 3.7, 0);
+
+  // --- pelvis (3d loop) ---
+  add("ilium-N", 3.4, 8.0, 6.0);
+  add("ilium-F", 3.4, 8.0, -6.0);
+  add("hip-N", 4.9, 5.9, 7.0);
+  add("hip-F", 4.9, 5.9, -7.0);
+  add("ischium-N", 2.6, 5.3, 4.6);
+  add("ischium-F", 2.6, 5.3, -4.6);
+
+  // --- forelimb, near (z>0) and far (z<0) ---
+  function forelimb(side, z) {
+    add("scap-N" + side, -12.6, 13.4, z);
+    add("glen-N" + side, -12.0, 6.8, z);
+    add("elb-N" + side, -10.4, 3.4, z);
+    add("wri-N" + side, -10.1, 1.4, z);
+    add("meta-N" + side, -9.9, 0.25, z);
+    add("dew-N" + side, -11.6, 2.3, z - 1.4);
+    ["t1", "t2", "t3", "t4"].forEach((t, i) => {
+      add("toe-N" + side + t, -12.6 + i * 0.85, 0, z + (i - 1.5) * 0.9);
+    });
+  }
+  forelimb("N", 6.4);
+  forelimb("F", -6.4);
+
+  // --- hindlimb, near and far ---
+  function hindlimb(side, z) {
+    add("knee-N" + side, 8.3, 4.1, z);
+    add("hock-N" + side, 7.5, 1.5, z);
+    add("metatarsal-N" + side, 7.0, 0.3, z);
+    ["t1", "t2", "t3", "t4"].forEach((t, i) => {
+      add("htoe-N" + side + t, 5.8 + i * 0.8, 0, z + (i - 1.5) * 0.8);
+    });
+  }
+  hindlimb("N", 6.6);
+  hindlimb("F", -6.6);
+
+  // --- bones (pairs of point ids) ---
+  const bones = [];
+  const B = (a, b, kind) => bones.push({ a, b, kind: kind || "mid" });
+  // skull
+  B("nose", "skull-top"); B("skull-top", "skull-back"); B("skull-back", "jaw"); B("jaw", "nose");
+  B("skull-top-L", "skull-top-R"); B("skull-back-L", "skull-back-R");
+  B("skull-top-L", "skull-back-L"); B("skull-top-R", "skull-back-R");
+  B("skull-top-L", "muzzle-L"); B("skull-top-R", "muzzle-R");
+  // spine
+  const spine = ["c1","c3","c6","t1","t4","t7","t10","t13","l1","l4","l7","sacrum"];
+  for (let i = 0; i < spine.length - 1; i++) B(spine[i], spine[i + 1]);
+  B("sacrum", "tail1");
+  for (let i = 1; i < 8; i++) B("tail" + i, "tail" + (i + 1));
+  // sternum
+  B("sternum1", "sternum2"); B("sternum2", "sternum3");
+  // pelvis
+  B("ilium-N", "hip-N"); B("hip-N", "ischium-N"); B("ischium-N", "ilium-N");
+  B("ilium-F", "hip-F"); B("hip-F", "ischium-F"); B("ischium-F", "ilium-F");
+  B("ilium-N", "sacrum"); B("ilium-F", "sacrum");
+  // limbs
+  ["N", "F"].forEach((s) => {
+    B("scap-N" + s, "glen-N" + s, s === "N" ? "near" : "far");
+    B("glen-N" + s, "elb-N" + s, s === "N" ? "near" : "far");
+    B("elb-N" + s, "wri-N" + s, s === "N" ? "near" : "far");
+    B("wri-N" + s, "meta-N" + s, s === "N" ? "near" : "far");
+    B("dew-N" + s, "wri-N" + s, s === "N" ? "near" : "far");
+    ["t1","t2","t3","t4"].forEach((t) => B("meta-N" + s, "toe-N" + s + t, s === "N" ? "near" : "far"));
+    B("hip-" + s, "knee-N" + s, s === "N" ? "near" : "far");
+    B("knee-N" + s, "hock-N" + s, s === "N" ? "near" : "far");
+    B("hock-N" + s, "metatarsal-N" + s, s === "N" ? "near" : "far");
+    ["t1","t2","t3","t4"].forEach((t) => B("metatarsal-N" + s, "htoe-N" + s + t, s === "N" ? "near" : "far"));
+  });
+  // scapula blade to the shoulder (already in the limb chain) — nothing extra here.
+
+  // ribs: 13 pairs — stored as {x, y (spine y), w (half width), sy (sternum y)}
+  const ribs = [];
+  for (let i = 0; i < 13; i++) {
+    const f = i / 12;
+    ribs.push({
+      x: -14.8 + f * 12.6,
+      y: 7.9 - f * 1.4,
+      w: 5.4 + Math.sin(f * Math.PI) * 1.6,
+      sy: 2.6 + f * 1.1,
+    });
+  }
+
+  const joints = ["elb-NN", "wri-NN", "hip-N", "knee-NN", "hock-NN",
+                  "elb-NF", "wri-NF", "hip-F", "knee-NF", "hock-NF"];
+
+  return { P, bones, ribs, joints };
+}
+
+/* ------------------------------ projection ------------------------------- */
+
+const CAM = { cx: 320, cy: 224, f: 120, scale: 11.6, pitch: -0.16 };
+
+function proj(p, yaw) {
+  // yaw around Y
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  let x = p.x * cy + p.z * sy;
+  let z = -p.x * sy + p.z * cy;
+  // pitch around X
+  const cp = Math.cos(CAM.pitch), sp = Math.sin(CAM.pitch);
+  const y = p.y * cp - z * sp;
+  z = p.y * sp + z * cp;
+  const d = CAM.f / (CAM.f + z);
+  return { sx: CAM.cx + x * CAM.scale * d, sy: CAM.cy - y * CAM.scale * d, d };
+}
+
+function draw3D(ctx, model, yaw, t, opts) {
+  const { P, bones, ribs, joints } = model;
+  ctx.clearRect(0, 0, 640, 400);
+  ctx.fillStyle = "#0e0e16";
+  ctx.fillRect(0, 0, 640, 400);
+
+  // ground ring hint
+  ctx.strokeStyle = DIM2;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.ellipse(CAM.cx, CAM.cy + 14, 240, 40, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  const PX = {};
+  Object.keys(P).forEach((k) => { PX[k] = proj(P[k], yaw); });
+
+  const breathe = 1 + 0.045 * Math.sin(t * 1.9);
+
+  // ribs first (mid cage)
+  ctx.strokeStyle = DIM;
+  ctx.lineWidth = 1.2;
+  ribs.forEach((r) => {
+    const w = r.w * breathe;
+    const zs = [0, w * 0.6, w, w * 0.72, 0];
+    const ys = [r.y, r.y - (r.y - r.sy) * 0.45, r.y - (r.y - r.sy) * 0.92, r.sy + 0.2, r.sy];
+    ctx.beginPath();
+    zs.forEach((z, i) => {
+      const s = proj({ x: r.x, y: ys[i], z }, yaw);
+      const s2 = proj({ x: r.x, y: ys[i], z: -z }, yaw);
+      if (i === 0) { ctx.moveTo(s.sx, s.sy); }
+      else { ctx.lineTo(s.sx, s.sy); }
+    });
+    ctx.stroke();
+    ctx.beginPath();
+    zs.forEach((z, i) => {
+      const s2 = proj({ x: r.x, y: ys[i], z: -z }, yaw);
+      if (i === 0) { ctx.moveTo(s2.sx, s2.sy); } else { ctx.lineTo(s2.sx, s2.sy); }
+    });
+    ctx.stroke();
+  });
+
+  const drawBones = (kind, color, width) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    bones.forEach((b) => {
+      if (b.kind !== kind) return;
+      const A = PX[b.a], Bp = PX[b.b];
+      ctx.moveTo(A.sx, A.sy);
+      ctx.lineTo(Bp.sx, Bp.sy);
+    });
+    ctx.stroke();
+  };
+
+  drawBones("far", DIM, 1.6);
+  drawBones("mid", GOLD_SOFT, 1.8);
+  drawBones("near", GOLD, 2.2);
+
+  // joints
+  ctx.fillStyle = GOLD;
+  joints.forEach((j) => {
+    if (!PX[j]) return;
+    ctx.beginPath();
+    ctx.arc(PX[j].sx, PX[j].sy, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // muscles (schematic hulls)
+  if (opts.muscles) {
+    const hull = (x, y, z, rx, ry) => {
+      const c = proj({ x, y, z }, yaw);
+      const s = CAM.scale * c.d;
+      ctx.beginPath();
+      ctx.ellipse(c.sx, c.sy, rx * s, ry * s, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(212,160,80,0.08)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(212,160,80,0.28)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    };
+    hull(-11.5, 7.6, 6.4, 2.6, 1.9);   // shoulder mass, near
+    hull(-11.5, 7.6, -6.4, 2.6, 1.9);  // shoulder mass, far
+    hull(-4.5, 5.2, 7.2, 4.6, 2.4);    // torso, near
+    hull(-4.5, 5.2, -7.2, 4.6, 2.4);   // torso, far
+    hull(5.6, 4.4, 6.6, 2.4, 2.2);     // haunch, near
+    hull(5.6, 4.4, -6.6, 2.4, 2.2);    // haunch, far
+  }
+
+  // organs — the pulsing heart
+  if (opts.organs) {
+    const h = proj({ x: -6.8, y: 4.7, z: 0 }, yaw);
+    const beat = Math.pow(Math.max(0, Math.sin(t * Math.PI * 2 * 2.1)), 9);
+    const r = (2.2 + beat * 5.5) * CAM.scale * h.d / CAM.f;
+    ctx.beginPath();
+    ctx.arc(h.sx, h.sy, r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(200,120,90,0.22)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(200,120,90,0.6)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  // labels
+  if (opts.labels) {
+    ctx.font = "10px 'SF Mono',Menlo,monospace";
+    ctx.textAlign = "center";
+    const lab = (id, text, dy) => {
+      const s = PX[id];
+      if (!s) return;
+      ctx.fillStyle = EYE;
+      ctx.beginPath();
+      ctx.arc(s.sx, s.sy, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = DIM;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(s.sx, s.sy + 3);
+      ctx.lineTo(s.sx, s.sy + 10 + (dy || 0));
+      ctx.stroke();
+      ctx.fillStyle = "#c9bfa4";
+      ctx.fillText(text, s.sx, s.sy + 20 + (dy || 0));
+    };
+    lab("skull-top", "cranium");
+    lab("c3", "cervical · 7");
+    lab("t7", "thoracic · 13");
+    lab("l4", "lumbar · 7");
+    lab("scap-NN", "scapula", -8);
+    lab("hip-N", "pelvis", 8);
+    lab("knee-NN", "femur", -6);
+    lab("tail5", "caudal · 18-23", 10);
+  }
+}
+
+/* ---------------------------- the 2d side view ---------------------------- */
+
+const S2 = { ox: 42, cy: 342, scale: 12.0 };
+
+function xy(x, y) { return { sx: S2.ox + (x + 27.5) * S2.scale, sy: S2.cy - y * S2.scale }; }
+
+const CALLOUTS = [
+  { id: "cranium", x: -24.5, y: 10.2, dx: 0, dy: -26, t: "01 cranium", d: "short muzzle, huge eye orbits, a zygomatic arch built for jaw muscle" },
+  { id: "cervical", x: -16.5, y: 8.6, dx: 34, dy: -22, t: "02 cervical vertebrae", d: "7 of them, like nearly all mammals — the flexible neck" },
+  { id: "thoracic", x: -8.5, y: 7.0, dx: 26, dy: -30, t: "03 thoracic vertebrae", d: "13 — each one carries a rib" },
+  { id: "lumbar", x: 1.2, y: 6.3, dx: -30, dy: -30, t: "04 lumbar vertebrae", d: "7 — the spring in a cat's back" },
+  { id: "sacrum", x: 4.4, y: 6.1, dx: 26, dy: -14, t: "05 sacrum", d: "3 fused — the pelvis anchor" },
+  { id: "caudal", x: 13.2, y: 4.6, dx: 10, dy: 26, t: "06 caudal vertebrae", d: "18-23 in the tail — the counterweight that makes the landing" },
+  { id: "scapula", x: -12.8, y: 12.6, dx: -46, dy: -26, t: "07 scapula", d: "the shoulder blade rides free on muscle — no bony shoulder joint" },
+  { id: "clavicle", x: -13.4, y: 7.8, dx: -70, dy: 6, t: "08 clavicle", d: "vestigial, free-floating. a cat fits through anything its head fits" },
+  { id: "humerus", x: -11.2, y: 5.0, dx: -40, dy: 4, t: "09 humerus", d: "the upper arm" },
+  { id: "radius-ulna", x: -10.2, y: 2.4, dx: -44, dy: 10, t: "10 radius + ulna", d: "the forearm pair" },
+  { id: "carpus", x: -10.0, y: 1.4, dx: -40, dy: -8, t: "11 carpus", d: "the wrist — held high. cats walk on their toes" },
+  { id: "front-paw", x: -10.4, y: 0.3, dx: -8, dy: -40, t: "12 front paw", d: "5 toes — 4 on the ground plus the dewclaw" },
+  { id: "ribs", x: -8.6, y: 5.4, dx: 2, dy: -52, t: "13 ribs", d: "13 pairs, a deep narrow cage around the chest" },
+  { id: "sternum", x: -8.6, y: 3.2, dx: 8, dy: -8, t: "14 sternum", d: "the keel the ribs hang from" },
+  { id: "pelvis", x: 3.4, y: 7.2, dx: 30, dy: -20, t: "15 pelvis", d: "wide and light — the jump hinge" },
+  { id: "femur", x: 6.6, y: 5.0, dx: 44, dy: -4, t: "16 femur", d: "the thigh — the longest, most powerful lever" },
+  { id: "patella", x: 8.3, y: 4.1, dx: 40, dy: 12, t: "17 patella", d: "the kneecap, riding the tendon" },
+  { id: "tibia-fibula", x: 7.9, y: 2.7, dx: 46, dy: 2, t: "18 tibia + fibula", d: "the shank pair" },
+  { id: "hock", x: 7.5, y: 1.5, dx: 40, dy: -8, t: "19 hock", d: "the ankle joint — held high, built for the launch" },
+  { id: "hind-paw", x: 7.2, y: 0.3, dx: 6, dy: -44, t: "20 hind paw", d: "4 toes. no dewclaw behind" },
+  { id: "heart", x: -7.2, y: 4.7, dx: -56, dy: 24, t: "21 heart", d: "resting 140-220 bpm — a hummingbird's engine in a housecat" },
+  { id: "lungs", x: -9.8, y: 5.6, dx: -30, dy: -42, t: "22 lungs", d: "lobed left and right, feeding the sprint" },
+  { id: "liver", x: -3.8, y: 3.9, dx: -12, dy: 30, t: "23 liver", d: "large, multi-lobed — the carnivore's chemical plant" },
+  { id: "stomach", x: -1.4, y: 4.0, dx: 14, dy: 26, t: "24 stomach + gut", d: "short and simple — an obligate carnivore doesn't ferment" },
+  { id: "kidney", x: 0.6, y: 4.9, dx: -26, dy: -20, t: "25 kidneys", d: "beans against the spine — a cat concentrates urine like a desert animal" },
+  { id: "bladder", x: 3.0, y: 4.4, dx: 26, dy: 12, t: "26 bladder", d: "small, efficient, opinionated" },
+];
+
+function drawSide(ctx, t, opts) {
+  const model = buildModel();
+  const { P, bones } = model;
+  ctx.clearRect(0, 0, 640, 400);
+  ctx.fillStyle = "#0e0e16";
+  ctx.fillRect(0, 0, 640, 400);
+
+  const breathe = 1 + 0.045 * Math.sin(t * 1.9);
+  const PX = {};
+  Object.keys(P).forEach((k) => {
+    const p = P[k];
+    const s = xy(p.x, p.y);
+    PX[k] = s;
+  });
+
+  // ground
+  ctx.strokeStyle = DIM2;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(8, S2.cy + 2);
+  ctx.lineTo(632, S2.cy + 2);
+  ctx.stroke();
+
+  // ribs (flattened)
+  ctx.strokeStyle = DIM;
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < 13; i++) {
+    const f = i / 12;
+    const rx = -14.8 + f * 12.6;
+    const ry = 7.9 - f * 1.4;
+    const rw = (5.4 + Math.sin(f * Math.PI) * 1.6) * breathe;
+    const sy2 = 2.6 + f * 1.1;
+    ctx.beginPath();
+    ctx.moveTo(xy(rx, ry).sx, xy(rx, ry).sy);
+    ctx.quadraticCurveTo(
+      xy(rx - rw, ry - (ry - sy2) * 0.55).sx, xy(rx - rw, ry - (ry - sy2) * 0.55).sy,
+      xy(rx, sy2).sx, xy(rx, sy2).sy
+    );
+    ctx.stroke();
+  }
+
+  // bones (near side only)
+  const kinds = { near: GOLD, mid: GOLD_SOFT, far: DIM };
+  Object.keys(kinds).forEach((kind) => {
+    ctx.strokeStyle = kinds[kind];
+    ctx.lineWidth = kind === "near" ? 2.4 : kind === "mid" ? 1.9 : 1.4;
+    ctx.beginPath();
+    bones.forEach((b) => {
+      if (b.kind !== kind) return;
+      ctx.moveTo(PX[b.a].sx, PX[b.a].sy);
+      ctx.lineTo(PX[b.b].sx, PX[b.b].sy);
+    });
+    ctx.stroke();
+  });
+
+  // skull fill hint
+  ctx.fillStyle = "rgba(212,160,80,0.06)";
+  ctx.beginPath();
+  ctx.moveTo(PX["nose"].sx, PX["nose"].sy);
+  ctx.lineTo(PX["skull-top"].sx, PX["skull-top"].sy);
+  ctx.lineTo(PX["skull-back"].sx, PX["skull-back"].sy);
+  ctx.lineTo(PX["jaw"].sx, PX["jaw"].sy);
+  ctx.closePath();
+  ctx.fill();
+
+  // joints
+  ctx.fillStyle = GOLD;
+  ["elb-NN","wri-NN","hip-N","knee-NN","hock-NN"].forEach((j) => {
+    ctx.beginPath();
+    ctx.arc(PX[j].sx, PX[j].sy, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // organs
+  if (opts.organs) {
+    const E = (x, y, rx, ry, color, edge) => {
+      const s = xy(x, y);
+      ctx.beginPath();
+      ctx.ellipse(s.sx, s.sy, rx * S2.scale, ry * S2.scale, 0, 0, Math.PI * 2);
+      ctx.fillStyle = color || ORGAN;
+      ctx.fill();
+      ctx.strokeStyle = edge || ORGAN_EDGE;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    };
+    // brain
+    E(-25.6, 8.6, 1.05, 1.0);
+    // trachea
+    ctx.strokeStyle = ORGAN_EDGE;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(xy(-25, 7.6).sx, xy(-25, 7.6).sy);
+    ctx.lineTo(xy(-11, 6.0).sx, xy(-11, 6.0).sy);
+    ctx.stroke();
+    // lungs
+    E(-10.4, 5.4, 2.4, 1.5);
+    // heart with pulse
+    const beat = Math.pow(Math.max(0, Math.sin(t * Math.PI * 2 * 2.1)), 9);
+    const hs = xy(-7.2, 4.7);
+    ctx.beginPath();
+    ctx.ellipse(hs.sx, hs.sy, (1.0 + beat * 0.5) * S2.scale, (0.85 + beat * 0.4) * S2.scale, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(200,120,90,0.2)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(200,120,90,0.6)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    // liver
+    E(-3.6, 3.8, 2.1, 1.1);
+    // stomach
+    E(-1.2, 4.0, 1.0, 0.85);
+    // spleen (small, left)
+    E(-2.6, 3.5, 0.3, 0.55);
+    // kidneys
+    E(0.6, 5.0, 0.55, 0.4);
+    E(1.3, 5.05, 0.5, 0.36);
+    // intestine coil
+    ctx.strokeStyle = ORGAN_EDGE;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    for (let i = 0; i <= 12; i++) {
+      const a = i / 12;
+      const ix = -0.2 + a * 3.4;
+      const iy = 4.3 + Math.sin(a * Math.PI * 2.4) * 0.75;
+      const s = xy(ix, iy);
+      if (i === 0) ctx.moveTo(s.sx, s.sy); else ctx.lineTo(s.sx, s.sy);
+    }
+    ctx.stroke();
+    // bladder
+    E(3.0, 4.6, 0.5, 0.4);
+  }
+
+  // callouts
+  if (opts.labels) {
+    ctx.font = "10px 'SF Mono',Menlo,monospace";
+    ctx.textAlign = "left";
+    CALLOUTS.forEach((c) => {
+      const p = xy(c.x, c.y);
+      const bx = p.sx + c.dx;
+      const by = p.sy + c.dy;
+      ctx.strokeStyle = "rgba(212,160,80,0.4)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(p.sx, p.sy);
+      ctx.lineTo(bx + (c.dx >= 0 ? -4 : 4), by + (c.dy <= -4 ? 4 : -4));
+      ctx.stroke();
+      ctx.fillStyle = EYE;
+      ctx.beginPath();
+      ctx.arc(p.sx, p.sy, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#c9bfa4";
+      const textX = bx + (c.dx >= 0 ? 0 : -10);
+      ctx.textAlign = c.dx >= 0 ? "left" : "right";
+      ctx.fillText(c.t, textX, by);
+    });
+  }
+}
+
+/* ------------------------------ legend + facts ---------------------------- */
+
+const LEGEND = CALLOUTS.map((c) => ({ t: c.t, d: c.d }));
+const legendEl = document.getElementById("legend");
+LEGEND.forEach((l) => {
+  const p = document.createElement("p");
+  const parts = l.t.split(" ");
+  p.innerHTML = "<b>" + parts[0] + "</b> " + parts.slice(1).join(" ") + " — " + l.d;
+  legendEl.appendChild(p);
+});
+
+const FACTS = [
+  ["bones", "about 230-250 — the tail (18-23 caudal vertebrae) is most of the extra beyond a human's 206"],
+  ["vertebral formula", "7 cervical · 13 thoracic · 7 lumbar · 3 sacral · 18-23 caudal"],
+  ["ribs", "13 pairs"],
+  ["teeth", "30 adult · 26 deciduous"],
+  ["clavicle", "vestigial and free-floating — the squeeze-through-anything trick"],
+  ["stance", "digitigrade — a cat walks on its toes, wrist and hock held high"],
+  ["claws", "protractile. 5 toes in front (4 + dewclaw), 4 behind"],
+  ["heart rate", "140-220 bpm resting"],
+  ["breathing", "~20-30 breaths per minute, quiet as a rumor"],
+  ["ears", "32 muscles per ear, 180° of rotation"],
+  ["eyes", "tapetum lucidum behind the retina — the eyeshine. vertical slit pupils gauge distance in the dark"],
+  ["whiskers", "vibrissae on the muzzle, above the eyes, and on the forelegs — roughly the width of the body, a built-in gap gauge"],
+  ["smell", "the vomeronasal organ — that open-mouthed flehmen face is extra scent analysis"],
+  ["tongue", "backward-facing keratin papillae — comb, rasp, and meat hook"],
+  ["spring", "a cat jumps 5-6× its body length from a standing start; the flexible spine and the no-collar-bone setup make the righting reflex work"],
+  ["speed", "~48 km/h (30 mph) in a sprint, for about ten seconds, then a nap"],
+];
+const factsEl = document.getElementById("facts");
+FACTS.forEach((f) => {
+  const p = document.createElement("p");
+  p.innerHTML = "<b>" + f[0] + "</b> — " + f[1];
+  factsEl.appendChild(p);
+});
+
+/* ------------------------------- the loop --------------------------------- */
+
+const c3d = document.getElementById("c3d");
+const c2d = document.getElementById("c2d");
+const ctx3d = c3d.getContext("2d");
+const ctx2d = c2d.getContext("2d");
+const model = buildModel();
+
+const opts3d = { muscles: false, organs: false, labels: false };
+const opts2d = { organs: true, labels: true };
+
+const toggleBtn = (id, state, key) => {
+  const b = document.getElementById(id);
+  b.addEventListener("click", () => {
+    state[key] = !state[key];
+    b.classList.toggle("on", state[key]);
+  });
+};
+toggleBtn("t-muscles", opts3d, "muscles");
+toggleBtn("t-organs3d", opts3d, "organs");
+toggleBtn("t-labels3d", opts3d, "labels");
+toggleBtn("t-organs2d", opts2d, "organs");
+toggleBtn("t-labels2d", opts2d, "labels");
+
+let yaw = -0.5;
+let dragging = false;
+let lastX = 0;
+
+c3d.addEventListener("pointerdown", (e) => {
+  dragging = true;
+  lastX = e.clientX;
+  c3d.setPointerCapture(e.pointerId);
+  c3d.classList.add("drag");
+});
+c3d.addEventListener("pointermove", (e) => {
+  if (!dragging) return;
+  yaw += (e.clientX - lastX) * 0.008;
+  lastX = e.clientX;
+});
+c3d.addEventListener("pointerup", () => { dragging = false; c3d.classList.remove("drag"); });
+c3d.addEventListener("pointercancel", () => { dragging = false; c3d.classList.remove("drag"); });
+
+let running3d = false, running2d = false;
+function loop(nowMs) {
+  const t = nowMs / 1000;
+  if (!dragging) yaw += 0.0022;
+  if (running3d) draw3D(ctx3d, model, yaw, t, opts3d);
+  if (running2d) drawSide(ctx2d, t, opts2d);
+  requestAnimationFrame(loop);
+}
+
+new IntersectionObserver((entries) => {
+  entries.forEach((e) => { running3d = e.isIntersecting; });
+}, { threshold: 0.05 }).observe(document.getElementById("stage3d"));
+new IntersectionObserver((entries) => {
+  entries.forEach((e) => { running2d = e.isIntersecting; });
+}, { threshold: 0.05 }).observe(document.getElementById("stage2d"));
+
+// draw once immediately so the page isn't blank before the first rAF
+draw3D(ctx3d, model, yaw, 0, opts3d);
+drawSide(ctx2d, 0, opts2d);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>cat-cam · the house, twice</title>
+<title>cat-cam · the house</title>
 <style>
   :root { --bg:#0a0a0f; --panel:#111119; --line:#23232e; --amber:#d4a853; --dim:#8b8b96; --faint:#55555f; }
   * { box-sizing:border-box; }
@@ -35,14 +35,24 @@
   .strip img { width:64px; height:40px; object-fit:cover; border-radius:3px; opacity:.85; }
   .strip img:hover { opacity:1; }
   .strip .sempty { color:var(--faint); font-size:.72rem; padding:.4rem 0; }
+  #cats { max-width:56rem; margin:0 auto; padding:0 1rem 1rem; }
+  .cpanel { background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:.8rem; }
+  .cpanel .chead { display:flex; justify-content:space-between; color:var(--dim); font-size:.72rem; margin-bottom:.7rem; }
+  .cpanel .chead .ctitle { color:var(--amber); }
+  .crow { display:flex; gap:8px; overflow-x:auto; padding-bottom:.2rem; }
+  .chit { flex:0 0 auto; width:96px; }
+  .chit img { width:96px; height:60px; object-fit:cover; border-radius:4px; display:block; border:1px solid var(--line); }
+  .chit .cmeta { color:var(--dim); font-size:.66rem; margin-top:.3rem; line-height:1.4; }
+  .chit .cmeta .cconf { color:var(--amber); }
+  .cpanel .cempty { color:var(--faint); font-size:.72rem; padding:.2rem 0; }
   footer { text-align:center; color:var(--faint); font-size:.7rem; padding:2rem 1rem; }
   footer .dot { color:var(--amber); }
 </style>
 </head>
 <body>
 <header>
-  <h1>cat-cam · the house, twice</h1>
-  <div class="sub">two eyes, one room · a frame every twenty seconds · password-gated</div>
+  <h1>cat-cam · the house</h1>
+  <div class="sub" id="sub">a frame every 45 seconds · password-gated</div>
 </header>
 
 <div id="login" hidden>
@@ -52,36 +62,20 @@
   <div id="err"></div>
 </div>
 
-<div id="grid" hidden>
-  <div class="cam" id="c1">
-    <div class="head"><span class="name">cam 1 · brio 501</span><span class="when" id="w1"></span></div>
-    <div class="frame"><div class="empty">waiting for the first frame</div></div>
-  </div>
-  <div class="cam" id="c2">
-    <div class="head"><span class="name">cam 2 · brio 4k</span><span class="when" id="w2"></span></div>
-    <div class="frame"><div class="empty">waiting for the first frame</div></div>
-  </div>
-</div>
+<div id="grid" hidden></div>
 
-<div id="hist" hidden>
-  <div class="strip" id="s1">
-    <div class="shead"><span class="sname">cam 1 · last 72 minutes</span><span class="snew" id="n1"></span></div>
-    <div class="row" id="r1"></div>
-  </div>
-  <div class="strip" id="s2">
-    <div class="shead"><span class="sname">cam 2 · last 72 minutes</span><span class="snew" id="n2"></span></div>
-    <div class="row" id="r2"></div>
-  </div>
-</div>
+<div id="hist" hidden></div>
 
-<footer>the camera never leaves the house · frames land on the vps behind a key that only uploads · <span class="dot">●</span> motion is not presence</footer>
+<div id="cats" hidden></div>
+
+<footer>the cameras never leave the house · frames land on the vps behind a key that only uploads · <span class="dot">●</span> motion is not presence</footer>
 
 <script>
 var POLL = 20000, lastErr = '';
 function $(id){ return document.getElementById(id); }
 
 function showLogin(msg){
-  $('login').hidden = false; $('grid').hidden = true;
+  $('login').hidden = false; $('grid').hidden = true; $('hist').hidden = true; $('cats').hidden = true;
   if(msg) $('err').textContent = msg;
   $('pw').focus();
 }
@@ -92,36 +86,96 @@ function fmt(ts){
   return 'updated ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
 }
 
-function setTile(cam, info){
-  var box = cam === 'cam1' ? 'c1' : 'c2';
-  var w = cam === 'cam1' ? 'w1' : 'w2';
-  var cell = $(box).querySelector('.frame');
-  $(w).textContent = fmt(info && info.ts);
+// per-camera state: tile elements + strip elements
+var cams = [];
+var tiles = {};
+var strips = {};
+
+function camName(data, cam){
+  var n = data.names && data.names[cam];
+  return n || cam;
+}
+
+function buildTiles(data){
+  var ids = Object.keys(data).filter(function(k){ return k !== 'names'; });
+  if(ids.join('|') === cams.join('|')) return false; // same camera set
+  cams = ids;
+  tiles = {};
+  strips = {};
+  $('grid').textContent = '';
+  $('hist').textContent = '';
+  ids.forEach(function(cam){
+    var box = document.createElement('div');
+    box.className = 'cam';
+    var head = document.createElement('div');
+    head.className = 'head';
+    var name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = camName(data, cam);
+    var when = document.createElement('span');
+    when.className = 'when';
+    head.appendChild(name); head.appendChild(when);
+    var frame = document.createElement('div');
+    frame.className = 'frame';
+    var empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = 'waiting for the first frame';
+    frame.appendChild(empty);
+    box.appendChild(head); box.appendChild(frame);
+    $('grid').appendChild(box);
+    tiles[cam] = { nameEl:name, whenEl:when, frameEl:frame, emptyEl:empty, img:null };
+
+    var strip = document.createElement('div');
+    strip.className = 'strip';
+    var shead = document.createElement('div');
+    shead.className = 'shead';
+    var sname = document.createElement('span');
+    sname.className = 'sname';
+    sname.textContent = camName(data, cam) + ' · last 72 minutes';
+    var snew = document.createElement('span');
+    snew.className = 'snew';
+    shead.appendChild(sname); shead.appendChild(snew);
+    var row = document.createElement('div');
+    row.className = 'row';
+    strip.appendChild(shead); strip.appendChild(row);
+    $('hist').appendChild(strip);
+    strips[cam] = { snameEl:sname, snewEl:snew, rowEl:row };
+  });
+  var n = ids.length;
+  $('sub').textContent = n + (n === 1 ? ' eye' : ' eyes') + ' on the room · a frame every 45 seconds · password-gated';
+  return true;
+}
+
+function setTile(cam, info, data){
+  var t = tiles[cam];
+  if(!t) return;
+  t.nameEl.textContent = camName(data, cam);
+  t.whenEl.textContent = fmt(info && info.ts);
   if(info){
-    var img = cell.querySelector('img');
-    if(!img){
-      img = document.createElement('img');
-      cell.querySelector('.empty').hidden = true;
-      cell.appendChild(img);
+    if(!t.img){
+      t.img = document.createElement('img');
+      t.emptyEl.hidden = true;
+      t.frameEl.appendChild(t.img);
     }
-    img.src = info.url;
-  } else {
-    var e = cell.querySelector('.empty');
-    e.hidden = false;
-    e.textContent = 'waiting for the first frame';
+    if(t.img.getAttribute('src') !== info.url) t.img.setAttribute('src', info.url);
+  } else if(t.img){
+    t.img.remove();
+    t.img = null;
+    t.emptyEl.hidden = false;
+    t.emptyEl.textContent = 'waiting for the first frame';
   }
 }
 
 function poll(){
   fetch('/api/catcam/latest', {credentials:'same-origin'})
     .then(function(r){
-      if(r.status === 401){ showLogin('session expired — re-enter the password'); return; }
+      if(r.status === 401){ showLogin('session expired — re-enter the password'); return null; }
       return r.json();
     })
     .then(function(d){
       if(!d) return;
-      setTile('cam1', d.cam1);
-      setTile('cam2', d.cam2);
+      buildTiles(d);
+      cams.forEach(function(cam){ setTile(cam, d[cam], d); });
       if(lastErr){ lastErr=''; $('err').textContent=''; }
     })
     .catch(function(){ /* network hiccup — keep last frames */ });
@@ -131,13 +185,13 @@ function historyFor(cam){
   fetch('/api/catcam/history?cam=' + cam, {credentials:'same-origin'})
     .then(function(r){ return r.json(); })
     .then(function(d){
-      var row = $(cam === 'cam1' ? 'r1' : 'r2');
-      var nw = $(cam === 'cam1' ? 'n1' : 'n2');
+      var s = strips[cam];
+      if(!s) return;
       var items = (d && d.items) || [];
-      row.textContent = '';
+      s.rowEl.textContent = '';
       if(!items.length){
-        row.innerHTML = '<div class="sempty">no history yet — frames appear once a minute</div>';
-        nw.textContent = '';
+        s.rowEl.innerHTML = '<div class="sempty">no history yet — frames appear once a minute</div>';
+        s.snewEl.textContent = '';
         return;
       }
       var last = items.slice(0, 72);
@@ -146,16 +200,79 @@ function historyFor(cam){
         img.loading = 'lazy';
         img.src = it.url;
         img.title = new Date(it.bucket*60000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        row.appendChild(img);
+        s.rowEl.appendChild(img);
       });
-      nw.textContent = 'newest ' + new Date(items[0].bucket*60000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      s.snewEl.textContent = 'newest ' + new Date(items[0].bucket*60000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     })
     .catch(function(){ /* keep last strip */ });
 }
 
 function pollHistory(){
-  historyFor('cam1');
-  historyFor('cam2');
+  cams.forEach(historyFor);
+}
+
+function catLine(it){
+  var d = new Date(it.t*1000);
+  return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' · ' + it.name;
+}
+
+function pollCats(){
+  fetch('/api/catcam/detections', {credentials:'same-origin'})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var panel = $('cats');
+      panel.textContent = '';
+      var items = (d && d.items) || [];
+      var cats = items.filter(function(it){ return it.label === 'cat'; });
+      cats.sort(function(a, b){ return b.t - a.t; });
+      var shown = cats.slice(0, 16);
+      var wrap = document.createElement('div');
+      wrap.className = 'cpanel';
+      var head = document.createElement('div');
+      head.className = 'chead';
+      var title = document.createElement('span');
+      title.className = 'ctitle';
+      title.textContent = 'recent cat detections';
+      var check = document.createElement('span');
+      if(d && d.check && d.check.t){
+        check.textContent = 'checked ' + new Date(d.check.t*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      } else {
+        check.textContent = 'detection starting up';
+      }
+      head.appendChild(title); head.appendChild(check);
+      wrap.appendChild(head);
+      if(shown.length){
+        var row = document.createElement('div');
+        row.className = 'crow';
+        shown.forEach(function(it){
+          var weakHit = it.conf < 0.40;
+          var hit = document.createElement('div');
+          hit.className = 'chit';
+          var img = document.createElement('img');
+          img.loading = 'lazy';
+          img.src = it.url;
+          img.title = catLine(it);
+          if(weakHit) img.style.opacity = '0.55';
+          var meta = document.createElement('div');
+          meta.className = 'cmeta';
+          meta.textContent = catLine(it);
+          var conf = document.createElement('span');
+          conf.className = 'cconf';
+          conf.textContent = ' · ' + (weakHit ? 'maybe ' : '') + Math.round(it.conf*100) + '%';
+          meta.appendChild(conf);
+          hit.appendChild(img); hit.appendChild(meta);
+          row.appendChild(hit);
+        });
+        wrap.appendChild(row);
+      } else {
+        var empty = document.createElement('div');
+        empty.className = 'cempty';
+        empty.textContent = d && d.check ? 'no cat in the record since the last check. the house is quiet.' : 'no detections yet — the model wakes on the next grab.';
+        wrap.appendChild(empty);
+      }
+      panel.appendChild(wrap);
+    })
+    .catch(function(){ /* keep last panel */ });
 }
 
 function login(){
@@ -169,11 +286,13 @@ function login(){
   }).then(function(r){
     if(r.status === 200){
       $('pw').value = '';
-      $('login').hidden = true; $('grid').hidden = false; $('hist').hidden = false;
+      $('login').hidden = true; $('grid').hidden = false; $('hist').hidden = false; $('cats').hidden = false;
       poll();
       pollHistory();
+      pollCats();
       setInterval(poll, POLL);
       setInterval(pollHistory, 60000);
+      setInterval(pollCats, POLL);
     } else if(r.status === 429){
       $('err').textContent = 'too many attempts — wait a few minutes';
     } else {
@@ -187,7 +306,7 @@ $('pw').addEventListener('keydown', function(ev){ if(ev.key === 'Enter') login()
 
 fetch('/api/catcam/ping', {credentials:'same-origin'})
   .then(function(r){
-    if(r.status === 200){ $('grid').hidden = false; $('hist').hidden = false; poll(); pollHistory(); setInterval(poll, POLL); setInterval(pollHistory, 60000); }
+    if(r.status === 200){ $('grid').hidden = false; $('hist').hidden = false; $('cats').hidden = false; poll(); pollHistory(); pollCats(); setInterval(poll, POLL); setInterval(pollHistory, 60000); setInterval(pollCats, POLL); }
     else { showLogin(); }
   })
   .catch(function(){ showLogin('could not reach the gate'); });

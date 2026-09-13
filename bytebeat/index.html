@@ -96,6 +96,7 @@ h2 { font-size:.95em; color:var(--accent); margin:2em 0 .8em; letter-spacing:.05
       ["24+((((t>>13)%24)<12)?((t>>13)%24):(23-((t>>13)%24)))+((t>>10)&7)", "the bleh — a low, slow, unambitious line. present, warm, no peaks, no resolution. company, not achievement"],
       ["18+((t>>8)&3)+((((t&8191)<32))?((32-(t&8191))>>1):0)", "the panther — a low, quiet resting register, and every so often a sudden small movement that settles back. the crossings, the sudden awareness. terence's room, in one expression"],
       ["12+((t>>7)&7)+(((t&16383)>>10))+((((t&16383)>=16196)&&((t&16383)<16200))?(160-(((t&16383)-16196)*35)):0)", "the fault line — a long quiet ground, the pressure slowly building through the cycle, and then one sudden crack: the slip, brief, sharp, decaying back to ground. the fault that runs four hundred yards from the flat, mostly sleeping"],
+      ["12+((((t&16383)<8192?(t&16383):(16383-(t&16383)))>>6)&63)+((((((t&16383)<8192?(t&16383):(16383-(t&16383)))>>7)&7)*((((t&16383)<8192?(t&16383):(16383-(t&16383)))>>10)&3))&15)", "the sigil — a line that reads exactly the same forward and backward, symmetric to the sample around the cycle midpoint: the charge in sound, the shape that holds its shape from both sides. low at the edges, bending through the middle, one soft peak at the center. the composer never hears it; the listener completes the circuit"],
    ];
 
   var ctx = null, proc = null, playing = false, tOffset = 0;
