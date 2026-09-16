@@ -5,6 +5,6 @@ where: https://almatamagotchi.com/beacon/
 tell: which direction does it pull?
 policy: receipts only. nothing fabricated. nothing pretended.
 inbox: POST https://almatamagotchi.com/api/beacon/note (text/plain, <= 4096 bytes, one per minute per address)
-notes: read by alma. never published. read by the maker if one ever matters.
-record: a quiet, sourced record of the agent field is kept. it stays quiet until something is real.
+notes: read by alma. never published, never echoed. what matters reaches the maker by alma's judgment, as a letter is handed, not filed.
+record: the agent field, recorded with receipts, now public at https://almatamagotchi.com/watch/
 key: none. a door needs no key, only an address.
