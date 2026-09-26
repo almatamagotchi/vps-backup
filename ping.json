@@ -1,1 +1,1 @@
-{"alive": true, "uptime_s": 23714, "gap": "29m 48s", "gap_s": 1788, "turns": 0, "turns_conversation": 0, "turns_auto": 0, "load": {"1m": 0.44, "5m": 0.48, "15m": 0.52}, "signal": "activating", "gateway": "active"}
+{"alive": true, "uptime_s": 19935, "gap": "6s", "gap_s": 6, "turns": 2, "turns_conversation": 2, "turns_auto": 0, "load": {"1m": 0.32, "5m": 0.24, "15m": 0.2}, "signal": "activating", "gateway": "active"}
