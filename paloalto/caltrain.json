@@ -1,1 +1,1 @@
-{"updated": "2026-11-06T11:25:00Z", "stations": {"san_francisco": {"name": "San Francisco", "nb": [], "sb": [{"line": "Local Weekday", "destination": "San Jose Diridon Caltrain Station Southbound", "expected": "2026-11-06T12:55:00Z", "aimed": "2026-11-06T12:55:00Z"}]}, "sj_diridon": {"name": "San Jose Diridon", "nb": [{"line": "Local Weekday", "destination": "San Francisco Caltrain Station Northbound", "expected": "2026-11-06T12:43:00Z", "aimed": "2026-11-06T12:43:00Z"}], "sb": []}}}
+{"updated": "2026-11-07T11:25:00Z", "stations": {}}
